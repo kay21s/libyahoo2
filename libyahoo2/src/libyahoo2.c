@@ -711,8 +711,11 @@ static int yahoo_send_packet(int fd, struct yahoo_packet *pkt, int extra_pad)
 		ret = write(fd, data, len);
 	} while(ret == -1 && errno==EINTR);
 
-	LOG(("wrote packet"));
-
+	if (ret == -1)  {
+		LOG(("wrote packet: ERR %s", strerror(errno)));
+	} else {
+		LOG(("wrote packet: OK"));
+	}
 	FREE(data);
 
 	return ret;
@@ -745,7 +748,11 @@ static int yahoo_send_data(int fd, char *data, int len)
 		ret = write(fd, data, len);
 	} while(ret == -1 && errno==EINTR);
 
-	LOG(("wrote data"));
+	if (ret == -1)  {
+		LOG(("wrote data: ERR %s", strerror(errno)));
+	} else {
+		LOG(("wrote data: OK"));
+	}
 
 	return ret;
 }
@@ -1062,7 +1069,10 @@ static void yahoo_process_conference(struct yahoo_input_data *yid, struct yahoo_
 		if(who)
 			YAHOO_CALLBACK(ext_yahoo_conf_userdecline)(yd->client_id, who, room, msg);
 		break;
+
+
 	case YAHOO_SERVICE_CONFLOGON:
+
 		if(who)
 			YAHOO_CALLBACK(ext_yahoo_conf_userjoin)(yd->client_id, who, room);
 		break;
@@ -1076,7 +1086,6 @@ static void yahoo_process_conference(struct yahoo_input_data *yid, struct yahoo_
 		break;
 	}
 }
-
 static void yahoo_process_chat(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	char *msg = NULL;
@@ -1089,6 +1098,7 @@ static void yahoo_process_chat(struct yahoo_input_data *yid, struct yahoo_packet
 	int  utf8 = 0;
 	int  firstjoin = 0;
 	int  membercount = 0;
+	int  chaterr=0;
 	YList *l;
 	
 	yahoo_dump_unhandled(pkt);
@@ -1160,9 +1170,23 @@ static void yahoo_process_chat(struct yahoo_input_data *yid, struct yahoo_packet
 			/* Message type */
 			msgtype = atoi(pair->value);
 		}
+		if (pair->key == 114) {
+			/* message error not sure what all the pair values mean */
+			/* but -1 means no session in room */
+			chaterr= atoi(pair->value);
+		}
 	}
 
 	if(!room) {
+		if (pkt->service == YAHOO_SERVICE_CHATLOGOUT) { /* yahoo originated chat logout */
+			YAHOO_CALLBACK(ext_yahoo_chat_yahoologout)(yid->yd->client_id);
+			return ;
+		}
+		if (pkt->service == YAHOO_SERVICE_COMMENT && chaterr)  {
+			YAHOO_CALLBACK(ext_yahoo_chat_yahooerror)(yid->yd->client_id);
+			return ;
+		}
+
 		WARNING(("We didn't get a room name, ignoring packet"));
 		return;
 	}
@@ -1173,7 +1197,7 @@ static void yahoo_process_chat(struct yahoo_input_data *yid, struct yahoo_packet
 			WARNING(("Count of members doesn't match No. of members we got"));
 		}
 		if(firstjoin && members) {
-			YAHOO_CALLBACK(ext_yahoo_chat_join)(yid->yd->client_id, room, topic, members);
+			YAHOO_CALLBACK(ext_yahoo_chat_join)(yid->yd->client_id, room, topic, members, yid->fd);
 		} else if(who) {
 			if(y_list_length(members) != 1) {
 				WARNING(("Got more than 1 member on a normal join"));
@@ -3893,7 +3917,7 @@ void yahoo_chat_logon(int id, const char *from, const char *room, const char *ro
 }
 
 
-void yahoo_chat_message(int id, const char *from, const char *room, const char *msg, const int msgtype, const int utf8)
+void  yahoo_chat_message(int id, const char *from, const char *room, const char *msg, const int msgtype, const int utf8)
 {
 	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
 	struct yahoo_data *yd;

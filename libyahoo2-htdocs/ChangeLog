@@ -1,3 +1,6 @@
+* Tue Sep 30 2003 Doug Davis
+- chat room logout and error code
+
 * Tue Sep 30 2003 Philip
 - fix for auth to work with big endian machines too
 

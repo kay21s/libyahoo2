@@ -242,9 +242,11 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_userleave)(int id, char *who, char *room
  * 	Called when joining the chatroom.
  * Params:
  * 	id      - the id that identifies the server connection
- * 	room    - the room joined, used in all other chat calls, freed by library after call
+ * 	room    - the room joined, used in all other chat calls, freed by 
+ * 	          library after call
  * 	topic   - the topic of the room, freed by library after call
- *      members - the initial members of the chatroom (null terminated YList of yahoo_chat_member's) Must be freed by the client
+ *      members - the initial members of the chatroom (null terminated YList of 
+ *                yahoo_chat_member's) Must be freed by the client
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_cat_xml)(int id, char *xml);
 
@@ -253,11 +255,14 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_cat_xml)(int id, char *xml);
  * 	Called when joining the chatroom.
  * Params:
  * 	id      - the id that identifies the server connection
- * 	room    - the room joined, used in all other chat calls, freed by library after call
+ * 	room    - the room joined, used in all other chat calls, freed by 
+ * 	          library after call
  * 	topic   - the topic of the room, freed by library after call
- *      members - the initial members of the chatroom (null terminated YList of yahoo_chat_member's) Must be freed by the client
+ *      members - the initial members of the chatroom (null terminated YList 
+ *                of yahoo_chat_member's) Must be freed by the client
+ *      fd	- the socket where the connection is coming from (for tracking)
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_join)(int id, char *room, char *topic, YList *members);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_join)(int id, char *room, char *topic, YList *members, int fd);
 
 /*
  * Name: ext_yahoo_chat_userjoin
@@ -299,6 +304,35 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userleave)(int id, char *room, char *who
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_message)(int id, char *who, char *room, char *msg, int msgtype, int utf8);
 
+/*
+ *
+ * Name: ext_yahoo_chat_yahoologout
+ *      called when yahoo disconnects your chat session
+ *      Note this is called whenver a disconnect happens, client or server
+ *      requested. Care should be taken to make sure you know the origin 
+ *      of the disconnect request before doing anything here (auto-join's etc)
+ * Params:
+ *      id   - the id that identifies this connection
+ * Returns:
+ *      nothing.
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_yahoologout)(int id);
+
+/*
+ *
+ * Name: ext_yahoo_chat_yahooerror
+ *      called when yahoo sends back an error to you
+ *      Note this is called whenver chat message is sent into a room
+ *      in error (fd not connected, room doesn't exists etc)
+ *      Care should be taken to make sure you know the origin 
+ *      of the error before doing anything about it.
+ * Params:
+ *      id   - the id that identifies this connection
+ * Returns:
+ *      nothing.
+ */
+
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_yahooerror)(int id);
 
 /*
  * Name: ext_yahoo_conf_message
@@ -442,7 +476,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, char *msg);
  *	a timestamp to stay in sync
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_image)(int id, const char * who,
-		const unsigned char *image, unsigned int image_size, unsigned int real_size,
+		unsigned char *image, unsigned int image_size, unsigned int real_size,
 		unsigned int timestamp);
 
 

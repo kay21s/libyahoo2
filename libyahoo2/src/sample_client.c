@@ -444,7 +444,7 @@ void ext_yahoo_chat_cat_xml(int id, char *xml)
 	print_message(("%s", xml));
 }
 
-void ext_yahoo_chat_join(int id, char *room, char * topic, YList *members)
+void ext_yahoo_chat_join(int id, char *room, char * topic, YList *members, int fd)
 {
 	print_message(("You have joined the chatroom %s with topic %s", room, topic));
 
@@ -809,6 +809,7 @@ void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 
 	ylad->id = yahoo_init_with_attributes(ylad->yahoo_id, ylad->password, 
 			"local_host", local_host,
+			"pager_port", 23,
 			NULL);
 	ylad->status = YAHOO_STATUS_OFFLINE;
 	yahoo_login(ylad->id, login_mode);
@@ -1547,6 +1548,14 @@ void ext_yahoo_got_file(int id, char *who, char *url, long expires, char *msg, c
 void ext_yahoo_got_identities(int id, YList * ids)
 {
 }
+void ext_yahoo_chat_yahoologout(int id)
+{ 
+ 	LOG(("got chat logout"));
+}
+void ext_yahoo_chat_yahooerror(int id)
+{ 
+ 	LOG(("got chat logout"));
+}
 
 static void register_callbacks()
 {
@@ -1570,6 +1579,8 @@ static void register_callbacks()
 	yc.ext_yahoo_chat_userjoin = ext_yahoo_chat_userjoin;
 	yc.ext_yahoo_chat_userleave = ext_yahoo_chat_userleave;
 	yc.ext_yahoo_chat_message = ext_yahoo_chat_message;
+	yc.ext_yahoo_chat_yahoologout = ext_yahoo_chat_yahoologout;
+	yc.ext_yahoo_chat_yahooerror = ext_yahoo_chat_yahooerror;
 	yc.ext_yahoo_got_webcam_image = ext_yahoo_got_webcam_image;
 	yc.ext_yahoo_webcam_invite = ext_yahoo_webcam_invite;
 	yc.ext_yahoo_webcam_invite_reply = ext_yahoo_webcam_invite_reply;

@@ -1317,7 +1317,15 @@ static void yahoo_process_voicechat(struct yahoo_data *yd, struct yahoo_packet *
 	}
 
 	NOTICE(("got voice chat invite from %s in %s", who, room));
-
+	/* 
+	 * send: s:0 1:me 5:who 57:room 13:1
+	 * ????  s:4 5:who 10:99 19:-1615114531
+	 * gotr: s:4 5:who 10:99 19:-1615114615
+	 * ????  s:1 5:me 4:who 57:room 13:3room
+	 * got:  s:1 5:me 4:who 57:room 13:1room
+	 * rej:  s:0 1:me 5:who 57:room 13:3
+	 * rejr: s:4 5:who 10:99 19:-1617114599
+	 */
 }
 
 static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt)

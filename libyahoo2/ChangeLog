@@ -1,3 +1,6 @@
+* Mon Dec 29 2003 Philip Tellis 0.7.3
+- up version number
+
 * Thu Dec 25 2003 Philip Tellis
 - asynchronous writes as well (might break file send)
 - better support for webcam broadcast

@@ -577,7 +577,7 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat, int utf8)
 	if(tm) {
 		char timestr[255];
 
-		strncpy(timestr, ctime(&tm), sizeof(timestr));
+		strncpy(timestr, ctime((time_t *)&tm), sizeof(timestr));
 		timestr[strlen(timestr) - 1] = '\0';
 
 		print_message(("[Offline message at %s from %s]: %s", 

@@ -1,3 +1,6 @@
+* Fri Jun 25 2004 A. Craig West
+- fix for yahoo's new auth thanks to Wilmer van der Gaast
+
 * Wed May  4 2004 A. Craig West
 - 64 bit fix for real this time, thanks to Matt Rogers for the fix
 

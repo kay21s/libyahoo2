@@ -4388,7 +4388,7 @@ struct yahoo_fn yahoo_fntable[5][96] =
      { XOR, 0x77D64B90, 0 },
      { BITFLD, (long)table_103, 0 },
      { LOOKUP, (long)table_104, 0 },
-     { MULADD, 0x7D1428CB, 0x89F6853D },
+     { MULADD, 0x7D1428CB, 0x3D },
      { XOR, 0x6F872C49, 0 },
      { XOR, 0x2E484655, 0 },
      { MULADD, 0x1E3349F7, 0x41F5 },

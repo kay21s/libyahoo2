@@ -1,11 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.50)
 
-AC_INIT(libyahoo2, 0.6.2)
+AC_INIT(libyahoo2, 0.6.3)
+RELEASE="1"
 
 AC_CONFIG_SRCDIR(config.h.in)
-
-RELEASE="2"
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)

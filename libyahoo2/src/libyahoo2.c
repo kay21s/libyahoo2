@@ -460,10 +460,11 @@ static int yahoo_send_packet(struct yahoo_data *yd, struct yahoo_packet *pkt, in
 	yahoo_packet_write(pkt, data + pos);
 
 	yahoo_packet_dump(data, len);
-redo_write:
-	ret = write(yd->fd, data, len);
-	if(ret == -1 && errno==EINTR)
-		goto redo_write;
+	
+	do {
+		ret = write(yd->fd, data, len);
+	} while(ret == -1 && errno==EINTR);
+
 	LOG(("wrote packet"));
 
 	FREE(data);
@@ -1445,11 +1446,9 @@ int yahoo_read_ready(int id, int fd)
 	if(!yd)
 		return -2;
 	
-redo:
-	len = read(fd, buf, sizeof(buf));
-
-	if(len == -1 && errno == EINTR)
-		goto redo;
+	do {
+		len = read(fd, buf, sizeof(buf));
+	} while(len == -1 && errno == EINTR);
 
 	if (len <= 0) {
 		int e = errno;

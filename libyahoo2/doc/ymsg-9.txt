@@ -1,0 +1,171 @@
+Yahoo Messenger Protocol v 9
+----------------------------
+
+The Yahoo Messenger Protocol is an application layer protocol running most
+of the time over TCP, but in some cases over HTTP as well.  Throughout 
+this document, we will speak about the YMSG packets, after stripping out 
+any other protocol data, but will mention this other data if it is of 
+relevance.
+
+1. The YMSG packet structure
+
+The YMSG packet structure is as follows:
+
+(5 chars == 1 byte, field includes | at the end)
+
+     <------- 4B -------><------- 4B -------><---2B--->
+    +-------------------+-------------------+---------+
+    |   Y   M   S   G   |      version      | pkt_len |
+    +---------+---------+---------+---------+---------+
+    | service |      status       |    session_id     |
+    +---------+-------------------+-------------------+
+    |                                                 |
+    :                    D A T A                      :
+    |                   0 - 65535*                    |
+    +-------------------------------------------------+
+    
+
+* 65535 is the theoretical limit, since the length field is two bytes
+long.  Practically though, the data section does not exceed about 1000
+bytes.
+
+All numeric fields are stored in network byte order.  i.e. Most 
+significant byte first.
+
+YMSG    - The first four bytes of all packets are always YMSG - the 
+          protocol name.
+
+version - The next four bytes are for the protocol version number.
+          For version 9, these are 0x09 0x00 0x00 0x00
+          NOTE: The last three bytes of this may just be padding bytes.
+
+pkt_len - A two byte value, in network byte order, stating how many bytes 
+          are in the _data_ section of the packet.  In practice, this 
+          value does not exceed about 1000.
+
+service - This is an opcode that tells the client/server what kind of 
+          service is requested/being responded to.  There are 45 known 
+          services.  See the services section of this document for a 
+          full listing.
+
+status  - In case of a response from the server, indicates the status
+          of the request (success/failure/etc.).  For a request, it is 0 
+          in most cases, except for packets that set the user's status 
+          (set status, typing notify, etc.)
+
+session - The session id is used primarily when connecting through a HTTP 
+id        proxy.  It is set in all cases, but has no effect in a direct 
+          connection.  When the client sends the first packet, it is 0, 
+          the server responds with a session id that is used by the client 
+          and the server in all further packets.  The server may change 
+          the session id, in which case the client must use the new 
+          session id henceforth.
+
+DATA    - The data section is pkt_len bytes long and consists of a series 
+          of key/value pairs.  All keys are numeric strings.  The packet 
+          contains their numeric values in the ASCII character set.  e.g.
+          1 == 0x31, 21 == 0x32 0x31
+
+          The maximum number of digits in a key is unknown, although keys 
+          of up to three digits have been seen.
+
+          Every key and value is terminated by a two byte sequence of 
+          0xc0 0x80.  Some keys may have empty values.
+
+          The actual keys sent, and their meanings depend on the service
+          in use.
+
+
+2. Services
+
+There are 45 known services at the moment, although more may exist.  All 
+known services are listed below along with the hex values that they 
+correspond to.  Any service without a hex value is one more than the 
+previous value.  i.e. YAHOO_SERVICE_LOGOFF=0x02 and 
+YAHOO_SERVICE_ISBACK=0x04.
+
+        YAHOO_SERVICE_LOGON            = 0x01
+        YAHOO_SERVICE_LOGOFF
+        YAHOO_SERVICE_ISAWAY
+        YAHOO_SERVICE_ISBACK
+        YAHOO_SERVICE_IDLE             = 0x05
+        YAHOO_SERVICE_MESSAGE
+        YAHOO_SERVICE_IDACT
+        YAHOO_SERVICE_IDDEACT
+        YAHOO_SERVICE_MAILSTAT
+        YAHOO_SERVICE_USERSTAT         = 0x0a
+        YAHOO_SERVICE_NEWMAIL
+        YAHOO_SERVICE_CHATINVITE
+        YAHOO_SERVICE_CALENDAR
+        YAHOO_SERVICE_NEWPERSONALMAIL
+        YAHOO_SERVICE_NEWCONTACT       = 0x0f
+        YAHOO_SERVICE_ADDIDENT         = 0x10
+        YAHOO_SERVICE_ADDIGNORE
+        YAHOO_SERVICE_PING
+        YAHOO_SERVICE_GROUPRENAME
+        YAHOO_SERVICE_SYSMESSAGE       = 0x14
+        YAHOO_SERVICE_PASSTHROUGH2     = 0x16
+        YAHOO_SERVICE_CONFINVITE       = 0x18
+        YAHOO_SERVICE_CONFLOGON
+        YAHOO_SERVICE_CONFDECLINE      = 0x1a
+        YAHOO_SERVICE_CONFLOGOFF
+        YAHOO_SERVICE_CONFADDINVITE
+        YAHOO_SERVICE_CONFMSG
+        YAHOO_SERVICE_CHATLOGON
+        YAHOO_SERVICE_CHATLOGOFF       = 0x1f
+        YAHOO_SERVICE_CHATMSG          = 0x20
+        YAHOO_SERVICE_GAMELOGON        = 0x28
+        YAHOO_SERVICE_GAMELOGOFF
+        YAHOO_SERVICE_GAMEMSG          = 0x2a
+        YAHOO_SERVICE_FILETRANSFER     = 0x46
+        YAHOO_SERVICE_VOICECHAT        = 0x4a
+        YAHOO_SERVICE_NOTIFY           = 0x4b
+        YAHOO_SERVICE_P2PFILEXFER      = 0x4d
+        YAHOO_SERVICE_PEERTOPEER       = 0x4f
+        YAHOO_SERVICE_AUTHRESP         = 0x54
+        YAHOO_SERVICE_LIST             = 0x55
+        YAHOO_SERVICE_AUTH             = 0x57
+        YAHOO_SERVICE_ADDBUDDY         = 0x83
+        YAHOO_SERVICE_REMBUDDY         = 0x84
+        YAHOO_SERVICE_IGNORECONTACT    = 0x85
+        YAHOO_SERVICE_REJECTCONTACT    = 0x86
+
+Most of the service codes should be self explanatory.  Those that aren't 
+are listed here:
+
+IDACT/IDDEACT - activate/deactivate an identity
+NOTIFY        - typing/game notification
+FILETRASNFER  - transfer a file using the yahoo filetransfer server as an 
+                intermediate
+P2PFILEXFER   - transfer a file between two peers, yahoo server not used
+PEERTOPEER    - check if peer to peer connections are possible
+AUTH          - Send initial login packet (username), response contains 
+                challenge string
+AUTHRESP      - Send response to challenge string, or, if received from 
+                server, contains reason for login failure
+LOGON/LOGOFF  - a buddy logged in/out
+
+
+3. Status codes
+
+The status code is a four byte value.  Most status codes are two bytes 
+long.  The status codes (in decimal except for offline and typing) are:
+
+        YAHOO_STATUS_AVAILABLE    = 0
+        YAHOO_STATUS_BRB
+        YAHOO_STATUS_BUSY
+        YAHOO_STATUS_NOTATHOME
+        YAHOO_STATUS_NOTATDESK
+        YAHOO_STATUS_NOTINOFFICE  = 5
+        YAHOO_STATUS_ONPHONE
+        YAHOO_STATUS_ONVACATION
+        YAHOO_STATUS_OUTTOLUNCH
+        YAHOO_STATUS_STEPPEDOUT   = 9
+        YAHOO_STATUS_INVISIBLE    = 12
+        YAHOO_STATUS_CUSTOM       = 99
+        YAHOO_STATUS_IDLE         = 999
+        YAHOO_STATUS_OFFLINE      = 0x5a55aa56
+        YAHOO_STATUS_TYPING       = 0x16
+
+You may choose either AVAILABLE or INVISIBLE as your initial login status.  
+TYPING is used only when sending a TYPING notification packet.

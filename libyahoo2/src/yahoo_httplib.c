@@ -59,9 +59,12 @@ int yahoo_tcp_readline(char *ptr, int maxlen, int fd)
 	char c;
 
 	for (n = 1; n < maxlen; n++) {
-	again:
 
-		if ((rc = read(fd, &c, 1)) == 1) {
+		do {
+			rc = read(fd, &c, 1);
+		} while(rc == -1 && errno == EINTR);
+
+		if (rc == 1) {
 			if(c == '\r')			/* get rid of \r */
 				continue;
 			*ptr = c;
@@ -74,8 +77,6 @@ int yahoo_tcp_readline(char *ptr, int maxlen, int fd)
 			else
 				break;			/* EOF, w/ data */
 		} else {
-			if (errno == EINTR)
-				goto again;
 			return -1;
 		}
 	}

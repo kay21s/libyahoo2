@@ -11,7 +11,7 @@ Group:		System Environment/Libraries
 License:	GPL
 Vendor:		%_vendor
 Url:		http://libyahoo2.sourceforge.net/
-Source:		%{name}-%{version}-%{release}.tar.gz
+Source:		%{name}-%{version}.tar.gz
 Packager:	%_me
 BuildRoot:	/var/tmp/%{name}-%{version}-%{release}-root
 Requires:	@YAHOOPKGREQ@

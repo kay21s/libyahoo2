@@ -1296,6 +1296,30 @@ static void yahoo_process_ignore(struct yahoo_data *yd, struct yahoo_packet *pkt
 */	
 }
 
+static void yahoo_process_voicechat(struct yahoo_data *yd, struct yahoo_packet *pkt)
+{
+	char *who = NULL;
+	char *me = NULL;
+	char *room = NULL;
+	char *voice_room = NULL;
+
+	YList *l;
+	for (l = pkt->hash; l; l = l->next) {
+		struct yahoo_pair *pair = l->data;
+		if (pair->key == 4)
+			who = pair->value;
+		if (pair->key == 5)
+			me = pair->value;
+		if (pair->key == 13)
+			voice_room=pair->value;
+		if (pair->key == 57) 
+			room=pair->value;
+	}
+
+	NOTICE(("got voice chat invite from %s in %s", who, room));
+
+}
+
 static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt)
 {
 	DEBUG_MSG(("yahoo_packet_process: 0x%02x", pkt->service));
@@ -1356,6 +1380,9 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_IGNORECONTACT:
 		yahoo_process_ignore(yd, pkt);
 		break;
+	case YAHOO_SERVICE_VOICECHAT:
+		yahoo_process_voicechat(yd, pkt);
+		break;
 	case YAHOO_SERVICE_IDLE:
 	case YAHOO_SERVICE_MAILSTAT:
 	case YAHOO_SERVICE_CHATINVITE:
@@ -1369,7 +1396,6 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_CHATLOGON:
 	case YAHOO_SERVICE_CHATLOGOFF:
 	case YAHOO_SERVICE_CHATMSG:
-	case YAHOO_SERVICE_VOICECHAT:
 	case YAHOO_SERVICE_REJECTCONTACT:
 	case YAHOO_SERVICE_PEERTOPEER:
 		WARNING(("unhandled service 0x%02x", pkt->service));

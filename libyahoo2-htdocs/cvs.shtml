@@ -1,0 +1,50 @@
+<html>
+<head>
+<title>libyahoo2</title>
+<!--#include virtual="stylehead.shtml" -->
+</head>
+
+<body>
+<h1>libyahoo2</h1>
+
+<!--#include virtual="links.shtml" -->
+
+<div class="content">
+<h2>CVS Information</h2>
+<p>
+You can get the latest source code by anonymous cvs:
+</p>
+
+<p>
+<code>
+cvs -z3 -d:pserver:anonymous@cvs.libyahoo2.sourceforge.net:/cvsroot/libyahoo2 co libyahoo2
+</code>
+</p>
+
+<p>
+This will create a directory called libyahoo2 in your current working
+directory.
+</p>
+<p>
+To update your cvs from within the libyahoo2 directory:
+</p>
+
+<p>
+<code>cvs update</code>
+</p>
+
+<p>
+If you find bugs in the releases, try the CVS, some bugs are fixed in here.
+</p>
+
+<p>
+To build the code from CVS, first run the gen script.  Then proceed with 
+the normal configure, make, make install process.
+</p>
+
+</div>
+
+<!--#include virtual="footer.shtml" -->
+
+</body>
+</html>

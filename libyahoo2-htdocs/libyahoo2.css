@@ -1,0 +1,67 @@
+BODY {
+	background-color: white;
+	color: black;
+}
+
+H1, H2, H3 {
+	font-family: Verdana, Helvetica, sans-serif;
+}
+
+DIV.content {
+	margin-left: 20px;
+	margin-right: 20px;
+	font-family: Verdana, Helvetica, sans-serif;
+	text-align: justify;
+}
+
+DIV.linkcontainer {
+	float: left;
+}
+DIV.links {
+	width: 130px;
+	border: solid #ddd 1px;
+	margin: 0px 10px 15px 0px;
+	padding: 0px 0px 5px 0px;
+	background-color: #eee;
+	color: black;
+	font-family: Verdana, Helvetica, sans-serif;
+	font-size: 0.8em;
+}
+
+DIV.links H2 {
+	font-size: 1em;
+	margin: 0px 0px 0px 0px;
+	padding: 2px 5px 2px 5px;
+	background-color: #ccc;
+	color: black;
+}
+
+DIV.links P.links {
+	margin: 3px 5px 5px 5px;
+	line-height: 1.5em;
+}
+
+DIV.links P.links SPAN.sublinks {
+	margin-left: 5px;
+	font-size: 0.9em;
+	line-height: 1.2em;
+}
+
+DIV.content P.navbar {
+	font-size: 0.9em;
+	float: right;
+}
+
+DIV.content P.navbar A {
+	color: #000080;
+	background-color: transparent;
+}
+
+DIV.footer {
+	clear: both;
+	text-align: center;
+	border-top: solid black 1px;
+	letter-spacing: 0.2em;
+	margin-top: 10px;
+	padding-top: 5px;
+}

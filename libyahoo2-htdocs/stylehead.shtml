@@ -1,0 +1,5 @@
+<!--#include virtual=".vars.shtml" -->
+<link rel="stylesheet" type="text/css" href="libyahoo2.css">
+<!--#if expr="!($NS4)" -->
+<link rel="stylesheet" type="text/css" href="libyahoo2-p.css">
+<!--#endif -->

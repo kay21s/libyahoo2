@@ -1,3 +1,8 @@
+* Fri Mar 21 2003 Mik
+- Clean up webcam data when yahoo data is cleaned up
+- Added connection type to webcam
+- Removed static for callbacks in sample_client
+
 * Wed Mar 19 2003 Mik
 - Added perliminary webcam upload support
 - Added descriptions for the webcam functions

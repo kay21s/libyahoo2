@@ -1,4 +1,6 @@
 libyahoo2: library for Yahoo! Messenger new protocol
 
 Philip S Tellis		<philip . tellis AT gmx . net>		Maintainer
-Steve McAndrewSmit	<steve AT finalge . org>		Code cleanups
+Steve McAndrewSmith	<steve AT finalge . org>		Code cleanups
+
+libyahoo2 is derivative of gaim: http://gaim.sourceforge.net/

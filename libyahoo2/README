@@ -101,6 +101,8 @@ void yahoo_send_im(guint32 id, char *who, char *what);
 id is the id that the connection is identified with, who is who you want
 to message, what is the message to be sent.
 
+You can also send typing notifications with yahoo_send_typing
+
 
 4. Changing your status
 
@@ -158,6 +160,8 @@ Whenever an input condition occurs, you must call one of the callback functions.
 For a read condition, call yahoo_read_ready, for a write condition, call
 yahoo_write_ready.
 
+You must also call yahoo_keepalive at regular intervals (10 minutes?) to keep
+the connection alive.
 
 
 8. Other functions

@@ -1471,7 +1471,7 @@ void yahoo_send_im(guint32 id, char *who, char *what)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_send_typing(guint32 id, char *who, int typ)
+void yahoo_send_typing(guint32 id, char *who, gboolean typ)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;

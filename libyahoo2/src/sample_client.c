@@ -65,7 +65,7 @@ static int poll_loop=1;
 
 /* Exported to libyahoo2 */
 char pager_host[MAX_PREF_LEN]="scs.yahoo.com";
-char pager_port[MAX_PREF_LEN]="23";
+char pager_port[MAX_PREF_LEN]="5050";
 char filetransfer_host[MAX_PREF_LEN]="filetransfer.msg.yahoo.com";
 char filetransfer_port[MAX_PREF_LEN]="80";
 

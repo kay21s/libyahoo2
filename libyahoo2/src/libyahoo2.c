@@ -107,6 +107,7 @@ int yahoo_connect(char * host, int port)
 
 extern char pager_host[];
 extern char pager_port[];
+static int fallback_ports[]={21, 23, 25, 80, 0};
 extern char filetransfer_host[];
 extern char filetransfer_port[];
 
@@ -280,6 +281,10 @@ static int yahoo_packet_length(struct yahoo_packet *pkt)
 
 	return len;
 }
+
+#ifndef u_char
+typedef unsigned char u_char;
+#endif
 
 #define yahoo_put16(buf, data) ( \
 		(*(buf) = (u_char)((data)>>8)&0xff), \
@@ -1486,8 +1491,14 @@ int yahoo_login(const char *username, const char *password, int initial)
 	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 	int fd;
+	int i;
 
 	fd = YAHOO_CALLBACK(ext_yahoo_connect)(pager_host, atoi(pager_port));
+
+	for(i=0; fd <=0 && fallback_ports[i]; i++) {
+		fd = YAHOO_CALLBACK(ext_yahoo_connect)(pager_host, 
+				fallback_ports[i]);
+	}
 
 	if(fd <= 0)
 		return fd;

@@ -1,2 +1,0 @@
-To build the code from CVS, first run gen, then proceed with configure,
-make and make install

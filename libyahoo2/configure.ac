@@ -3,6 +3,8 @@ AC_INIT(src/libyahoo2.c)
 AM_INIT_AUTOMAKE([libyahoo2], [0.6.2cvs])
 AM_CONFIG_HEADER(config.h)
 
+CFLAGS="$CFLAGS -Wall -ansi -pedantic"
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_LIBTOOL
@@ -24,11 +26,12 @@ AC_C_CONST
 AC_TYPE_SIZE_T
 AC_STRUCT_TM
 
+AC_CHECK_TYPES(u_char)
+
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset strchr strcspn strdup strncasecmp strrchr strstr strtol])
 
 AM_PATH_GLIB(1.2.0, [AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib 1.2.0 or higher])])
-CFLAGS="$CFLAGS -Wall -ansi -pedantic"
 
 AC_OUTPUT([Makefile src/Makefile doc/Makefile])

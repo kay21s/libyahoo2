@@ -282,7 +282,7 @@ static int yahoo_packet_length(struct yahoo_packet *pkt)
 	return len;
 }
 
-#ifndef u_char
+#if !HAVE_U_CHAR
 typedef unsigned char u_char;
 #endif
 
@@ -360,12 +360,12 @@ static void yahoo_packet_write(struct yahoo_packet *pkt, unsigned char *data)
 		unsigned char buf[100];
 
 		snprintf((char *)buf, sizeof(buf), "%d", pair->key);
-		strcpy(data + pos, buf);
+		strcpy((char *)data + pos, (char *)buf);
 		pos += strlen((char *)buf);
 		data[pos++] = 0xc0;
 		data[pos++] = 0x80;
 
-		strcpy(data + pos, pair->value);
+		strcpy((char *)data + pos, pair->value);
 		pos += strlen(pair->value);
 		data[pos++] = 0xc0;
 		data[pos++] = 0x80;

@@ -375,13 +375,13 @@ int YAHOO_CALLBACK_TYPE(ext_yahoo_connect)(char *host, int port);
 };
 
 void yahoo_register_callbacks(struct yahoo_callbacks * tyc);
-#endif
 	
-#endif
-
 #undef YAHOO_CALLBACK_TYPE
+
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
+#endif

@@ -28,46 +28,46 @@ extern "C" {
 
 #include "yahoo2_types.h"
 
-int  yahoo_get_fd(guint32 id);
+int  yahoo_get_fd(int id);
 
 int  yahoo_set_log_level(enum yahoo_log_level level);
 
-guint32 yahoo_login(const char *username, const char *password, int initial);
-void yahoo_logoff(guint32 id);
-void yahoo_refresh(guint32 id);
-void yahoo_get_list(guint32 id);
-void yahoo_keepalive(guint32 id);
+int  yahoo_login(const char *username, const char *password, int initial);
+void yahoo_logoff(int id);
+void yahoo_refresh(int id);
+void yahoo_get_list(int id);
+void yahoo_keepalive(int id);
 
-void yahoo_send_im(guint32 id, const char *who, const char *what);
-void yahoo_send_typing(guint32 id, const char *who, gboolean typ);
+void yahoo_send_im(int id, const char *who, const char *what);
+void yahoo_send_typing(int id, const char *who, gboolean typ);
 
-void yahoo_set_away(guint32 id, enum yahoo_status state, const char *msg, gboolean away);
+void yahoo_set_away(int id, enum yahoo_status state, const char *msg, gboolean away);
 
-void yahoo_add_buddy(guint32 id, const char *who, const char *group);
-void yahoo_remove_buddy(guint32 id, const char *who, const char *group);
-void yahoo_reject_buddy(guint32 id, const char *who, const char *msg);
-void yahoo_ignore_buddy(guint32 id, const char *who, gboolean unignore);
-void yahoo_change_buddy_group(guint32 id, const char *who, const char *old_group, const char *new_group);
+void yahoo_add_buddy(int id, const char *who, const char *group);
+void yahoo_remove_buddy(int id, const char *who, const char *group);
+void yahoo_reject_buddy(int id, const char *who, const char *msg);
+void yahoo_ignore_buddy(int id, const char *who, gboolean unignore);
+void yahoo_change_buddy_group(int id, const char *who, const char *old_group, const char *new_group);
 
-void yahoo_conference_invite(guint32 id, GList *who, const char *room, const char *msg);
-void yahoo_conference_addinvite(guint32 id, const char *who, const char *room, const char *msg);
-void yahoo_conference_decline(guint32 id, GList *who, const char *room, const char *msg);
-void yahoo_conference_message(guint32 id, GList *who, const char *room, const char *msg);
-void yahoo_conference_logon(guint32 id, GList *who, const char *room);
-void yahoo_conference_logoff(guint32 id, GList *who, const char *room);
+void yahoo_conference_invite(int id, GList *who, const char *room, const char *msg);
+void yahoo_conference_addinvite(int id, const char *who, const char *room, const char *msg);
+void yahoo_conference_decline(int id, GList *who, const char *room, const char *msg);
+void yahoo_conference_message(int id, GList *who, const char *room, const char *msg);
+void yahoo_conference_logon(int id, GList *who, const char *room);
+void yahoo_conference_logoff(int id, GList *who, const char *room);
 
-int  yahoo_send_file(guint32 id, const char *who, const char *msg, const char *name, long size);
+int  yahoo_send_file(int id, const char *who, const char *msg, const char *name, long size);
 
-int  yahoo_read_ready(guint32 id, int fd);
-int  yahoo_write_ready(guint32 id, int fd);
+int  yahoo_read_ready(int id, int fd);
+int  yahoo_write_ready(int id, int fd);
 
-enum yahoo_status yahoo_current_status(guint32 id);
-const GList * yahoo_get_buddylist(guint32 id);
-const GList * yahoo_get_ignorelist(guint32 id);
-const GList * yahoo_get_identities(guint32 id);
-const char  * yahoo_get_cookie(guint32 id, const char *which);
+enum yahoo_status yahoo_current_status(int id);
+const GList * yahoo_get_buddylist(int id);
+const GList * yahoo_get_ignorelist(int id);
+const GList * yahoo_get_identities(int id);
+const char  * yahoo_get_cookie(int id, const char *which);
 
-int yahoo_get_url_handle(guint32 id, const char *url, char *filename, unsigned long *filesize);
+int yahoo_get_url_handle(int id, const char *url, char *filename, unsigned long *filesize);
 
 #include "yahoo_httplib.h"
 

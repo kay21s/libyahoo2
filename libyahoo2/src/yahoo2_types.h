@@ -92,32 +92,33 @@ enum yahoo_log_level {
 #define YAHOO_STYLE_URLOFF "\033[xlm"
 
 struct yahoo_data {
-	char *user;
-	char *password;
+	char  *user;
+	char  *password;
 
-	char *cookie_y;
-	char *cookie_t;
-	char *cookie_c;
-	char *login_cookie;
+	char  *cookie_y;
+	char  *cookie_t;
+	char  *cookie_c;
+	char  *login_cookie;
 
 	GList *buddies;
 	GList *ignore;
 	GList *identities;
-	char *login_id;
+	char  *login_id;
 
-	int fd;
-	unsigned char *rxqueue;
-	int rxlen;
-	GString *rawbuddylist;
-	GString *ignorelist;
+	int   fd;
 
-	int current_status;
-	int initial_status;
+	int   current_status;
+	int   initial_status;
 	gboolean logged_in;
 
-	guint32 id;
+	int id;
 
-	guint32 client_id;
+	int client_id;
+
+	guchar	*rxqueue;
+	int	rxlen;
+	GString *rawbuddylist;
+	GString *ignorelist;
 };
 
 struct yahoo_buddy {

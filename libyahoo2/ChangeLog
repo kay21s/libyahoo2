@@ -1,3 +1,8 @@
+* Tue Dec 10 2002 Philip Tellis (version 0.6.2)
+- Added some prototypes for snprintf, strdup and vsnprintf (when compiling
+with -ansi -pedantic and without glib
+- Updated version number for release
+
 * Mon Dec 9 2002 Philip Tellis
 - Changed u_char to unsigned char
 - Fixed yahoo_get16 and yahoo_get32 to work with big endian systems also

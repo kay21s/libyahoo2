@@ -29,12 +29,6 @@
 # define HAVE_GLIB 1
 #endif
 
-#if HAVE_GLIB
-# include <glib.h>
-# define snprintf g_snprintf
-# define vsnprintf g_vsnprintf
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

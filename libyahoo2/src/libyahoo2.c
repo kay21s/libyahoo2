@@ -68,6 +68,7 @@ char *strchr (), *strrchr ();
 
 #include <stdlib.h>
 #include <ctype.h>
+
 #include "md5.h"
 #include "yahoo2.h"
 #include "yahoo_connections.h"

@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(libyahoo2, 0.7.0, libyahoo2-users@lists.sourceforge.net)
+AC_INIT(libyahoo2, 0.7.1, libyahoo2-users@lists.sourceforge.net)
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR(src/libyahoo2.c)
 AM_INIT_AUTOMAKE([1.6 dist-bzip2])
@@ -24,7 +24,7 @@ YAHOO2_CURRENT=4	# 1 - < 0.6
 			# 2 - pre utf8 (0.6.2)
 			# 3 - pre webcam/chat support (0.6.3)
 			# 4 - 0.7.0
-YAHOO2_REVISION=0
+YAHOO2_REVISION=1
 YAHOO2_AGE=0
 YAHOO2_VERSION="$YAHOO2_CURRENT:$YAHOO2_REVISION:$YAHOO2_AGE"
 AC_SUBST(YAHOO2_VERSION)
@@ -33,6 +33,12 @@ AC_SUBST(YAHOO2_VERSION)
 AC_PROG_CC
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
+
+# Checks for libraries.
+enable_sample_client="yes"
+AC_SEARCH_LIBS(socket, socket, ,
+	[AC_SEARCH_LIBS(socket, socket, LIBS="$LIBS -lnsl", 
+		enable_sample_client="no", -lnsl)])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -81,6 +87,7 @@ elif test "$with_glib" != "no" -a "$with_glib" != "0"; then
 	)]
 	)
 fi
+
 AC_SUBST(YAHOOPKGREQ)
 AC_SUBST_FILE(CHANGELOG)
 CHANGELOG=ChangeLog

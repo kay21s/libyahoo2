@@ -16,7 +16,12 @@ yahoo2.h contains functions that you can call.  The data structures used
 are defined in yahoo2_types.h, which is included by yahoo2.h
 
 yahoo2_callbacks.h contains prototypes for functions that you *must*
-implement.  *All* these functions must be implemented by your code.
+implement.  *All* these functions must be implemented by your code.  You
+can choose at configure time whether these are implemented as callback
+functions or as a callback structure.
+
+If compiled as a callback structure, you must call yahoo_register_callbacks
+before doing anything else.
 
 What each function is supposed to do and return is documented in 
 yahoo2_callbacks.h
@@ -31,7 +36,7 @@ supposed to do, this is the process flow:
 You must first login by making a call to yahoo_login, and pass the
 username, password and initial login status as parameters.
 
-guint32 yahoo_login(char * username, char * password, int initial);
+int yahoo_login(char * username, char * password, int initial);
 
 The initial status is one of enum yahoo_status.
 
@@ -84,7 +89,7 @@ where msg is the rejection message.
 void yahoo_change_buddy_group(id, char * who, char *old_group, char *new_group);
 
 - To ignore/unignore a buddy, call yahoo_ignore_buddy:
-void yahoo_ignore_buddy(id, char *who, gboolean unignore);
+void yahoo_ignore_buddy(id, char *who, int unignore);
 
 If unignore is TRUE, the buddy is unignored, if it is FALSE, the buddy is
 ignored.
@@ -96,7 +101,7 @@ ignored.
 
 To send an IM, make a call to yahoo_send_im
 
-void yahoo_send_im(guint32 id, char *who, char *what);
+void yahoo_send_im(int id, char *who, char *what);
 
 id is the id that the connection is identified with, who is who you want
 to message, what is the message to be sent.
@@ -108,12 +113,13 @@ You can also send typing notifications with yahoo_send_typing
 
 To change your status on the server, call yahoo_set_away.
 
-void yahoo_set_away(id, enum yahoo_status status, char *msg, gboolean away);
+void yahoo_set_away(id, enum yahoo_status status, char *msg, int away);
 
 id is the identifying id, status is your new status.
 msg is a custom status message in case status == YAHOO_STATUS_CUSTOM
 and away is a flag that says whether the custom message is an away message
-or just a regular signature.
+or just a regular signature (this affects the kind of icon against your
+name in the official Yahoo Messenger client).
 
 
 5. Conferencing

@@ -1,3 +1,12 @@
+version 0.6cvs
+
+- Removed glib dependencies.  Will use glib only if available
+- Configure time option --with-struct-callbacks to use a callback struct
+instead of callback functions (see yahoo2_callbacks.h and the README)
+- Code cleanups by Steve McAndrewSmith
+
+- sample client no longer requires gtk
+
 22-7-2002: version 0.5
 
 - Added basic documentation to README

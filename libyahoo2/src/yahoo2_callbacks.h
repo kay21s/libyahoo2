@@ -19,6 +19,18 @@
  *
  */
 
+/*
+ * The functions in this file *must* be defined in your client program
+ * If you want to use a callback structure instead of direct functions,
+ * then you must define USE_STRUCT_CALLBACKS in all files that #include
+ * this one.
+ *
+ * Register the callback structure by calling yahoo_register_callbacks -
+ * declared in this file and defined in libyahoo2.c
+ */
+
+
+
 #ifndef YAHOO2_CALLBACKS_H
 #define YAHOO2_CALLBACKS_H
 
@@ -361,6 +373,10 @@ int YAHOO_CALLBACK_TYPE(ext_yahoo_connect)(char *host, int port);
 
 #ifdef USE_STRUCT_CALLBACKS
 };
+
+void yahoo_register_callbacks(struct yahoo_callbacks * tyc);
+#endif
+	
 #endif
 
 #undef YAHOO_CALLBACK_TYPE

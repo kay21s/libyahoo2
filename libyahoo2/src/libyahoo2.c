@@ -282,21 +282,31 @@ static int yahoo_packet_length(struct yahoo_packet *pkt)
 	return len;
 }
 
+static int is_little_endian() 
+{
+	union { 
+		long l; 
+		unsigned char uc[sizeof(long)]; 
+	} u; 
+	u.l = 1; 
+	return u.uc[0];
+}
+
 #define yahoo_put16(buf, data) ( \
 		(*(buf) = (unsigned char)((data)>>8)&0xff), \
 		(*((buf)+1) = (unsigned char)(data)&0xff),  \
 		2)
-#define yahoo_get16(buf) ((((*(buf))<<8)&0xff00) + ((*((buf)+1)) & 0xff))
+#define yahoo_get16(buf) ((((*(buf))&0xff)<<8) + ((*((buf)+1)) & 0xff))
 #define yahoo_put32(buf, data) ( \
 		(*((buf)) = (unsigned char)((data)>>24)&0xff), \
 		(*((buf)+1) = (unsigned char)((data)>>16)&0xff), \
 		(*((buf)+2) = (unsigned char)((data)>>8)&0xff), \
 		(*((buf)+3) = (unsigned char)(data)&0xff), \
 		4)
-#define yahoo_get32(buf) ((((*(buf))<<24)&0xff000000) + \
-		(((*((buf)+1))<<16)&0x00ff0000) + \
-		(((*((buf)+2))<< 8)&0x0000ff00) + \
-		(((*((buf)+3)    )&0x000000ff)))
+#define yahoo_get32(buf) ((((*(buf)   )&0xff)<<24) + \
+			 (((*((buf)+1))&0xff)<<16) + \
+			 (((*((buf)+2))&0xff)<< 8) + \
+			 (((*((buf)+3))&0xff)))
 
 static void yahoo_packet_read(struct yahoo_packet *pkt, unsigned char *data, int len)
 {

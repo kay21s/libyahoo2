@@ -1,9 +1,6 @@
 /*
  * libyahoo2: yahoo_httplib.c
  *
- * $Revision$
- * $Date$
- * 
  * Copyright (C) 2002, Philip S Tellis <philip . tellis AT gmx . net>
  *
  * This program is free software; you can redistribute it and/or modify

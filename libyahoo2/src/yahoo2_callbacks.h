@@ -122,6 +122,18 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_got_identities)(int id, YList * ids);
 
 
 
+
+/*
+ * Name: ext_yahoo_got_cookies
+ * 	Called when the cookie list is got from the server
+ * Params:
+ * 	id   - the id that identifies the server connection
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_cookies)(int id);
+
+
+
+
 /*
  * Name: ext_yahoo_status_changed
  * 	Called when remote user's status changes.

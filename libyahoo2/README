@@ -52,6 +52,10 @@ When the login procedure is complete, the library will call
 ext_yahoo_login_response with a status code.  See yahoo2_types for an
 enumeration of these codes.
 
+The buddy list and cookies will not be available at the time when
+ext_yahoo_login_response is called.  You should wait for ext_yahoo_got_buddies
+and ext_yahoo_got_cookies.
+
 
 2. Buddies and Addressbook
 
@@ -69,7 +73,8 @@ from the server, make a call to yahoo_get_list.
 
 Buddy nicknames and other contact information is stored in your yahoo address
 book.  To retrieve this information, call yahoo_get_yab.  call yahoo_set_yab
-to create or modify an addressbook entry.
+to create or modify an addressbook entry.  Call these functions only after
+ext_yahoo_got_cookies has been called.
 
 - To refresh the status of all buddies, make a call to yahoo_refresh.
 
@@ -213,7 +218,13 @@ You'll still have to study it a bit, but IMO the major complexity is in
 putting a http server in the lib, and whether we want to do that.
 
 
-7. Callbacks
+7. Webcam
+
+
+8. Yahoo Chat
+
+
+9. Callbacks
 
 The library may request you to register io handlers using ext_yahoo_add_handler.
 Whenever an input condition occurs, you must call one of the callback functions.
@@ -224,7 +235,7 @@ You must also call yahoo_keepalive at regular intervals (10 minutes?) to keep
 the connection alive.
 
 
-8. Identities
+10. Identities
 
 libyahoo2 will now get your identities from the server (if you don't know
 what that is, then you aren't using it).  Use yahoo_get_identities to get
@@ -242,7 +253,7 @@ message is from the yahoo servers.  Don't complain to me about it.  I
 know it sucks that we can't do translation of these strings.
 
 
-9. Other functions
+11. Other functions
 
 You can call yahoo_get_cookie to get the cookies for your connection.  I
 think these can be used when starting a browser to get information from

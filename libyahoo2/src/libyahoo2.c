@@ -1076,6 +1076,8 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 				FREE(yd->cookie_c);
 				yd->cookie_c = getcookie(pair->value);
 			} 
+			if(yd->cookie_y && yd->cookie_t && yd->cookie_c)
+				YAHOO_CALLBACK(ext_yahoo_got_cookies)(yd->client_id);
 
 			break;
 		case 3: /* my id */

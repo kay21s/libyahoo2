@@ -782,7 +782,7 @@ void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 
 void ext_yahoo_got_cookies(int id)
 {
-	yahoo_get_yab(id);
+	/*yahoo_get_yab(id);*/
 }
 
 void ext_yahoo_login_response(int id, int succ, char *url)
@@ -982,6 +982,7 @@ struct _conn {
 	int fd;
 	yahoo_input_condition cond;
 	void *data;
+	int remove;
 };
 
 void yahoo_callback(struct _conn *c, yahoo_input_condition cond)
@@ -1026,8 +1027,9 @@ void ext_yahoo_remove_handler(int id, int fd)
 	for(l = connections; l; l = y_list_next(l)) {
 		struct _conn *c = l->data;
 		if(c->id == id && c->fd == fd) {
-			connections = y_list_remove(connections, c);
-			FREE(c);
+			/* don't actually remove it, just mark it for removal */
+			/* we'll remove when we start the next poll cycle */
+			c->remove = 1;
 			return;
 		}
 	}
@@ -1281,6 +1283,7 @@ static void process_commands(char *line)
 
 	} else if(!strncasecmp(cmd, "OFF", strlen("OFF"))) {
 		/* go offline */
+		printf("Going offline\n");
 		poll_loop=0;
 	} else if(!strncasecmp(cmd, "IDS", strlen("IDS"))) {
 		/* print identities */
@@ -1430,13 +1433,24 @@ int main(int argc, char * argv[])
 	ext_yahoo_login(ylad, status);
 
 	while(poll_loop) {
-		YList *l;
+		YList *l=connections;
 		FD_ZERO(&inp);
 		FD_ZERO(&outp);
 		FD_SET(fd_stdin, &inp);
 		tv.tv_sec=1;
 		tv.tv_usec=0;
 		lfd=0;
+
+		while(l) {
+			struct _conn *c = l->data;
+			if(c->remove) {
+				connections = y_list_remove_link(connections, l);
+				FREE(c);
+			} else {
+				l = y_list_next(l);
+			}
+		}
+			
 		for(l = connections; l; l = y_list_next(l)) {
 			struct _conn *c = l->data;
 			if(c->cond & YAHOO_INPUT_READ)
@@ -1454,6 +1468,8 @@ int main(int argc, char * argv[])
 
 		for(l = connections; l; l = y_list_next(l)) {
 			struct _conn *c = l->data;
+			if(c->remove)
+				continue;
 			if(FD_ISSET(c->fd, &inp))
 				yahoo_callback(c, YAHOO_INPUT_READ);
 			if(FD_ISSET(c->fd, &outp))

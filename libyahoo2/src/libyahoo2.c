@@ -69,8 +69,6 @@ char *strchr (), *strrchr ();
 #include <stdlib.h>
 #include <ctype.h>
 
-#include <time.h>
-
 #include "md5.h"
 #include "yahoo2.h"
 #include "yahoo_connections.h"
@@ -1929,7 +1927,6 @@ void yahoo_get_yab(int id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_data *nyd;
-	time_t tm = time(NULL);
 	char url[1024];
 	char buff[1024];
 
@@ -1942,9 +1939,7 @@ void yahoo_get_yab(int id)
 	nyd->type = YAHOO_CONNECTION_YAB;
 	nyd->buddies = yd->buddies;
 
-	snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?" 
-		"filter=%lu&imv=%lu&system=%lu&sms=%lu&chatcat=%lu"
-		"&ab2=0&intl=us&os=win", tm, tm, tm, tm, tm);
+	snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?ab2=0");
 
 	snprintf(buff, sizeof(buff), "Y=%s; T=%s",
 			yd->cookie_y, yd->cookie_t);

@@ -857,14 +857,14 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			if(!yd->rawbuddylist)
 				yd->rawbuddylist = strdup(pair->value);
 			else {
-				y_string_append(yd->rawbuddylist, pair->value);
+				yd->rawbuddylist = y_string_append(yd->rawbuddylist, pair->value);
 			}
 			break;
 
 		case 88: /* ignore list */
 			if(!yd->ignorelist)
 				yd->ignorelist = strdup("Ignore:");
-			y_string_append(yd->ignorelist, pair->value);
+			yd->ignorelist = y_string_append(yd->ignorelist, pair->value);
 			break;
 
 		case 89: /* me */

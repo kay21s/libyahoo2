@@ -111,6 +111,13 @@ enum yahoo_webcam_direction_type {
         YAHOO_WEBCAM_UPLOAD
 };
 
+/* chat member attribs */
+#define YAHOO_CHAT_MALE 0x8000
+#define YAHOO_CHAT_FEMALE 0x10000
+#define YAHOO_CHAT_FEMALE 0x10000
+#define YAHOO_CHAT_DUNNO 0x400
+#define YAHOO_CHAT_WEBCAM 0x10
+
 struct webcam {
 	int direction;     /* Uploading or downloading */
 	int conn_type;     /* 0=Dialup, 1=DSL/Cable, 2=T1/Lan */
@@ -177,6 +184,14 @@ struct yahoo_buddy {
 	char *id;
 	char *real_name;
 	struct yab *yab_entry;
+};
+
+struct yahoo_chat_member {
+	char *id;
+	int  age;
+	int  attribs;
+	char *alias;
+	char *location;
 };
 
 #ifdef __cplusplus

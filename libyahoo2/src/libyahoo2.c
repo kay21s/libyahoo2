@@ -856,37 +856,121 @@ static void yahoo_process_chat(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	char *msg = NULL;
 	char *who = NULL;
 	char *room = NULL;
+	char *topic = NULL;
+	YList *members = NULL;
+	struct yahoo_chat_member *currentmember = NULL;
+	int  msgtype = 1;
 	int  utf8 = 0;
+	int  firstjoin = 0;
+	int  membercount = 0;
 	YList *l;
 	
 	yahoo_dump_unhandled(pkt);
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
-		if (pair->key == 109)		/* message sender */
+
+		if (pair->key == 104) {
+			/* Room name */
+			room = pair->value;
+		}
+
+		if (pair->key == 105) {
+			/* Room topic */
+			topic = pair->value;
+		}
+
+		if (pair->key == 108) {
+			/* Number of members in this packet */
+			membercount = atoi(pair->value);
+		}
+
+		if (pair->key == 109) {
+			/* message sender */
 			who = pair->value;
 
-		if (pair->key == 117)		/* message */
-			msg = pair->value;
+			if (pkt->service == YAHOO_SERVICE_CHATJOIN) {
+				currentmember = y_new0(struct yahoo_chat_member, 1);
+				currentmember->id = strdup(pair->value);
+				members = y_list_append(members, currentmember);
+			}
+		}
 
-		if (pair->key == 104)		/* Room name */
-			room = pair->value;
+		if (pair->key == 110) {
+			/* age */
+			if (pkt->service == YAHOO_SERVICE_CHATJOIN)
+				currentmember->age = atoi(pair->value);
+		}
+
+		if (pair->key == 113) {
+			/* attribs */
+			if (pkt->service == YAHOO_SERVICE_CHATJOIN)
+				currentmember->attribs = atoi(pair->value);
+		}
+
+		if (pair->key == 141) {
+			/* alias */
+			if (pkt->service == YAHOO_SERVICE_CHATJOIN)
+				currentmember->alias = strdup(pair->value);
+		}
+
+		if (pair->key == 142) {
+			/* location */
+			if (pkt->service == YAHOO_SERVICE_CHATJOIN)
+				currentmember->location = strdup(pair->value);
+		}
+
+
+		if (pair->key == 130) {
+			/* first join */
+			firstjoin = 1;
+		}
+
+		if (pair->key == 117) {
+			/* message */
+			msg = pair->value;
+		}
+
+		if (pair->key == 124) {
+			/* Message type */
+			msgtype = atoi(pair->value);
+		}
 	}
 
-	if(!room)
+	if(!room) {
+		WARNING(("We didn't get a room name, ignoring packet"));
 		return;
+	}
 
 	switch(pkt->service) {
 	case YAHOO_SERVICE_CHATJOIN:
-		if(who)
-			YAHOO_CALLBACK(ext_yahoo_chat_userjoin)(yd->client_id, who, room);
+		if(y_list_length(members) != membercount) {
+			WARNING(("Count of members doesn't match No. of members we got"));
+		}
+		if(firstjoin && members) {
+			YAHOO_CALLBACK(ext_yahoo_chat_join)(yd->client_id, room, topic, members);
+		} else if(who) {
+			if(y_list_length(members) != 1) {
+				WARNING(("Got more than 1 member on a normal join"));
+			}
+			/* this should only ever have one, but just in case */
+			while(members) {
+				YList *n = members->next;
+				currentmember = members->data;
+				YAHOO_CALLBACK(ext_yahoo_chat_userjoin)(yd->client_id, room, currentmember);
+				FREE(members);
+				members=n;
+			}
+		}
 		break;
 	case YAHOO_SERVICE_CHATEXIT:
-		if(who)
-			YAHOO_CALLBACK(ext_yahoo_chat_userleave)(yd->client_id, who, room);
+		if(who) {
+			YAHOO_CALLBACK(ext_yahoo_chat_userleave)(yd->client_id, room, who);
+		}
 		break;
 	case YAHOO_SERVICE_COMMENT:
-		if(who)
-			YAHOO_CALLBACK(ext_yahoo_chat_message)(yd->client_id, who, room, msg, utf8);
+		if(who) {
+			YAHOO_CALLBACK(ext_yahoo_chat_message)(yd->client_id, who, room, msg, msgtype, utf8);
+		}
 		break;
 	}
 }
@@ -1067,7 +1151,7 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			}
 			YAHOO_CALLBACK(ext_yahoo_got_identities)(yd->client_id, yd->identities);
 			break;
-		case 59: /* cookies add C cookie */
+		case 59: /* cookies */
 			if(yd->ignorelist) {
 				yd->ignore = bud_str2list(yd->ignorelist);
 				FREE(yd->ignorelist);
@@ -1987,8 +2071,9 @@ static void yahoo_process_yab_connection(struct yahoo_data *yd)
 	struct yab *yab;
 	YList *buds;
 	int changed=0;
+	int id = yd->client_id;
 
-	while((yab = yahoo_getyab(yd)) != NULL) {
+	while(find_conn_by_id(id) && (yab = yahoo_getyab(yd)) != NULL) {
 		changed=1;
 		for(buds = yd->buddies; buds; buds=buds->next) {
 			struct yahoo_buddy * bud = buds->data;
@@ -2703,10 +2788,11 @@ void yahoo_chat_logon(int id, const char *from, const char *room, const char *ro
 }
 
 
-void yahoo_chat_message(int id, const char *from, const char *room, const char *msg)
+void yahoo_chat_message(int id, const char *from, const char *room, const char *msg, const int msgtype, const int utf8)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
+	char buf[2];
 		
 	if(!yd)
 		return;
@@ -2716,7 +2802,12 @@ void yahoo_chat_message(int id, const char *from, const char *room, const char *
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 104, room);
 	yahoo_packet_hash(pkt, 117, msg);
-	yahoo_packet_hash(pkt, 124, "1");
+	
+	snprintf(buf, sizeof(buf), "%d", msgtype);
+	yahoo_packet_hash(pkt, 124, buf);
+
+	if(utf8)
+		yahoo_packet_hash(pkt, 97, "1");
 
 	yahoo_send_packet(yd, pkt, 0);
 

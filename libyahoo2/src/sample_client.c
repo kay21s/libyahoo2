@@ -361,55 +361,81 @@ void ext_yahoo_conf_message(int id, char *who, char *room, char *msg, int utf8)
 	if(utf8)
 		FREE(umsg);
 }
-void ext_yahoo_chat_userjoin(int id, char *who, char *room)
-{
-	conf_room * cr = find_conf_room_by_name_and_id(id, room);
-	if(cr) {
-	YList * l = NULL;
-	for(l = cr->members; l; l=l->next) {
-		char * w = l->data;
-		if(!strcmp(w, who))
-			break;
+
+void print_chat_member(struct yahoo_chat_member *ycm) {
+	printf("%s (%s) ", ycm->id, ycm->alias);
+	printf(" Age: %d Sex: ", ycm->age);
+	if (ycm->attribs & YAHOO_CHAT_MALE) {
+		printf("Male");
+	} else if (ycm->attribs & YAHOO_CHAT_FEMALE) {
+		printf("Female");
+	} else {
+		printf("Unknown");
 	}
-	if(!l)
-		cr->members = y_list_append(cr->members, strdup(who));
+	if (ycm->attribs & YAHOO_CHAT_WEBCAM) {
+		printf(" with webcam");
 	}
 
-	print_message(("%s joined the conference %s", who, room));
-
+	printf("  Location: %s", ycm->location);
 }
-void ext_yahoo_chat_userleave(int id, char *who, char *room)
-{
-	YList * l;
-	conf_room * cr = find_conf_room_by_name_and_id(id, room);
-	
-	if(cr)
-	for(l = cr->members; l; l=l->next) {
-		char * w = l->data;
-		if(!strcmp(w, who)) {
-			cr->members = y_list_remove_link(cr->members, l);
-			FREE(l->data);
-			FREE(l);
-			break;
-		}
-	}
 
-	print_message(("%s left the conference %s", who, room));
+void ext_yahoo_chat_join(int id, char *room, char * topic, YList *members)
+{
+	print_message(("You have joined the chatroom %s with topic %s", room, topic));
+
+	while(members) {
+		YList *n = members->next;
+
+		printf("\t");
+		print_chat_member(members->data);
+		printf("\n");
+		FREE(((struct yahoo_chat_member *)members->data)->id);
+		FREE(((struct yahoo_chat_member *)members->data)->alias);
+		FREE(((struct yahoo_chat_member *)members->data)->location);
+		FREE(members->data);
+		FREE(members);
+		members=n;
+	}
 }
-void ext_yahoo_chat_message(int id, char *who, char *room, char *msg, int utf8)
+void ext_yahoo_chat_userjoin(int id, char *room, struct yahoo_chat_member *who)
+{
+	print_chat_member(who);
+	print_message((" joined the chatroom %s", room));
+	FREE(who->id);
+	FREE(who->alias);
+	FREE(who->location);
+	FREE(who);
+}
+void ext_yahoo_chat_userleave(int id, char *room, char *who)
+{
+	print_message(("%s left the chatroom %s", who, room));
+}
+void ext_yahoo_chat_message(int id, char *who, char *room, char *msg, int msgtype, int utf8)
 {
 	char * umsg = msg;
+	char * charpos;
 
 	if(utf8)
 		umsg = y_utf8_to_str(msg);
+	/* Remove escapes */
+	charpos = umsg;
+	while(*charpos) {
+		if (*charpos == 0x1b) {
+			*charpos = ' ';
+		}
+		charpos++;
+	}
 
-	who = get_buddy_name(who);
-
-	print_message(("%s (in %s): %s", who, room, umsg));
+	if (msgtype == 2) {
+		print_message(("(in %s) %s %s", room, who, umsg));
+	} else {
+		print_message(("(in %s) %s: %s", room, who, umsg));
+	}
 
 	if(utf8)
 		FREE(umsg);
 }
+
 void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 {
 	yahoo_account * ya=NULL;
@@ -1173,7 +1199,7 @@ static void process_commands(char *line)
 		}
 		msg = copy;
 		if(roomname && msg) {
-			yahoo_chat_message(ylad->id, NULL, roomname, msg);
+			yahoo_chat_message(ylad->id, NULL, roomname, msg, 1, 0);
 		}
 
 	} else if(!strncasecmp(cmd, "CHX", strlen("CHX"))) {
@@ -1406,6 +1432,7 @@ static void register_callbacks()
 	yc.ext_yahoo_conf_userjoin = ext_yahoo_conf_userjoin;
 	yc.ext_yahoo_conf_userleave = ext_yahoo_conf_userleave;
 	yc.ext_yahoo_conf_message = ext_yahoo_conf_message;
+	yc.ext_yahoo_chat_join = ext_yahoo_chat_join;
 	yc.ext_yahoo_chat_userjoin = ext_yahoo_chat_userjoin;
 	yc.ext_yahoo_chat_userleave = ext_yahoo_chat_userleave;
 	yc.ext_yahoo_chat_message = ext_yahoo_chat_message;

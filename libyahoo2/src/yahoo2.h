@@ -76,16 +76,19 @@ void yahoo_ignore_buddy(int id, const char *who, int unignore);
 void yahoo_change_buddy_group(int id, const char *who, const char *old_group, const char *new_group);
 void yahoo_group_rename(int id, const char *old_group, const char *new_group);
 
-void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid);
-void yahoo_chat_message(int id, const char *from, const char *room, const char *msg);
-void yahoo_chat_logoff(int id, const char *from);
-
 void yahoo_conference_invite(int id, const char * from, YList *who, const char *room, const char *msg);
 void yahoo_conference_addinvite(int id, const char * from, const char *who, const char *room, const YList * members, const char *msg);
 void yahoo_conference_decline(int id, const char * from, YList *who, const char *room, const char *msg);
 void yahoo_conference_message(int id, const char * from, YList *who, const char *room, const char *msg, int utf8);
 void yahoo_conference_logon(int id, const char * from, YList *who, const char *room);
 void yahoo_conference_logoff(int id, const char * from, YList *who, const char *room);
+
+/* join room with specified roomname and roomid */
+void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid);
+/* Send message "msg" to room with specified roomname, msgtype is 1-normal message or 2-/me mesage */
+void yahoo_chat_message(int id, const char *from, const char *room, const char *msg, const int msgtype, const int utf8);
+/* Log off chat */
+void yahoo_chat_logoff(int id, const char *from);
 
 /* requests a key which is needed to connect to the webcam server */
 /* who is the person who's webcam you would like to view */

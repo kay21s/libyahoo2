@@ -238,14 +238,25 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_message)(int id, char *who, char *room, 
 
 
 /*
+ * Name: ext_yahoo_chat_join
+ * 	Called when joining the chatroom.
+ * Params:
+ * 	id      - the id that identifies the server connection
+ * 	room    - the room joined, used in all other chat calls, freed by library after call
+ * 	topic   - the topic of the room, freed by library after call
+ *      members - the initial members of the chatroom (null terminated YList of yahoo_chat_member's) Must be freed by the client
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_join)(int id, char *room, char *topic, YList *members);
+
+/*
  * Name: ext_yahoo_chat_userjoin
  * 	Called when someone joins the chatroom.
  * Params:
  * 	id   - the id that identifies the server connection
- * 	who  - the user who has joined
  * 	room - the room joined
+ * 	who  - the user who has joined, Must be freed by the client
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userjoin)(int id, char *who, char *room);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userjoin)(int id, char *room, struct yahoo_chat_member *who);
 
 
 
@@ -255,10 +266,10 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userjoin)(int id, char *who, char *room)
  * 	Called when someone leaves the chatroom.
  * Params:
  * 	id   - the id that identifies the server connection
- * 	who  - the user who has left
  * 	room - the room left
+ * 	who  - the user who has left (Just the User ID)
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userleave)(int id, char *who, char *room);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userleave)(int id, char *room, char *who);
 
 
 
@@ -268,12 +279,14 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userleave)(int id, char *who, char *room
  * 	Called when someone messages in the chatroom.
  * Params:
  * 	id   - the id that identifies the server connection
- * 	who  - the user who messaged
  * 	room - the room
+ * 	who  - the user who messaged (Just the user id)
  * 	msg  - the message
+ * 	msgtype  - 1 = Normal message
+ * 		   2 = /me type message
  * 	utf8 - whether the message is utf8 encoded or not
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_message)(int id, char *who, char *room, char *msg, int utf8);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_message)(int id, char *who, char *room, char *msg, int msgtype, int utf8);
 
 
 

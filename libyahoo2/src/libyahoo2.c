@@ -244,6 +244,19 @@ static void yahoo_free_identities(YList * list)
 	y_list_free(list);
 }
 
+/* Free webcam data */
+static void yahoo_free_webcam(struct webcam *wcm)
+{
+	if (wcm) {
+		FREE(wcm->user);
+		FREE(wcm->server);
+		FREE(wcm->key);
+		FREE(wcm->description);
+		FREE(wcm->my_ip);
+	}
+	FREE(wcm);
+}
+
 static void yahoo_free_data(struct yahoo_data *yd)
 {
 	FREE(yd->user);
@@ -260,6 +273,7 @@ static void yahoo_free_data(struct yahoo_data *yd)
 	yahoo_free_buddies(yd->buddies);
 	yahoo_free_buddies(yd->ignore);
 	yahoo_free_identities(yd->identities);
+	yahoo_free_webcam(yd->wcm);
 
 	FREE(yd);
 }
@@ -2838,6 +2852,7 @@ void yahoo_webcam_get_upload_server(int id)
 
 void yahoo_webcam_connect(int id, struct webcam *wcm)
 {
+	char conn_type[100];
 	char *data=NULL;
 	char *packet=NULL;
 	unsigned char magic_nr[] = {1, 0, 0, 0, 1};
@@ -2896,7 +2911,10 @@ void yahoo_webcam_connect(int id, struct webcam *wcm)
 			data = y_string_append(data, wcm->my_ip);
 			data = y_string_append(data, "\r\ng=");
 			data = y_string_append(data, wcm->user);
-			data = y_string_append(data, "\r\no=w-2-5-1\r\np=1\r\n");
+			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
+			sprintf(conn_type, "%d", wcm->conn_type);
+			data = y_string_append(data, conn_type);
+			data = y_string_append(data, "\r\n");
 			break;
 		case YAHOO_WEBCAM_UPLOAD:
 			header_len = 13;
@@ -2906,7 +2924,10 @@ void yahoo_webcam_connect(int id, struct webcam *wcm)
 			data = y_string_append(data, wcm->key);
 			data = y_string_append(data, "\r\ni=");
 			data = y_string_append(data, wcm->my_ip);
-			data = y_string_append(data, "\r\no=w-2-5-1\r\np=1\r\nb=");
+			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
+			sprintf(conn_type, "%d", wcm->conn_type);
+			data = y_string_append(data, conn_type);
+			data = y_string_append(data, "\r\nb=");
 			data = y_string_append(data, wcm->description);
 			data = y_string_append(data, "\r\n");
 			break;

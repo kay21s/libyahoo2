@@ -302,7 +302,7 @@ void ext_yahoo_got_ignore(int id, YList * igns)
 
 void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 {
-	int i=0;
+	int i=0,j=0;
 	if(stat == 2) {
 		LOG(("Error sending message to %s", who));
 		return;
@@ -312,18 +312,24 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 		return;
 
 
+	/* need to typecast to (char) otherwise it never matches, since
+	 * 0x80 > max(char) == 0x7f
+	 */
 	while(msg[i]) {
-		if(msg[i]==(char)195) {
-			int j=i;
-			if(!msg[i+1]) {
-				msg[i]=0;
-				break;
-			}
-			msg[i+1] += 64;
-			while((msg[j] = msg[j+1]))
-				j++;
+		if(msg[i] < (char)0x80) {	/* 7 bit ASCII */
+			msg[j] = msg[i];
+			i++;
+		} else if(msg[i] < (char)0xC4) {/* ISOLatin1 */
+			msg[j] = (msg[i]<<6) | (msg[i+1] & 0xC0);
+			i+=2;
+		} else if(msg[i] < (char)0xE0) {
+			msg[j] = '.';
+			i+=3;
+		} else if(msg[i] < (char)0xF0) {
+			msg[j] = '.';
+			i+=4;
 		}
-		i++;
+		j++;
 	}
 
 	if(tm) {

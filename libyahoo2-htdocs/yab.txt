@@ -38,10 +38,10 @@ All values timef, timei, timesy, timesm, timec and timea are timestamps.
 They specify the last time that you sync'ed with the server.
 
 If you don't want to receive any particular block, set its timestamp to
-the current time.  Set a timestamp to 0 to get everything.
+the current time or just don't include it.  Set a timestamp to 0 to get
+everything.
 
-eg: To get only the addressbook, set all times to right now, and set 
-timea to 0.
+eg: To get only the addressbook, include only ab2=0
 
 Apart from the address book, you can get everything else by typing in the
 above url in your browser.
@@ -78,3 +78,4 @@ Just after addab2=0 and before fname=..., we add the following url parameters:
 &ee=1&ow=1&id=<db_id>
 
 where db_id is the record number for this entry, set by the server.
+

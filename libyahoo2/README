@@ -101,12 +101,15 @@ ignored.
 
 To send an IM, make a call to yahoo_send_im
 
-void yahoo_send_im(int id, char *who, char *what);
+void yahoo_send_im(int id, char * from, char *who, char *what);
 
 id is the id that the connection is identified with, who is who you want
 to message, what is the message to be sent.
 
-You can also send typing notifications with yahoo_send_typing
+The parameter from is the identity that you want to use to send the message.
+If this is NULL, your default identity will be used.
+
+You can also send typing notifications with yahoo_send_typing.
 
 
 4. Changing your status
@@ -140,6 +143,10 @@ Send a message by calling yahoo_conference_message.
 NOTE: Except for yahoo_conference_addinvite, all conference functions take
 the list of members as an argument.
 
+Have a look at yahoo2_callbacks.h for conference callbacks.  Beware that
+there's a chance you could get a conf_userjoin even before you get an 
+invitation to that conference.
+
 
 6. File Transfer
 
@@ -157,6 +164,32 @@ downloading the file, make a call to yahoo_get_url_handle:
 
 fname and fsize are used to store the file's name and size
 
+Yahoo's file transfer is implemented using HTTP.  It can either be peer
+to peer or via the yahoo file transfer servers.  The latter is used in
+case a peer to peer connection cannot be set up - for example, in the
+case of a firewall.
+
+libyahoo2 supports both types of file transfer for receiving, but only
+sends files using the yahoo file transfer server.
+
+If anyone's interested in implementing peer to peer file send, this is
+how it happens.
+
+First a PEERTOPEER packet is sent to check if it is possible.  This will
+mark the connection between these two hosts as p2p compatible.  No further
+PEERTOPEER packets will be sent between these two hosts for the duration
+that the connection is alive.
+
+After the first P2P packet, the initiater will start an HTTP server on
+some port (really any port), and send the url across to the other end.
+
+After this, the first host will always play the part of the server for
+all file transfers.  If a transfer is from the server, it uses GET, if
+it is from the client to the server, it uses POST.  There is no encoding
+used for POST.
+
+You'll still have to study it a bit, but IMO the major complexity is in
+putting a http server in the lib, and whether we want to do that.
 
 
 7. Callbacks

@@ -354,9 +354,9 @@ static void yahoo_packet_write(struct yahoo_packet *pkt, unsigned char *data)
 		struct yahoo_pair *pair = l->data;
 		unsigned char buf[100];
 
-		snprintf(buf, sizeof(buf), "%d", pair->key);
+		snprintf((char *)buf, sizeof(buf), "%d", pair->key);
 		strcpy(data + pos, buf);
-		pos += strlen(buf);
+		pos += strlen((char *)buf);
 		data[pos++] = 0xc0;
 		data[pos++] = 0x80;
 
@@ -980,84 +980,84 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	md5_byte_t result[16];
 	md5_state_t ctx;
 	char *crypt_result;
-	char *password_hash = malloc(25);
-	char *crypt_hash = malloc(25);
-	char *hash_string_p = malloc(50 + strlen(sn));
-	char *hash_string_c = malloc(50 + strlen(sn));
+	unsigned char *password_hash = malloc(25);
+	unsigned char *crypt_hash = malloc(25);
+	unsigned char *hash_string_p = malloc(50 + strlen(sn));
+	unsigned char *hash_string_c = malloc(50 + strlen(sn));
 	
 	char checksum;
 	
 	int sv;
 	
-	char *result6 = malloc(25);
-	char *result96 = malloc(25);
+	unsigned char *result6 = malloc(25);
+	unsigned char *result96 = malloc(25);
 
 	sv = seed[15];
 	sv = sv % 8;
 
 	md5_init(&ctx);
-	md5_append(&ctx, yd->password, strlen(yd->password));
+	md5_append(&ctx, (md5_byte_t *)yd->password, strlen(yd->password));
 	md5_finish(&ctx, result);
 	to_y64(password_hash, result, 16);
 	
 	md5_init(&ctx);
 	crypt_result = yahoo_crypt(yd->password, "$1$_2S43d5f$");  
-	md5_append(&ctx, crypt_result, strlen(crypt_result));
+	md5_append(&ctx, (md5_byte_t *)crypt_result, strlen(crypt_result));
 	md5_finish(&ctx, result);
 	to_y64(crypt_hash, result, 16);
 
 	switch (sv%5) {
 	case 0:
 		checksum = seed[seed[7] % 16];
-		snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf((char *)hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, password_hash, yd->user, seed);
-		snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf((char *)hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, crypt_hash, yd->user, seed);
 		break;
 	case 1:
 		checksum = seed[seed[9] % 16];
-		snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf((char *)hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, seed, password_hash);
-		snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf((char *)hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, seed, crypt_hash);
 		break;
 	case 2:
 		checksum = seed[seed[15] % 16];
-		snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf((char *)hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, seed, password_hash, yd->user);
-		snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf((char *)hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, seed, crypt_hash, yd->user);
 		break;
 	case 3:
 		checksum = seed[seed[1] % 16];
-		snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf((char *)hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, password_hash, seed);
-		snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf((char *)hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, crypt_hash, seed);
 		break;
 	case 4:
 		checksum = seed[seed[3] % 16];
-		snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf((char *)hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, password_hash, seed, yd->user);
-		snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf((char *)hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, crypt_hash, seed, yd->user);
 		break;
 	}
 		
 	md5_init(&ctx);  
-	md5_append(&ctx, hash_string_p, strlen(hash_string_p));
+	md5_append(&ctx, (md5_byte_t *)hash_string_p, strlen((char *)hash_string_p));
 	md5_finish(&ctx, result);
 	to_y64(result6, result, 16);
 
 	md5_init(&ctx);  
-	md5_append(&ctx, hash_string_c, strlen(hash_string_c));
+	md5_append(&ctx, (md5_byte_t *)hash_string_c, strlen((char *)hash_string_c));
 	md5_finish(&ctx, result);
 	to_y64(result96, result, 16);
 
 	pack = yahoo_packet_new(YAHOO_SERVICE_AUTHRESP, yd->initial_status, 0);
 	yahoo_packet_hash(pack, 0, yd->user);
-	yahoo_packet_hash(pack, 6, result6);
-	yahoo_packet_hash(pack, 96, result96);
+	yahoo_packet_hash(pack, 6, (char *)result6);
+	yahoo_packet_hash(pack, 96, (char *)result96);
 	yahoo_packet_hash(pack, 1, yd->user);
 		
 	yahoo_send_packet(yd, pack, 0);
@@ -1415,7 +1415,7 @@ static struct yahoo_packet * yahoo_getdata(struct yahoo_data * yd)
 	yd->rxlen -= YAHOO_PACKET_HDRLEN + pktlen;
 	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
 	if (yd->rxlen>0) {
-		char *tmp = y_memdup(yd->rxqueue + YAHOO_PACKET_HDRLEN 
+		unsigned char *tmp = y_memdup(yd->rxqueue + YAHOO_PACKET_HDRLEN 
 				+ pktlen, yd->rxlen);
 		FREE(yd->rxqueue);
 		yd->rxqueue = tmp;
@@ -1943,7 +1943,7 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 	struct yahoo_packet *pkt = NULL;
 	char size_str[10];
 	long content_length=0;
-	char buff[1024];
+	unsigned char buff[1024];
 	char url[255];
 
 	if(!yd)
@@ -1978,7 +1978,7 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 	yahoo_send_packet(nyd, pkt, 8);
 	yahoo_packet_free(pkt);
 
-	snprintf(buff, sizeof(buff), "29");
+	snprintf((char *)buff, sizeof(buff), "29");
 	buff[2] = 0xc0;
 	buff[3] = 0x80;
 	

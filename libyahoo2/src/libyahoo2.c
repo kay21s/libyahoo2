@@ -1150,7 +1150,7 @@ static void yahoo_process_auth_resp(struct yahoo_data *yd, struct yahoo_packet *
 
 	if(pkt->status == 0xffffffff) {
 		YAHOO_CALLBACK(ext_yahoo_login_response)(yd->client_id, login_status, url);
-		yahoo_logoff(yd->client_id);
+	/*	yahoo_logoff(yd->client_id);*/
 	}
 }
 
@@ -1471,6 +1471,9 @@ static struct yahoo_packet * yahoo_getdata(struct yahoo_data * yd)
 	int pos = 0;
 	int pktlen;
 
+	if(!yd)
+		return NULL;
+
 	DEBUG_MSG(("rxlen is %d", yd->rxlen));
 	if (yd->rxlen < YAHOO_PACKET_HDRLEN) {
 		DEBUG_MSG(("len < YAHOO_PACKET_HDRLEN"));
@@ -1596,6 +1599,9 @@ static struct yab * yahoo_getyab(struct yahoo_data *yd)
 	struct yab *yab = NULL;
 	int pos = 0, end=0;
 
+	if(!yd)
+		return NULL;
+
 	DEBUG_MSG(("rxlen is %d", yd->rxlen));
 
 	while(pos < yd->rxlen) {
@@ -1645,8 +1651,9 @@ int yahoo_write_ready(int id, int fd)
 static void yahoo_process_pager_connection(struct yahoo_data *yd)
 {
 	struct yahoo_packet *pkt;
+	int id = yd->client_id;
 
-	while ((pkt = yahoo_getdata(yd)) != NULL) {
+	while (find_conn_by_id(id) && (pkt = yahoo_getdata(yd)) != NULL) {
 
 		yahoo_packet_process(yd, pkt);
 

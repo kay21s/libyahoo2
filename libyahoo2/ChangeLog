@@ -1,3 +1,7 @@
+* Thu Feb 13 2003 Philip
+- added check for null connection when reading from socket.
+thanks to Alan Humpherys
+
 * Thu Feb 6 2003 Philip
 - renamed yahoo_add_yab to yahoo_set_yab
 

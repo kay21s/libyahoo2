@@ -13,6 +13,7 @@ ltmain.sh
 libltdl
 install-sh
 config.h
+config.h.in
 stamp-h
 libyahoo2.pc
 libyahoo2.spec

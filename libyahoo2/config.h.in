@@ -1,4 +1,4 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+/* config.h.in.  Generated automatically from configure.ac by autoheader.  */
 
 /* Define if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -68,6 +68,10 @@
 
 /* Define if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
+
+/* Define if you want to use a callback structure instead of callback
+   functions */
+#undef USE_STRUCT_CALLBACKS
 
 /* Version number of package */
 #undef VERSION

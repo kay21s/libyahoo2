@@ -5,10 +5,15 @@ AM_CONFIG_HEADER(config.h)
 
 # Checks for programs.
 AC_PROG_CC
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 
-# Checks for libraries.
+AC_ARG_WITH([struct-callbacks], [AC_HELP_STRING([--with-struct-callbacks],
+[use a callback structure instead of callback functions])])
+if test "$with_callback_struct" = "yes"; then
+	AC_DEFINE(USE_STRUCT_CALLBACKS, 1, 
+	[Define if you want to use a callback structure instead of callback functions])
+fi
 
 # Checks for header files.
 AC_HEADER_STDC

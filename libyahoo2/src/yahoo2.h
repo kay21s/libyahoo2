@@ -69,6 +69,11 @@ const char  * yahoo_get_cookie(int id, const char *which);
 
 int yahoo_get_url_handle(int id, const char *url, char *filename, unsigned long *filesize);
 
+#ifdef USE_STRUCT_CALLBACKS
+#include "yahoo2_callbacks.h"
+void yahoo_register_callbacks(struct yahoo_callbacks * yc);
+#endif
+
 #include "yahoo_httplib.h"
 
 #ifdef __cplusplus

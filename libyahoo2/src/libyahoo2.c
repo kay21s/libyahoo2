@@ -131,6 +131,7 @@ extern char filetransfer_host[];
 extern char filetransfer_port[];
 extern char webcam_host[];
 extern char webcam_port[];
+extern char webcam_description[];
 extern char local_host[];
 extern int conn_type;
 
@@ -2087,9 +2088,12 @@ static char * yahoo_getwebcam_master(struct yahoo_input_data *yid)
 {
 	unsigned int pos=0;
 	unsigned int len=0;
-	char *server;
+	unsigned int status=0;
+	char *server=NULL;
+	char *msg=NULL;
+	struct yahoo_data *yd = yid->yd;
 
-	if(!yid)
+	if(!yid || !yd)
 		return NULL;
 
 	DEBUG_MSG(("rxlen is %d", yid->rxlen));
@@ -2098,10 +2102,22 @@ static char * yahoo_getwebcam_master(struct yahoo_input_data *yid)
 	if (yid->rxlen < len)
 		return NULL;
 
-	pos += 3; /* skip next 3 bytes */
+	/* extract status (0 = ok, 6 = webcam not online) */
+        status = yid->rxqueue[pos++];
 
-	server =  y_memdup(yid->rxqueue+pos, 16);
-	pos += 16;
+	if (status == 0)
+	{
+		pos += 2; /* skip next 2 bytes */
+		server =  y_memdup(yid->rxqueue+pos, 16);
+		pos += 16;
+	}
+	else if (status == 6)
+	{
+		msg = strdup(yid->wcm->user);
+		msg = y_string_append(msg, " does not have his/her webcam online");
+		YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
+		FREE(msg);
+	}
 
 	/* skip rest of the data */
 
@@ -2126,6 +2142,7 @@ static int yahoo_get_webcam_data(struct yahoo_input_data *yid)
 	unsigned int pos=0;
 	unsigned int begin=0;
 	unsigned int end=0;
+	unsigned int closed=0;
 	unsigned char header_len=0;
 	char *who;
 	int connect=0;
@@ -2188,8 +2205,10 @@ static int yahoo_get_webcam_data(struct yahoo_input_data *yid)
 	/* find out what kind of packet we got */
 	switch (yid->wcd->packet_type)
 	{
-		case 0x00: /* user requests to view webcam */
-			if (yid->wcd->data_size) {
+		case 0x00:
+			/* user requests to view webcam (uploading) */
+			if (yid->wcd->data_size &&
+			    yid->wcm->direction == YAHOO_WEBCAM_UPLOAD) {
 				end = begin;
 				while (end <= yid->rxlen &&
 					yid->rxqueue[end++] != 13);
@@ -2200,6 +2219,16 @@ static int yahoo_get_webcam_data(struct yahoo_input_data *yid)
 					YAHOO_CALLBACK(ext_yahoo_webcam_viewer)
 						(yd->client_id, who + 2, 2);
 					FREE(who);
+				}
+			}
+
+			if (yid->wcm->direction == YAHOO_WEBCAM_DOWNLOAD) {
+				/* timestamp/status field */
+				/* 0 = declined viewing permission */
+				/* 1 = accepted viewing permission */
+				if (yid->wcd->timestamp == 0) {
+					YAHOO_CALLBACK(ext_yahoo_webcam_closed)
+					(yd->client_id, yid->wcm->user, 3);
 				}
 			}
 			break;
@@ -2220,9 +2249,17 @@ static int yahoo_get_webcam_data(struct yahoo_input_data *yid)
 			}
 			break;
 		case 0x07: /* connection is closing */
-			/* second byte in header is reason */
-			/* 01 = user closed connection */
-			/* 0F = user disconnected us */
+			switch(reason)
+			{
+				case 0x01: /* user closed connection */
+					closed = 1;
+					break;
+				case 0x0F: /* user cancelled permission */
+					closed = 2;
+					break;
+			}
+			YAHOO_CALLBACK(ext_yahoo_webcam_closed)
+				(yd->client_id, yid->wcm->user, closed);
 			break;
 		case 0x0C: /* user connected */
 		case 0x0D: /* user disconnected */
@@ -2240,6 +2277,8 @@ static int yahoo_get_webcam_data(struct yahoo_input_data *yid)
 			break;
 		case 0x13: /* user data */
 			/* i=user_ip (ip of the user we are viewing) */
+			/* j=user_ext_ip (external ip of the user we */
+ 			/*                are viewing) */
 			break;
 		case 0x17: /* ?? */
 			break;
@@ -2469,6 +2508,8 @@ static void yahoo_process_webcam_master_connection(struct yahoo_input_data *yid)
 		yid->wcm->server = strdup(server);
 		yid->wcm->conn_type = conn_type;
 		yid->wcm->my_ip = strdup(local_host);
+		if (yid->wcm->direction == YAHOO_WEBCAM_UPLOAD)
+			yid->wcm->description = strdup(webcam_description);
 		yahoo_webcam_connect(yid);
 		FREE(server);
 	}

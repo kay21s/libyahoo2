@@ -1,3 +1,7 @@
+* Tue May 6 2003 Mik
+- fixes for webcam uploading
+- extra callback for closing connection
+
 * Thu May 1 2003 Philip
 - allow closing of webcam connections
 - more reliable finding of webcam connections

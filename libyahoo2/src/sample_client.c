@@ -69,6 +69,9 @@ static time_t pingTimer = 0;
 static time_t webcamTimer = 0;
 static double webcamStart = 0;
 
+/* id of the webcam connection (needed for uploading) */
+static int webcam_id = 0;
+
 static int poll_loop=1;
 
 /* Exported to libyahoo2 */
@@ -78,6 +81,7 @@ char filetransfer_host[MAX_PREF_LEN]="filetransfer.msg.yahoo.com";
 char filetransfer_port[MAX_PREF_LEN]="80";
 char webcam_host[MAX_PREF_LEN]="webcam.yahoo.com";
 char webcam_port[MAX_PREF_LEN]="5100";
+char webcam_description[MAX_PREF_LEN]="Philips ToUcam Pro";
 char local_host[MAX_PREF_LEN]="";
 int conn_type = 1;
 
@@ -110,11 +114,6 @@ typedef struct {
 	int id;
 	char *who;
 } yahoo_authorize_data;
-
-typedef struct {
-	int id;
-	int fd;
-} yahoo_connection;
 
 yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_AVAILABLE, "Available"},
@@ -169,10 +168,6 @@ int ext_yahoo_log(char *fmt,...)
 #define print_message(x) { printf x; printf("\n"); }
 
 static yahoo_local_account * ylad = NULL;
-static yahoo_connection * ylab = NULL;
-static yahoo_connection * ywcm = NULL;
-static yahoo_connection * ycam = NULL;
-static yahoo_connection * ycht = NULL;
 static YList * buddies = NULL;
 
 static int expired(time_t timer)
@@ -725,10 +720,30 @@ void ext_yahoo_webcam_viewer(int id, char *who, int connect)
 	}
 }
 
+void ext_yahoo_webcam_closed(int id, char *who, int reason)
+{
+	switch(reason)
+	{
+		case 1:
+			print_message(("%s stopped broadcasting", who));
+			break;
+		case 2:
+			print_message(("%s cancelled viewing permission", who));
+			break;
+		case 3:
+			print_message(("%s declines permission to view his/her webcam", who));
+			break;
+	}
+}
+
 void ext_yahoo_webcam_data_request(int id, int send)
 {
+	webcam_id = id;
+
 	if (send) {
 		print_message(("Got request to start sending images"));
+		if (!webcamTimer)
+			rearm(&webcamTimer, 2);
 	} else {
 		print_message(("Got request to stop sending images"));
 	}
@@ -1428,10 +1443,6 @@ int main(int argc, char * argv[])
 	YList *l=connections;
 
 	ylad = y_new0(yahoo_local_account, 1);
-	ylab = y_new0(yahoo_connection, 1);
-	ywcm = y_new0(yahoo_connection, 1);
-	ycam = y_new0(yahoo_connection, 1);
-	ycht = y_new0(yahoo_connection, 1);
 
 	strncpy(local_host, get_local_addresses(), sizeof(local_host));
 
@@ -1510,7 +1521,7 @@ int main(int argc, char * argv[])
 		}
 
 		if(expired(pingTimer))		yahoo_ping_timeout_callback();
-		if(expired(webcamTimer))	yahoo_webcam_timeout_callback(ycam->id);
+		if(expired(webcamTimer))	yahoo_webcam_timeout_callback(webcam_id);
 	}
 	LOG(("Exited loop"));
 
@@ -1523,10 +1534,6 @@ int main(int argc, char * argv[])
 	yahoo_logout();
 
 	FREE(ylad);
-	FREE(ylab);
-	FREE(ywcm);
-	FREE(ycam);
-	FREE(ycht);
 
 	return 0;
 }

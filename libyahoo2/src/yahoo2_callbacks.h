@@ -473,6 +473,22 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_invite_reply)(int id, char *from, int 
 
 
 /*
+ * Name: ext_yahoo_webcam_closed
+ * 	Called when the webcam connection closed
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	who  - the user who we where connected to
+ *      reason - reason why the connection closed
+ *	         1 = user stopped broadcasting
+ *	         2 = user cancelled viewing permission
+ *	         3 = user declines permission
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_closed)(int id, char *who, int
+reason);
+
+
+
+/*
  * Name: ext_yahoo_error
  * 	Called on error.
  * Params:

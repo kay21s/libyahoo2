@@ -63,9 +63,6 @@
 /* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define if the system has the type `u_char'. */
-#undef HAVE_U_CHAR
-
 /* Name of package */
 #undef PACKAGE
 

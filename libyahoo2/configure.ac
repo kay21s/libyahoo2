@@ -41,8 +41,6 @@ AC_C_CONST
 AC_TYPE_SIZE_T
 AC_STRUCT_TM
 
-AC_CHECK_TYPES(u_char)
-
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset strchr strcspn strdup strncasecmp strrchr strstr strtol])
@@ -55,7 +53,7 @@ if test "$with_struct_callbacks" = "yes"; then
 fi
 
 YAHOOPKGREQ=""
-AC_ARG_WITH([glib], [AC_HELP_STRING([--without-glib], [don't use glib even if found])])
+AC_ARG_WITH([glib], [AC_HELP_STRING([--with-glib], [Which version of glib to use: 0/no = none, 1 = glib 1.2, 2 = glib 2, yes = auto.  Default is auto.])])
 if test "$with_glib" = "1"; then
 	AM_PATH_GLIB(1.2.8, [
 		AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib support])

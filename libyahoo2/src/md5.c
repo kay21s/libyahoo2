@@ -37,6 +37,10 @@
   1999-05-03 lpd Original version.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include "md5.h"
 #include <string.h>
 

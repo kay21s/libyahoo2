@@ -1,3 +1,7 @@
+* Thu Dec 18 2002 Philip Tellis
+- sample client now handles sending of bell with ^G and sounding of bell
+when it receives it
+
 * Tue Dec 10 2002 Philip Tellis (version 0.6.2)
 - Added some prototypes for snprintf, strdup and vsnprintf (when compiling
 with -ansi -pedantic and without glib

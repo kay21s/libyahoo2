@@ -1132,7 +1132,7 @@ static void yahoo_process_mail(struct yahoo_data *yd, struct yahoo_packet *pkt)
 		char from[1024];
 		snprintf(from, sizeof(from), "%s (%s)", who, email);
 		YAHOO_CALLBACK(ext_yahoo_mail_notify)(yd->client_id, from, subj, count);
-	} else 
+	} else if(count>0)
 		YAHOO_CALLBACK(ext_yahoo_mail_notify)(yd->client_id, NULL, NULL, count);
 }
 

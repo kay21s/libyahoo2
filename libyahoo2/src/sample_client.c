@@ -65,7 +65,7 @@ static int poll_loop=1;
 
 /* Exported to libyahoo2 */
 char pager_host[MAX_PREF_LEN]="scs.yahoo.com";
-char pager_port[MAX_PREF_LEN]="5050";
+char pager_port[MAX_PREF_LEN]="23";
 char filetransfer_host[MAX_PREF_LEN]="filetransfer.msg.yahoo.com";
 char filetransfer_port[MAX_PREF_LEN]="80";
 
@@ -310,6 +310,7 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 	if(!msg)
 		return;
 
+
 	if(tm) {
 		char timestr[255];
 
@@ -320,6 +321,8 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 				timestr, who, msg))
 	} else {
 		print_message(("%s: %s", who, msg))
+		if(!strcmp(msg, "<ding>")) 
+			printf("\a");
 	}
 }
 
@@ -629,8 +632,12 @@ static void process_commands(char *line)
 			copy = tmp+1;
 		}
 		msg = copy;
-		if(to && msg)
-			yahoo_send_im(ylad->id, NULL, to, msg);
+		if(to && msg) {
+			if(!strcmp(msg, "\a"))
+				yahoo_send_im(ylad->id, NULL, to, "<ding>");
+			else
+				yahoo_send_im(ylad->id, NULL, to, msg);
+		}
 	} else if(!strncasecmp(cmd, "CMS", strlen("CMS"))) {
 		/* send a message */
 		conf_room * cr;

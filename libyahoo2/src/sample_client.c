@@ -305,6 +305,7 @@ void ext_yahoo_login_response(int id, int succ, char *url)
 	ylad->status = YAHOO_STATUS_OFFLINE;
 	print_message((buff));
 	yahoo_logout();
+	poll_loop=0;
 }
 
 void ext_yahoo_error(int id, char *err, int fatal)

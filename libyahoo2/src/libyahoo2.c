@@ -117,8 +117,8 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_ISBACK,
 	YAHOO_SERVICE_IDLE, /* 5 (placemarker) */
 	YAHOO_SERVICE_MESSAGE,
-	YAHOO_SERVICE_IDACT,
-	YAHOO_SERVICE_IDDEACT,
+	YAHOO_SERVICE_IDACT,	/* 3 -> identity */
+	YAHOO_SERVICE_IDDEACT,	/* 3 -> identity */
 	YAHOO_SERVICE_MAILSTAT,
 	YAHOO_SERVICE_USERSTAT, /* 0xa */
 	YAHOO_SERVICE_NEWMAIL,
@@ -726,12 +726,17 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 {
 	char *msg = NULL;
 	char *from = NULL;
+	char *real_from = NULL;
 	long tm = 0L;
 	YList *l;
 	
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
-		if (pair->key == 4)
+		if (pair->key == 0)
+			real_from = pair->value;
+		else if (pair->key == 1)
+			from = pair->value;
+		else if (pair->key == 4)
 			from = pair->value;
 		else if (pair->key == 14)
 			msg = pair->value;

@@ -107,6 +107,7 @@ void yahoo_webcam_get_upload_server(int id);
 /* when uploading the webcam description should be filled */
 /* my_ip should be filled with your own ip, even if it's a private ip */
 /* direction should be set to YAHOO_WEBCAM_DOWNLOAD or YAHOO_WEBCAM_UPLOAD */
+/* conn_type should be one of the following 0=Dialup, 1=DSL/Cable, 2=T1/Lan */
 void yahoo_webcam_connect(int id, struct webcam *wcm);
 
 /* sends an image when uploading */

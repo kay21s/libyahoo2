@@ -120,7 +120,7 @@ struct webcam {
 	char *description;
 	char *my_ip;
 
-	unsigned int image_size;
+	unsigned int data_size;
 	unsigned int to_read;
 	unsigned int timestamp;
 	unsigned char packet_type;

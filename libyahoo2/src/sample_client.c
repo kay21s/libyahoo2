@@ -62,6 +62,8 @@ static int do_mail_notify = 0;
 static int do_yahoo_debug = 0;
 static int ignore_system = 0;
 static int do_typing_notify = 1;
+static int accept_webcam_viewers = 1;
+static int send_webcam_images = 0;
 static int webcam_direction = YAHOO_WEBCAM_DOWNLOAD;
 static time_t curTime = 0;
 static time_t pingTimer = 0;
@@ -207,12 +209,34 @@ static int yahoo_ping_timeout_callback()
 
 static int yahoo_webcam_timeout_callback(int id)
 {
+	static unsigned image_num = 0;
 	unsigned char *image = NULL;
 	unsigned int length = 0;
 	unsigned int timestamp = get_time() - webcamStart;
+	char fname[1024];
+	FILE *f_image = NULL;
+	struct stat s_image;
 
-	print_message(("Sending a webcam image"));
+	if (send_webcam_images)
+	{
+		sprintf(fname, "images/image_%.3d.jpc", image_num++);
+		if (image_num > 43) image_num = 0;
+		if (stat(fname, &s_image) == -1)
+			return -1;
+		length = s_image.st_size;
+		image = y_new0(unsigned char, length);
+
+		if ((f_image = fopen(fname, "r")) != NULL) {
+			fread(image, length, 1, f_image);
+			fclose(f_image);
+		} else {
+			printf("Error reading from %s\n", fname);
+		}
+	}
+
+	print_message(("Sending a webcam image (%d bytes)", length));
 	yahoo_webcam_send_image(id, image, length, timestamp);
+	if (image) FREE(image);
 	rearm(&webcamTimer, 2);
 	return 1;
 }
@@ -623,6 +647,33 @@ void ext_yahoo_got_webcam_image(int id, unsigned char *image, unsigned int image
 			if (image_num > 999) image_num = 0;
 		}
 	}
+}
+
+void ext_yahoo_webcam_viewer(int id, char *who, int connect)
+{
+	switch (connect)
+	{
+		case 0:
+			print_message(("%s has stopped viewing your webcam", who));
+			break;
+		case 1:
+			print_message(("%s has started viewing your webcam", who));
+			break;
+		case 2:
+			print_message(("%s is trying to view your webcam", who));
+			yahoo_webcam_accept_viewer(id, who, accept_webcam_viewers);
+			break;
+	}
+}
+
+void ext_yahoo_webcam_data_request(int id, int send)
+{
+	if (send) {
+		print_message(("Got request to start sending images"));
+	} else {
+		print_message(("Got request to stop sending images"));
+	}
+	send_webcam_images = send;
 }
 
 void ext_yahoo_webcam_invite(int id, char *from)
@@ -1306,13 +1357,13 @@ int main(int argc, char * argv[])
 		select(lfd + 1, &inp, NULL, NULL, &tv);
 		time(&curTime);
 
-		if(expired(pingTimer))		yahoo_ping_timeout_callback();
-		if(expired(webcamTimer))	yahoo_webcam_timeout_callback(ycam->id);
 		if(FD_ISSET(fd_stdin, &inp))	local_input_callback(0);
 		if(ylad->fd && FD_ISSET(ylad->fd, &inp)) yahoo_callback(ylad->id);
 		if(ylab->fd && FD_ISSET(ylab->fd, &inp)) yahoo_callback(ylab->id);
 		if(ywcm->fd && FD_ISSET(ywcm->fd, &inp)) yahoo_callback(ywcm->id);
 		if(ycam->fd && FD_ISSET(ycam->fd, &inp)) yahoo_callback(ycam->id);
+		if(expired(pingTimer))		yahoo_ping_timeout_callback();
+		if(expired(webcamTimer))	yahoo_webcam_timeout_callback(ycam->id);
 	}
 
 	yahoo_logout();
@@ -1352,6 +1403,13 @@ static void register_callbacks()
 	yc.ext_yahoo_chat_userjoin = ext_yahoo_chat_userjoin;
 	yc.ext_yahoo_chat_userleave = ext_yahoo_chat_userleave;
 	yc.ext_yahoo_chat_message = ext_yahoo_chat_message;
+	yc.ext_yahoo_got_webcam_key = ext_yahoo_got_webcam_key;
+	yc.ext_yahoo_got_webcam_server = ext_yahoo_got_webcam_server;
+	yc.ext_yahoo_got_webcam_image = ext_yahoo_got_webcam_image;
+	yc.ext_yahoo_webcam_invite = ext_yahoo_webcam_invite;
+	yc.ext_yahoo_webcam_invite_reply = ext_yahoo_webcam_invite_reply;
+	yc.ext_yahoo_webcam_viewer = ext_yahoo_webcam_viewer;
+	yc.ext_yahoo_webcam_data_request = ext_yahoo_webcam_data_request;
 	yc.ext_yahoo_got_file = ext_yahoo_got_file;
 	yc.ext_yahoo_contact_added = ext_yahoo_contact_added;
 	yc.ext_yahoo_rejected = ext_yahoo_rejected;

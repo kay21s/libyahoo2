@@ -438,6 +438,29 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, char *msg);
 
 
 
+/*
+ * Name: ext_yahoo_webcam_viewer
+ *	Called when a viewer disconnects/connects/requests to connect
+ * Params:
+ *	id  - the id that identifies the server connection
+ *	who - the viewer
+ *	connect - 0=disconnect 1=connect 2=request
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_viewer)(int id, char *who, int connect);
+
+
+
+
+/*
+ * Name: ext_yahoo_webcam_data_request
+ *	Called when you get a request for webcam images
+ * Params:
+ *	id   - the id that identifies the server connection
+ *	send - whether to send images or not
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_data_request)(int id, int send);
+
+
 
 
 /*

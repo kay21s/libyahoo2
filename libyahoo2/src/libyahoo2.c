@@ -282,16 +282,6 @@ static int yahoo_packet_length(struct yahoo_packet *pkt)
 	return len;
 }
 
-static int is_little_endian() 
-{
-	union { 
-		long l; 
-		unsigned char uc[sizeof(long)]; 
-	} u; 
-	u.l = 1; 
-	return u.uc[0];
-}
-
 #define yahoo_put16(buf, data) ( \
 		(*(buf) = (unsigned char)((data)>>8)&0xff), \
 		(*((buf)+1) = (unsigned char)(data)&0xff),  \

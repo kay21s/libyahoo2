@@ -156,6 +156,104 @@ int yahoo_ping_timeout_callback()
 	return 1;
 }
 
+YList * conferences = NULL;
+typedef struct {
+	int id;
+	char * room_name;
+	char * host;
+	YList * members;
+	int joined;
+} conf_room;
+
+static conf_room * find_conf_room_by_name_and_id(int id, const char * name)
+{
+	YList * l;
+	for(l = conferences; l; l=l->next) {
+		conf_room * cr = l->data;
+		if(cr->id == id && !strcmp(name, cr->room_name)) {
+			return cr;
+		}
+	}
+
+	return NULL;
+}
+
+void ext_yahoo_got_conf_invite(int id, char *who, char *room, char *msg, YList *members)
+{
+	conf_room * cr = y_new0(conf_room, 1);
+	cr->room_name = strdup(room);
+	cr->host = strdup(who);
+	cr->members = members;
+	cr->id = id;
+
+	conferences = y_list_append(conferences, cr);
+
+	print_message(("%s has invited you to a conference: %s\n"
+				"with the message: %s",
+				who, room, msg));
+
+	for(; members; members=members->next)
+		print_message(("\t%s", (char *)members->data));
+	
+}
+void ext_yahoo_conf_userdecline(int id, char *who, char *room, char *msg)
+{
+	YList * l;
+	conf_room * cr = find_conf_room_by_name_and_id(id, room);
+	
+	if(cr)
+	for(l = cr->members; l; l=l->next) {
+		char * w = l->data;
+		if(!strcmp(w, who)) {
+			cr->members = y_list_remove_link(cr->members, l);
+			FREE(l->data);
+			FREE(l);
+			break;
+		}
+	}
+
+	print_message(("%s declined the invitation to %s\n"
+				"with the message: %s", who, room, msg));
+}
+void ext_yahoo_conf_userjoin(int id, char *who, char *room)
+{
+	conf_room * cr = find_conf_room_by_name_and_id(id, room);
+	if(cr) {
+	YList * l = NULL;
+	for(l = cr->members; l; l=l->next) {
+		char * w = l->data;
+		if(!strcmp(w, who))
+			break;
+	}
+	if(!l)
+		cr->members = y_list_append(cr->members, strdup(who));
+	}
+
+	print_message(("%s joined the conference %s", who, room));
+
+}
+void ext_yahoo_conf_userleave(int id, char *who, char *room)
+{
+	YList * l;
+	conf_room * cr = find_conf_room_by_name_and_id(id, room);
+	
+	if(cr)
+	for(l = cr->members; l; l=l->next) {
+		char * w = l->data;
+		if(!strcmp(w, who)) {
+			cr->members = y_list_remove_link(cr->members, l);
+			FREE(l->data);
+			FREE(l);
+			break;
+		}
+	}
+
+	print_message(("%s left the conference %s", who, room));
+}
+void ext_yahoo_conf_message(int id, char *who, char *room, char *msg)
+{
+	print_message(("%s (in %s): %s", who, room, msg));
+}
 void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 {
 	yahoo_account * ya=NULL;
@@ -299,6 +397,24 @@ void yahoo_logout()
 	}
 
 	call_timeout=0;
+
+	while(conferences) {
+		YList * n = conferences->next;
+		conf_room * cr = conferences->data;
+		if(cr->joined)
+			yahoo_conference_logoff(ylad->id, NULL, cr->members, cr->room_name);
+		FREE(cr->room_name);
+		FREE(cr->host);
+		while(cr->members) {
+			YList *n = cr->members->next;
+			FREE(cr->members->data);
+			FREE(cr->members);
+			cr->members=n;
+		}
+		FREE(cr);
+		FREE(conferences);
+		conferences = n;
+	}
 	
 	yahoo_logoff(ylad->id);
 
@@ -473,6 +589,8 @@ static void process_commands(char *line)
 	if(tmp) {
 		*tmp = '\0';
 		copy = tmp+1;
+	} else {
+		copy = NULL;
 	}
 
 	if(!strcasecmp(cmd, "MSG")) {
@@ -486,8 +604,160 @@ static void process_commands(char *line)
 		msg = copy;
 		if(to && msg)
 			yahoo_send_im(ylad->id, NULL, to, msg);
-		FREE(start);
-		return;
+	} else if(!strcasecmp(cmd, "CMS")) {
+		// send a message
+		conf_room * cr;
+		to = copy;
+		tmp = strchr(copy, ' ');
+		if(tmp) {
+			*tmp = '\0';
+			copy = tmp+1;
+		}
+		msg = copy;
+		cr = find_conf_room_by_name_and_id(ylad->id, to);
+		if(!cr) {
+			print_message(("no such room: %s", copy));
+			goto end_parse;
+		}
+		if(msg)
+			yahoo_conference_message(ylad->id, NULL, cr->members, to, msg);
+	} else if(!strcasecmp(cmd, "CLS")) {
+		YList * l;
+		if(copy) {
+			conf_room * cr = find_conf_room_by_name_and_id(ylad->id, copy);
+			if(!cr) {
+				print_message(("no such room: %s", copy));
+				goto end_parse;
+			}
+			print_message(("Room: %s", copy));
+			for(l = cr->members; l; l=l->next) {
+				print_message(("%s", (char *)l->data))
+			}
+		} else {
+			print_message(("All Rooms:"));
+			for(l = conferences; l; l=l->next) {
+				conf_room * cr = l->data;
+				print_message(("%s", cr->room_name));
+			}
+		}
+
+	} else if(!strcasecmp(cmd, "CCR")) {
+		conf_room * cr = y_new0(conf_room, 1);
+		while((tmp = strchr(copy, ' ')) != NULL) {
+			*tmp = '\0';
+			if(!cr->room_name)
+				cr->room_name = strdup(copy);
+			else
+				cr->members = y_list_append(cr->members,
+						strdup(copy));
+			copy = tmp+1;
+		}
+		cr->members = y_list_append(cr->members, strdup(copy));
+
+		if(!cr->room_name || !cr->members) {
+			FREE(cr);
+		} else {
+			cr->id = ylad->id;
+			cr->joined = 1;
+			conferences = y_list_append(conferences, cr);
+			yahoo_conference_invite(ylad->id, NULL, cr->members, cr->room_name, "Join my conference");
+			cr->members = y_list_append(cr->members,strdup(ylad->yahoo_id));
+		}
+	} else if(!strcasecmp(cmd, "CIN")) {
+		conf_room * cr;
+		char * room=copy;
+		YList * l1, *l = NULL;
+
+		while((tmp = strchr(copy, ' ')) != NULL) {
+			*tmp = '\0';
+			copy = tmp+1;
+			l = y_list_append(l, copy);
+		}
+
+		cr = find_conf_room_by_name_and_id(ylad->id, room);
+		if(!cr) {
+			print_message(("no such room: %s", room));
+			y_list_free(l);
+			goto end_parse;
+		}
+
+		for(l1 = l; l1; l1=l1->next) {
+			char * w = l1->data;
+			yahoo_conference_addinvite(ylad->id, NULL, w, room, cr->members, "Join my conference");
+			cr->members = y_list_append(cr->members, strdup(w));
+		}
+		y_list_free(l);
+
+	} else if(!strcasecmp(cmd, "CLN")) {
+		conf_room * cr = find_conf_room_by_name_and_id(ylad->id, copy);
+		YList * l;
+		if(!cr) {
+			print_message(("no such room: %s", copy));
+			goto end_parse;
+		}
+
+		cr->joined = 1;
+		for(l = cr->members; l; l=l->next) {
+			char * w = l->data;
+			if(!strcmp(w, ylad->yahoo_id))
+				break;
+		}
+		if(!l)
+			cr->members = y_list_append(cr->members, strdup(ylad->yahoo_id));
+		yahoo_conference_logon(ylad->id, NULL, cr->members, copy);
+
+	} else if(!strcasecmp(cmd, "CLF")) {
+		conf_room * cr = find_conf_room_by_name_and_id(ylad->id, copy);
+		
+		if(!cr) {
+			print_message(("no such room: %s", copy));
+			goto end_parse;
+		}
+
+		yahoo_conference_logoff(ylad->id, NULL, cr->members, copy);
+
+		conferences = y_list_remove(conferences, cr);
+		FREE(cr->room_name);
+		FREE(cr->host);
+		while(cr->members) {
+			YList *n = cr->members->next;
+			FREE(cr->members->data);
+			FREE(cr->members);
+			cr->members=n;
+		}
+		FREE(cr);
+
+	} else if(!strcasecmp(cmd, "CDC")) {
+		conf_room * cr;
+		char * room = copy;
+		tmp = strchr(copy, ' ');
+		if(tmp) {
+			*tmp = '\0';
+			copy = tmp+1;
+			msg = copy;
+		} else {
+			msg = "Thanks, but no thanks!";
+		}
+		
+		cr = find_conf_room_by_name_and_id(ylad->id, room);
+		if(!cr) {
+			print_message(("no such room: %s", room));
+			goto end_parse;
+		}
+
+		yahoo_conference_decline(ylad->id, NULL, cr->members, room,msg);
+
+		conferences = y_list_remove(conferences, cr);
+		FREE(cr->room_name);
+		FREE(cr->host);
+		while(cr->members) {
+			YList *n = cr->members->next;
+			FREE(cr->members->data);
+			FREE(cr->members);
+			cr->members=n;
+		}
+		FREE(cr);
+
 	} else if(!strcasecmp(cmd, "STA")) {
 		if(isdigit(copy[0])) {
 			state = (enum yahoo_status)atoi(copy);
@@ -506,12 +776,9 @@ static void process_commands(char *line)
 
 		yahoo_set_away(ylad->id, state, msg, 1);
 
-		return;
 	} else if(!strcasecmp(cmd, "OFF")) {
 		// go offline
-		FREE(start);
 		poll_loop=0;
-		return;
 	} else if(!strcasecmp(cmd, "IDS")) {
 		// print identities
 		const YList * ids = yahoo_get_identities(ylad->id);
@@ -540,9 +807,10 @@ static void process_commands(char *line)
 		}
 	} else {
 		fprintf(stderr, "Unknown command: %s\n", cmd);
-		FREE(start);
-		return;
 	}
+
+end_parse:
+	FREE(start);
 }
 
 static void local_input_callback(int source)
@@ -635,21 +903,6 @@ int main(int argc, char * argv[])
 	return 0;
 }
 
-void ext_yahoo_got_conf_invite(int id, char *who, char *room, char *msg, YList *members)
-{
-}
-void ext_yahoo_conf_userdecline(int id, char *who, char *room, char *msg)
-{
-}
-void ext_yahoo_conf_userjoin(int id, char *who, char *room)
-{
-}
-void ext_yahoo_conf_userleave(int id, char *who, char *room)
-{
-}
-void ext_yahoo_conf_message(int id, char *who, char *room, char *msg)
-{
-}
 void ext_yahoo_got_file(int id, char *who, char *url, long expires, char *msg, char *fname, unsigned long fesize)
 {
 }

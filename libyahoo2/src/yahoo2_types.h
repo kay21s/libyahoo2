@@ -59,6 +59,7 @@ enum yahoo_error {
 	E_IGNOREDUP = 2,
 	E_IGNORENONE = 3,
 	E_IGNORECONF = 12,
+	E_CONFNOTAVAIL = 20,
 };
 
 enum yahoo_log_level {

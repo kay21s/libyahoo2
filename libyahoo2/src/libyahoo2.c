@@ -683,6 +683,8 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 			who = pair->value;
 		if (pair->key == 54)		// decline
 			who = pair->value;
+		if (pair->key == 55)		// unavailable (status == 2)
+			who = pair->value;
 		if (pair->key == 56)		// logoff
 			who = pair->value;
 
@@ -709,7 +711,13 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 		return;
 
 	if(host) {
-		members = y_list_append(members, strdup(host));
+		for(l = members; l; l = l->next) {
+			char * w = l->data;
+			if(!strcmp(w, host))
+				break;
+		}
+		if(!l)
+			members = y_list_append(members, strdup(host));
 	}
 	// invite, decline, join, left, message -> status == 1
 
@@ -717,11 +725,14 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 	case YAHOO_SERVICE_CONFINVITE:
 		if(members)
 			YAHOO_CALLBACK(ext_yahoo_got_conf_invite)(yd->client_id, host, room, msg, members);
-		else
+		else if(msg)
 			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
 		break;
 	case YAHOO_SERVICE_CONFADDINVITE:
-		YAHOO_CALLBACK(ext_yahoo_got_conf_invite)(yd->client_id, host, room, msg, members);
+		if(pkt->status == 2)
+			;
+		else
+			YAHOO_CALLBACK(ext_yahoo_got_conf_invite)(yd->client_id, host, room, msg, members);
 		break;
 	case YAHOO_SERVICE_CONFDECLINE:
 		if(who)
@@ -1797,7 +1808,7 @@ void yahoo_change_buddy_group(int id, const char *who, const char *old_group, co
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_addinvite(int id, const char *who, const char *room, const YList * members, const char *msg)
+void yahoo_conference_addinvite(int id, const char * from, const char *who, const char *room, const YList * members, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1807,7 +1818,7 @@ void yahoo_conference_addinvite(int id, const char *who, const char *room, const
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFADDINVITE, YAHOO_STATUS_AVAILABLE, yd->id);
 
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 51, who);
 	yahoo_packet_hash(pkt, 57, room);
 	yahoo_packet_hash(pkt, 58, msg);
@@ -1823,7 +1834,7 @@ void yahoo_conference_addinvite(int id, const char *who, const char *room, const
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_invite(int id, YList *who, const char *room, const char *msg)
+void yahoo_conference_invite(int id, const char * from, YList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1833,7 +1844,7 @@ void yahoo_conference_invite(int id, YList *who, const char *room, const char *m
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFINVITE, YAHOO_STATUS_AVAILABLE, yd->id);
 
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 50, yd->user);
 	for(; who; who = who->next) {
 		yahoo_packet_hash(pkt, 52, (char *)who->data);
@@ -1847,7 +1858,7 @@ void yahoo_conference_invite(int id, YList *who, const char *room, const char *m
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_logon(int id, YList *who, const char *room)
+void yahoo_conference_logon(int id, const char *from, YList *who, const char *room)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1857,7 +1868,7 @@ void yahoo_conference_logon(int id, YList *who, const char *room)
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGON, YAHOO_STATUS_AVAILABLE, yd->id);
 
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
 		yahoo_packet_hash(pkt, 3, (char *)who->data);
 	}
@@ -1868,7 +1879,7 @@ void yahoo_conference_logon(int id, YList *who, const char *room)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_decline(int id, YList *who, const char *room, const char *msg)
+void yahoo_conference_decline(int id, const char * from, YList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1878,7 +1889,7 @@ void yahoo_conference_decline(int id, YList *who, const char *room, const char *
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFDECLINE, YAHOO_STATUS_AVAILABLE, yd->id);
 
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
 		yahoo_packet_hash(pkt, 3, (char *)who->data);
 	}
@@ -1890,7 +1901,7 @@ void yahoo_conference_decline(int id, YList *who, const char *room, const char *
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_logoff(int id, YList *who, const char *room)
+void yahoo_conference_logoff(int id, const char * from, YList *who, const char *room)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1900,7 +1911,7 @@ void yahoo_conference_logoff(int id, YList *who, const char *room)
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGOFF, YAHOO_STATUS_AVAILABLE, yd->id);
 
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
 		yahoo_packet_hash(pkt, 3, (char *)who->data);
 	}
@@ -1911,7 +1922,7 @@ void yahoo_conference_logoff(int id, YList *who, const char *room)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_message(int id, YList *who, const char *room, const char *msg)
+void yahoo_conference_message(int id, const char * from, YList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1921,7 +1932,7 @@ void yahoo_conference_message(int id, YList *who, const char *room, const char *
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFMSG, YAHOO_STATUS_AVAILABLE, yd->id);
 
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
 		yahoo_packet_hash(pkt, 53, (char *)who->data);
 	}

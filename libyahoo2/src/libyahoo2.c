@@ -1,9 +1,6 @@
 /*
  * libyahoo2: libyahoo2.c
  *
- * $Revision$
- * $Date$
- * 
  * Some code copyright (C) 2002, Philip S Tellis <philip . tellis AT gmx . net>
  *
  * Much of this code was taken and adapted from the yahoo module for

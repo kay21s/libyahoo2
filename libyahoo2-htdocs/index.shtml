@@ -37,6 +37,7 @@ supports almost all current features of the protocol.
 	<li>Reject buddy</li>
 	<li>Buddy status updates</li>
 	<li>Group renaming</li>
+	<li>Buddy Search (new in 0.7.3)</li>
 	</ul>
 </li>
 <li>Yahoo Address book support</li>

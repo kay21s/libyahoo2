@@ -1,5 +1,8 @@
 lib_LTLIBRARIES = libyahoo2.la
+
+if SAMPLE_CLIENT
 noinst_PROGRAMS = yahoo
+endif
 
 EXTRA_DIST = sample_client.c sample_makefile
 

@@ -54,6 +54,10 @@ if test "$with_struct_callbacks" = "yes"; then
 	[Define if you want to use a callback structure instead of callback functions])
 fi
 
+AC_ARG_ENABLE([sample-client], [AC_HELP_STRING([--disable-sample-client],
+[do not compile the sample client program])])
+AM_CONDITIONAL(SAMPLE_CLIENT, test "$enable_sample_client" != "no")
+
 YAHOOPKGREQ=""
 AC_ARG_WITH([glib], [AC_HELP_STRING([--with-glib], [Which version of glib to use: 0/no = none, 1 = glib 1.2, 2 = glib 2, yes = auto.  Default is auto.])])
 if test "$with_glib" = "1"; then

@@ -1,3 +1,16 @@
+* 28-Sep-2002
+
+Well, I added documentation some time ago.  It's in the README file.  I
+suppose people have found it.
+
+The good news now is that libyahoo2 is being used in many clients, the
+bad news is that there's very little discussion on the mailing list.
+
+Hope to come out with 0.6 Real Soon Now.
+
+
+* 20-Jul-2002
+
 Umm, ok, it's been in everybuddy for a few months, and now I'm releasing
 it as a separate project.
 

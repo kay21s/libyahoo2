@@ -5,7 +5,7 @@ version 0.6cvs
 instead of callback functions (see yahoo2_callbacks.h and the README)
 - Code cleanups by Steve McAndrewSmith
 
-- sample client no longer requires gtk
+- sample console client no longer requires gtk!
 
 22-7-2002: version 0.5
 

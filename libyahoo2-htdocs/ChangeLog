@@ -1,3 +1,15 @@
+* Fri Aug  8 2004 A. Craig West
+- up version number 0.7.5
+
+* Fri Jun 25 2004 A. Craig West
+- fix for yahoo's new auth thanks to Wilmer van der Gaast
+
+* Wed May  4 2004 A. Craig West
+- 64 bit fix for real this time, thanks to Matt Rogers for the fix
+
+* Tue Mar 23 2004 A. Craig West
+- fix y_strsplit when string is empty, and for 0 element case to match gstrsplit
+
 * Thu Feb 26 2004 Philip Tellis
 - fix memory leak in auth thanks to Wilmer van der Gaast
 
@@ -10,13 +22,13 @@
 * Thu Jan 29 2004 Philip Tellis
 - yahoo_fn works with 64 bit machines too, thanks to Ben Reser for the fix
 
-* Wed Jan 21 2003 Philip Tellis 0.7.4
+* Wed Jan 21 2004 Philip Tellis 0.7.4
 - up version number
 
-* Fri Jan 16 2003 Alan Humpherys
+* Fri Jan 16 2004 Alan Humpherys
 - remove_handler also takes client_id
 
-* Wed Jan 14 2003 Doug Davis
+* Wed Jan 14 2004 Doug Davis
 - fix auth
 
 * Mon Dec 29 2003 Philip Tellis 0.7.3

@@ -22,6 +22,9 @@
  *
  */
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <netdb.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -60,6 +63,8 @@ char pager_host[MAX_PREF_LEN]="scs.yahoo.com";
 char pager_port[MAX_PREF_LEN]="5050";
 char filetransfer_host[MAX_PREF_LEN]="filetransfer.msg.yahoo.com";
 char filetransfer_port[MAX_PREF_LEN]="80";
+
+static void register_callbacks();
 
 typedef struct {
 	char yahoo_id[255];
@@ -518,6 +523,7 @@ int main(int argc, char * argv[])
 	printf("Log Level: ");
 	scanf("%d", &log_level);
 
+	register_callbacks();
 	yahoo_set_log_level(log_level);
 
 	ext_yahoo_login(ylad, status);
@@ -558,3 +564,37 @@ void ext_yahoo_conf_message(int id, char *who, char *room, char *msg)
 void ext_yahoo_got_file(int id, char *who, char *url, long expires, char *msg, char *fname, unsigned long fesize)
 {
 }
+
+static void register_callbacks()
+{
+#ifdef USE_STRUCT_CALLBACKS
+	static struct yahoo_callbacks yc;
+
+	yc.ext_yahoo_login_response = ext_yahoo_login_response;
+	yc.ext_yahoo_got_buddies = ext_yahoo_got_buddies;
+	yc.ext_yahoo_got_ignore = ext_yahoo_got_ignore;
+	yc.ext_yahoo_status_changed = ext_yahoo_status_changed;
+	yc.ext_yahoo_got_im = ext_yahoo_got_im;
+	yc.ext_yahoo_got_conf_invite = ext_yahoo_got_conf_invite;
+	yc.ext_yahoo_conf_userdecline = ext_yahoo_conf_userdecline;
+	yc.ext_yahoo_conf_userjoin = ext_yahoo_conf_userjoin;
+	yc.ext_yahoo_conf_userleave = ext_yahoo_conf_userleave;
+	yc.ext_yahoo_conf_message = ext_yahoo_conf_message;
+	yc.ext_yahoo_got_file = ext_yahoo_got_file;
+	yc.ext_yahoo_contact_added = ext_yahoo_contact_added;
+	yc.ext_yahoo_rejected = ext_yahoo_rejected;
+	yc.ext_yahoo_typing_notify = ext_yahoo_typing_notify;
+	yc.ext_yahoo_game_notify = ext_yahoo_game_notify;
+	yc.ext_yahoo_mail_notify = ext_yahoo_mail_notify;
+	yc.ext_yahoo_system_message = ext_yahoo_system_message;
+	yc.ext_yahoo_error = ext_yahoo_error;
+	yc.ext_yahoo_log = ext_yahoo_log;
+	yc.ext_yahoo_add_handler = ext_yahoo_add_handler;
+	yc.ext_yahoo_remove_handler = ext_yahoo_remove_handler;
+	yc.ext_yahoo_connect = ext_yahoo_connect;
+
+	yahoo_register_callbacks(&yc);
+	
+#endif
+}
+

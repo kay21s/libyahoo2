@@ -1760,7 +1760,8 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 
 	/* Dump magic key into a char for SHA1 action. */
 		
-	memcpy(&magic_key_char[0], &value, sizeof(int));
+	for(x = 0; x < sizeof(int); x++, value>>=8) 
+		magic_key_char[x] = value & 0xff;
 
 	/* Get password and crypt hashes as per usual. */
 	md5_init(&ctx);

@@ -832,6 +832,47 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 	}
 }
 
+
+static void yahoo_process_chat(struct yahoo_data *yd, struct yahoo_packet *pkt)
+{
+	char *msg = NULL;
+	char *who = NULL;
+	char *room = NULL;
+	int  utf8 = 0;
+	YList *l;
+	
+	yahoo_dump_unhandled(pkt);
+	for (l = pkt->hash; l; l = l->next) {
+		struct yahoo_pair *pair = l->data;
+		if (pair->key == 109)		/* message sender */
+			who = pair->value;
+
+		if (pair->key == 117)		/* message */
+			msg = pair->value;
+
+		if (pair->key == 104)		/* Room name */
+			room = pair->value;
+	}
+
+	if(!room)
+		return;
+
+	switch(pkt->service) {
+	case YAHOO_SERVICE_CHATJOIN:
+		if(who)
+			YAHOO_CALLBACK(ext_yahoo_chat_userjoin)(yd->client_id, who, room);
+		break;
+	case YAHOO_SERVICE_CHATEXIT:
+		if(who)
+			YAHOO_CALLBACK(ext_yahoo_chat_userleave)(yd->client_id, who, room);
+		break;
+	case YAHOO_SERVICE_COMMENT:
+		if(who)
+			YAHOO_CALLBACK(ext_yahoo_chat_message)(yd->client_id, who, room, msg, utf8);
+		break;
+	}
+}
+
 static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pkt)
 {
 	YList *l;
@@ -1491,6 +1532,16 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_CONFMSG:
 		yahoo_process_conference(yd, pkt);
 		break;
+	case YAHOO_SERVICE_CHATONLINE:
+	case YAHOO_SERVICE_CHATGOTO:
+	case YAHOO_SERVICE_CHATJOIN:
+	case YAHOO_SERVICE_CHATLEAVE:
+	case YAHOO_SERVICE_CHATEXIT:
+	case YAHOO_SERVICE_CHATLOGOUT:
+	case YAHOO_SERVICE_CHATPING:
+	case YAHOO_SERVICE_COMMENT:
+		yahoo_process_chat(yd, pkt);
+		break;
 	case YAHOO_SERVICE_P2PFILEXFER:
 	case YAHOO_SERVICE_FILETRANSFER:
 		yahoo_process_filetransfer(yd, pkt);
@@ -1675,14 +1726,17 @@ static struct yab * yahoo_getyab(struct yahoo_data *yd)
 
 	DEBUG_MSG(("rxlen is %d", yd->rxlen));
 
-	while(pos < yd->rxlen-1 && memcmp(yd->rxqueue + pos, "<r", 2))
+	/* start with <record */
+	while(pos < yd->rxlen-strlen("<record")+1 
+			&& memcmp(yd->rxqueue + pos, "<record", strlen("<record")))
 		pos++;
 
 	if(pos >= yd->rxlen-1)
 		return NULL;
 
 	end = pos+2;
-	while(end < yd->rxlen-1 && memcmp(yd->rxqueue + end, "/>", 2))
+	/* end with /> */
+	while(end < yd->rxlen-strlen("/>")+1 && memcmp(yd->rxqueue + end, "/>", strlen("/>")))
 	       	end++;
 
 	if(end >= yd->rxlen-1)
@@ -2537,6 +2591,105 @@ void yahoo_conference_message(int id, const char * from, YList *who, const char 
 
 	if(utf8)
 		yahoo_packet_hash(pkt, 97, "1");
+
+	yahoo_send_packet(yd, pkt, 0);
+
+	yahoo_packet_free(pkt);
+}
+
+/*
+void yahoo_get_chatrooms(int id)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_data *nyd;
+	char url[1024];
+	char buff[1024];
+
+	if(!yd)
+		return;
+
+	nyd = y_new0(struct yahoo_data, 1);
+	nyd->id = yd->id;
+	nyd->client_id = ++last_id;
+	nyd->type = YAHOO_CONNECTION_YAB;
+	nyd->buddies = yd->buddies;
+
+	snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?chatcat=0");
+
+	snprintf(buff, sizeof(buff), "Y=%s; T=%s",
+			yd->cookie_y, yd->cookie_t);
+
+	nyd->fd = yahoo_http_get(url, buff);
+
+	add_to_list(nyd, nyd->fd);
+
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
+
+}
+*/
+void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_packet *pkt;
+		
+	if(!yd)
+		return;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATONLINE, YAHOO_STATUS_AVAILABLE, yd->id);
+
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
+	yahoo_packet_hash(pkt, 109, yd->user);
+	yahoo_packet_hash(pkt, 6, "abcde");
+
+	yahoo_send_packet(yd, pkt, 0);
+
+	yahoo_packet_free(pkt);
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATJOIN, YAHOO_STATUS_AVAILABLE, yd->id);
+
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
+	yahoo_packet_hash(pkt, 104, room);
+	yahoo_packet_hash(pkt, 129, roomid);
+	yahoo_packet_hash(pkt, 62, "2"); /* ??? */
+
+	yahoo_send_packet(yd, pkt, 0);
+
+	yahoo_packet_free(pkt);
+}
+
+
+void yahoo_chat_message(int id, const char *from, const char *room, const char *msg)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_packet *pkt;
+		
+	if(!yd)
+		return;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_COMMENT, YAHOO_STATUS_AVAILABLE, yd->id);
+
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
+	yahoo_packet_hash(pkt, 104, room);
+	yahoo_packet_hash(pkt, 117, msg);
+	yahoo_packet_hash(pkt, 124, "1");
+
+	yahoo_send_packet(yd, pkt, 0);
+
+	yahoo_packet_free(pkt);
+}
+
+
+void yahoo_chat_logoff(int id, const char *from)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_packet *pkt;
+		
+	if(!yd)
+		return;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATLOGOUT, YAHOO_STATUS_AVAILABLE, yd->id);
+
+	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 
 	yahoo_send_packet(yd, pkt, 0);
 

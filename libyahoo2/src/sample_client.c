@@ -337,6 +337,55 @@ void ext_yahoo_conf_message(int id, char *who, char *room, char *msg, int utf8)
 	if(utf8)
 		FREE(umsg);
 }
+void ext_yahoo_chat_userjoin(int id, char *who, char *room)
+{
+	conf_room * cr = find_conf_room_by_name_and_id(id, room);
+	if(cr) {
+	YList * l = NULL;
+	for(l = cr->members; l; l=l->next) {
+		char * w = l->data;
+		if(!strcmp(w, who))
+			break;
+	}
+	if(!l)
+		cr->members = y_list_append(cr->members, strdup(who));
+	}
+
+	print_message(("%s joined the conference %s", who, room));
+
+}
+void ext_yahoo_chat_userleave(int id, char *who, char *room)
+{
+	YList * l;
+	conf_room * cr = find_conf_room_by_name_and_id(id, room);
+	
+	if(cr)
+	for(l = cr->members; l; l=l->next) {
+		char * w = l->data;
+		if(!strcmp(w, who)) {
+			cr->members = y_list_remove_link(cr->members, l);
+			FREE(l->data);
+			FREE(l);
+			break;
+		}
+	}
+
+	print_message(("%s left the conference %s", who, room));
+}
+void ext_yahoo_chat_message(int id, char *who, char *room, char *msg, int utf8)
+{
+	char * umsg = msg;
+
+	if(utf8)
+		umsg = y_utf8_to_str(msg);
+
+	who = get_buddy_name(who);
+
+	print_message(("%s (in %s): %s", who, room, umsg));
+
+	if(utf8)
+		FREE(umsg);
+}
 void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 {
 	yahoo_account * ya=NULL;
@@ -1042,6 +1091,37 @@ static void process_commands(char *line)
 		}
 		FREE(cr);
 
+
+	} else if(!strncasecmp(cmd, "CHJ", strlen("CHJ"))) {
+		char *roomid, *roomname;
+/* Linux, FreeBSD, Solaris:1 */
+/* 1600326591 */
+		roomid = copy;
+		tmp = strchr(copy, ' ');
+		if(tmp) {
+			*tmp = '\0';
+			copy = tmp+1;
+		}
+		roomname = copy;
+		if(roomid && roomname) {
+			yahoo_chat_logon(ylad->id, NULL, roomname, roomid);
+		}
+
+	} else if(!strncasecmp(cmd, "CHM", strlen("CHM"))) {
+		char *msg, *roomname;
+		roomname = copy;
+		tmp = strstr(copy, "  ");
+		if(tmp) {
+			*tmp = '\0';
+			copy = tmp+2;
+		}
+		msg = copy;
+		if(roomname && msg) {
+			yahoo_chat_message(ylad->id, NULL, roomname, msg);
+		}
+
+	} else if(!strncasecmp(cmd, "CHX", strlen("CHX"))) {
+		yahoo_chat_logoff(ylad->id, NULL);
 	} else if(!strncasecmp(cmd, "STA", strlen("STA"))) {
 		if(isdigit(copy[0])) {
 			state = (enum yahoo_status)atoi(copy);
@@ -1269,6 +1349,9 @@ static void register_callbacks()
 	yc.ext_yahoo_conf_userjoin = ext_yahoo_conf_userjoin;
 	yc.ext_yahoo_conf_userleave = ext_yahoo_conf_userleave;
 	yc.ext_yahoo_conf_message = ext_yahoo_conf_message;
+	yc.ext_yahoo_chat_userjoin = ext_yahoo_chat_userjoin;
+	yc.ext_yahoo_chat_userleave = ext_yahoo_chat_userleave;
+	yc.ext_yahoo_chat_message = ext_yahoo_chat_message;
 	yc.ext_yahoo_got_file = ext_yahoo_got_file;
 	yc.ext_yahoo_contact_added = ext_yahoo_contact_added;
 	yc.ext_yahoo_rejected = ext_yahoo_rejected;

@@ -76,6 +76,10 @@ void yahoo_ignore_buddy(int id, const char *who, int unignore);
 void yahoo_change_buddy_group(int id, const char *who, const char *old_group, const char *new_group);
 void yahoo_group_rename(int id, const char *old_group, const char *new_group);
 
+void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid);
+void yahoo_chat_message(int id, const char *from, const char *room, const char *msg);
+void yahoo_chat_logoff(int id, const char *from);
+
 void yahoo_conference_invite(int id, const char * from, YList *who, const char *room, const char *msg);
 void yahoo_conference_addinvite(int id, const char * from, const char *who, const char *room, const YList * members, const char *msg);
 void yahoo_conference_decline(int id, const char * from, YList *who, const char *room, const char *msg);

@@ -225,6 +225,45 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_message)(int id, char *who, char *room, 
 
 
 
+/*
+ * Name: ext_yahoo_chat_userjoin
+ * 	Called when someone joins the chatroom.
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	who  - the user who has joined
+ * 	room - the room joined
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userjoin)(int id, char *who, char *room);
+
+
+
+
+/*
+ * Name: ext_yahoo_chat_userleave
+ * 	Called when someone leaves the chatroom.
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	who  - the user who has left
+ * 	room - the room left
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_userleave)(int id, char *who, char *room);
+
+
+
+
+/*
+ * Name: ext_yahoo_chat_message
+ * 	Called when someone messages in the chatroom.
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	who  - the user who messaged
+ * 	room - the room
+ * 	msg  - the message
+ * 	utf8 - whether the message is utf8 encoded or not
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_message)(int id, char *who, char *room, char *msg, int utf8);
+
+
 
 /*
  * Name: ext_yahoo_got_file

@@ -1,3 +1,6 @@
+* Tue Mar 18 2003 Wayne Parrot
+- Added preliminary yahoo chat support
+
 * Sun Mar 16 2003 Philip
 - Fixed double deletion problem with yab
 - Fixed memory leak with non-pager connections

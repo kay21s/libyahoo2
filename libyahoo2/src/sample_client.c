@@ -485,7 +485,7 @@ void ext_yahoo_got_buddies(int id, YList * buds)
 		ya->status = YAHOO_STATUS_OFFLINE;
 		buddies = y_list_append(buddies, ya);
 
-		print_message(("%s is %s", bud->id, bud->real_name));
+/*		print_message(("%s is %s", bud->id, bud->real_name));*/
 	}
 }
 

@@ -346,12 +346,12 @@ static void yahoo_free_buddies(YList * list)
 static void yahoo_free_identities(YList * list)
 {
 	YList * l;
-	for (l = list; l; l=l->next) {
+	for (l = list; l; ) {
+		YList *n = l->next;
 		FREE(l->data);
-		l->data=NULL;
+		y_list_free_1(l);
+		l = n;
 	}
-
-	y_list_free(list);
 }
 
 /* Free webcam data */
@@ -622,11 +622,9 @@ static void yahoo_packet_free(struct yahoo_packet *pkt)
 {
 	while (pkt->hash) {
 		struct yahoo_pair *pair = pkt->hash->data;
-		YList * l = pkt->hash;
 		FREE(pair->value);
 		FREE(pair);
 		pkt->hash = y_list_remove_link(pkt->hash, pkt->hash);
-		FREE(l);
 	}
 	FREE(pkt);
 }
@@ -676,6 +674,8 @@ static void yahoo_input_close(struct yahoo_input_data *yid)
 		yahoo_close(yid->yd->client_id);
 	}
 	yahoo_free_webcam(yid->wcm);
+	if(yid->wcd)
+		FREE(yid->wcd);
 	FREE(yid);
 }
 
@@ -1385,6 +1385,7 @@ static void yahoo_process_auth(struct yahoo_input_data *yid, struct yahoo_packet
 	md5_append(&ctx, (md5_byte_t *)crypt_result, strlen(crypt_result));
 	md5_finish(&ctx, result);
 	to_y64(crypt_hash, result, 16);
+	free(crypt_result);
 
 	switch (sv) {
 	case 0:

@@ -1,3 +1,6 @@
+* Thu Jun 5 2003 Philip
+- fix a bunch of memory leaks
+
 * Sat May 24 2003 Philip 0.7.0-1
 - Fix configure error because of old missing script in distribution
 

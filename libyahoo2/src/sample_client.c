@@ -370,9 +370,8 @@ void ext_yahoo_conf_userdecline(int id, char *who, char *room, char *msg)
 	for(l = cr->members; l; l=l->next) {
 		char * w = l->data;
 		if(!strcmp(w, who)) {
-			cr->members = y_list_remove_link(cr->members, l);
 			FREE(l->data);
-			FREE(l);
+			cr->members = y_list_remove_link(cr->members, l);
 			break;
 		}
 	}
@@ -406,9 +405,8 @@ void ext_yahoo_conf_userleave(int id, char *who, char *room)
 	for(l = cr->members; l; l=l->next) {
 		char * w = l->data;
 		if(!strcmp(w, who)) {
-			cr->members = y_list_remove_link(cr->members, l);
 			FREE(l->data);
-			FREE(l);
+			cr->members = y_list_remove_link(cr->members, l);
 			break;
 		}
 	}
@@ -802,11 +800,13 @@ void yahoo_logout()
 	}
 	
 	yahoo_logoff(ylad->id);
+	yahoo_close(ylad->id);
 
 	ylad->status = YAHOO_STATUS_OFFLINE;
 	ylad->id = 0;
 
 	poll_loop=0;
+
 	print_message(("logged_out"));
 }
 
@@ -1495,7 +1495,7 @@ int main(int argc, char * argv[])
 				YList *n = y_list_next(l);
 				LOG(("Removing id:%d fd:%d", c->id, c->fd));
 				connections = y_list_remove_link(connections, l);
-				FREE(c);
+				free(c);
 				l=n;
 			} else {
 				if(c->cond & YAHOO_INPUT_READ)

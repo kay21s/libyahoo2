@@ -278,9 +278,9 @@ void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 	}
 	
 	if(msg)
-		print_message(("%s is now %s", who, msg))
+		print_message(("%s (%s) is now %s", ya?ya->name:who, who, msg))
 	else
-		print_message(("%s is now %s", who, 
+		print_message(("%s (%s) is now %s", ya?ya->name:who, who, 
 					yahoo_status_code(stat)))
 
 	if(ya) {
@@ -305,7 +305,7 @@ void ext_yahoo_got_buddies(int id, YList * buds)
 		ya->status = YAHOO_STATUS_OFFLINE;
 		buddies = y_list_append(buddies, ya);
 
-		print_message(("%s is %s", bud->id, bud->real_name))
+		print_message(("%s is %s", bud->id, bud->real_name)) 
 	}
 }
 
@@ -857,11 +857,29 @@ static void process_commands(char *line)
 			if(ya->status == YAHOO_STATUS_OFFLINE)
 				continue;
 			if(ya->msg)
-				print_message(("%s is now %s", ya->yahoo_id, 
+				print_message(("%s (%s) is now %s", ya->name, ya->yahoo_id, 
 							ya->msg))
 			else
-				print_message(("%s is now %s", ya->yahoo_id, 
+				print_message(("%s (%s) is now %s", ya->name, ya->yahoo_id, 
 						yahoo_status_code(ya->status)))
+		}
+	} else if(!strncasecmp(cmd, "NAM", strlen("NAM"))) {
+		struct yab * yab;
+		
+		to = copy;
+		tmp = strchr(copy, ' ');
+		if(tmp) {
+			*tmp = '\0';
+			copy = tmp+1;
+		}
+		msg = copy;
+
+		if(to && msg) {
+			yab = y_new0(struct yab, 1);
+			yab->id = to;
+			yab->fname = msg;
+			yahoo_add_yab(ylad->id, yab);
+			FREE(yab);
 		}
 	} else {
 		fprintf(stderr, "Unknown command: %s\n", cmd);

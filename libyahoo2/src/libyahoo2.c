@@ -213,6 +213,17 @@ static void yahoo_free_buddies(YList * list)
 		FREE(bud->group);
 		FREE(bud->id);
 		FREE(bud->real_name);
+		if(bud->yab_entry) {
+			FREE(bud->yab_entry->fname);
+			FREE(bud->yab_entry->lname);
+			FREE(bud->yab_entry->nname);
+			FREE(bud->yab_entry->id);
+			FREE(bud->yab_entry->email);
+			FREE(bud->yab_entry->hphone);
+			FREE(bud->yab_entry->wphone);
+			FREE(bud->yab_entry->mphone);
+			FREE(bud->yab_entry);
+		}
 		FREE(bud);
 		l->data = bud = NULL;
 	}
@@ -1644,8 +1655,10 @@ static void yahoo_process_yab_connection(struct yahoo_data *yd)
 {
 	struct yab *yab;
 	YList *buds;
+	int changed=0;
 
 	while((yab = yahoo_getyab(yd)) != NULL) {
+		changed=1;
 		for(buds = yd->buddies; buds; buds=buds->next) {
 			struct yahoo_buddy * bud = buds->data;
 			if(!strcmp(bud->id, yab->id)) {
@@ -1667,7 +1680,8 @@ static void yahoo_process_yab_connection(struct yahoo_data *yd)
 		}
 	}
 
-	YAHOO_CALLBACK(ext_yahoo_got_buddies)(yd->client_id, yd->buddies);
+	if(changed)
+		YAHOO_CALLBACK(ext_yahoo_got_buddies)(yd->client_id, yd->buddies);
 }
 
 static void (*yahoo_process_connection[])(struct yahoo_data *) = {
@@ -1697,6 +1711,9 @@ int yahoo_read_ready(int id, int fd)
 
 		yd->current_status = -1;
 		YAHOO_CALLBACK(ext_yahoo_remove_handler)(id, fd);
+
+		if(yd->client_id == last_id)
+			last_id--;
 
 		close(fd);
 
@@ -1930,6 +1947,66 @@ void yahoo_get_yab(int id)
 
 	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
 
+}
+
+void yahoo_add_yab(int id, struct yab * yab)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_data *nyd;
+	char url[1024];
+	char buff[1024];
+
+	if(!yd)
+		return;
+
+	nyd = y_new0(struct yahoo_data, 1);
+	nyd->id = yd->id;
+	nyd->client_id = ++last_id;
+	nyd->type = YAHOO_CONNECTION_YAB;
+	nyd->buddies = yd->buddies;
+
+	strncpy(url, "http://insider.msg.yahoo.com/ycontent/?addab2=0", sizeof(url));
+
+	if(yab->fname) {
+		strncat(url, "&fn=", sizeof(url) - strlen(url));
+		strncat(url, yab->fname, sizeof(url) - strlen(url));
+	}
+	if(yab->lname) {
+		strncat(url, "&ln=", sizeof(url) - strlen(url));
+		strncat(url, yab->lname, sizeof(url) - strlen(url));
+	}
+	strncat(url, "&yid=", sizeof(url) - strlen(url));
+	strncat(url, yab->id, sizeof(url) - strlen(url));
+	if(yab->nname) {
+		strncat(url, "&nn=", sizeof(url) - strlen(url));
+		strncat(url, yab->nname, sizeof(url) - strlen(url));
+	}
+	if(yab->email) {
+		strncat(url, "&e=", sizeof(url) - strlen(url));
+		strncat(url, yab->email, sizeof(url) - strlen(url));
+	}
+	if(yab->hphone) {
+		strncat(url, "&hp=", sizeof(url) - strlen(url));
+		strncat(url, yab->hphone, sizeof(url) - strlen(url));
+	}
+	if(yab->wphone) {
+		strncat(url, "&wp=", sizeof(url) - strlen(url));
+		strncat(url, yab->wphone, sizeof(url) - strlen(url));
+	}
+	if(yab->mphone) {
+		strncat(url, "&mp=", sizeof(url) - strlen(url));
+		strncat(url, yab->mphone, sizeof(url) - strlen(url));
+	}
+	strncat(url, "&pp=0", sizeof(url) - strlen(url));
+
+	snprintf(buff, sizeof(buff), "Y=%s; T=%s",
+			yd->cookie_y, yd->cookie_t);
+
+	nyd->fd = yahoo_http_get(url, buff);
+
+	add_to_list(nyd, nyd->fd);
+
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
 }
 
 void yahoo_set_identity_status(int id, const char * identity, int active)

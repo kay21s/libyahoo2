@@ -1,3 +1,6 @@
+* Mon Jan 27 2003 Philip
+- Support for adding address book entry on the server
+
 * Thu Jan 24 2003 Philip
 - Download address book from server and fill in real_name field
 of yahoo_buddy

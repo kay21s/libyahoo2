@@ -53,6 +53,7 @@ void yahoo_set_identity_status(int id, const char * identity, int active);
 void yahoo_get_list(int id);
 /* download buddy contact information from your yahoo addressbook */
 void yahoo_get_yab(int id);
+void yahoo_add_yab(int id, struct yab * yab);
 void yahoo_keepalive(int id);
 
 /* from is the identity you're sending from.  if NULL, the default is used */

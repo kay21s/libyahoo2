@@ -107,7 +107,7 @@ int yahoo_connect(char * host, int port)
 
 extern char pager_host[];
 extern char pager_port[];
-static int fallback_ports[]={23, 25, 80, 0};
+static int fallback_ports[]={23, 25, 80, 5050, 0};
 extern char filetransfer_host[];
 extern char filetransfer_port[];
 

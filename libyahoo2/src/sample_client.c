@@ -518,24 +518,27 @@ void yahoo_set_current_state(int yahoo_state)
 int ext_yahoo_connect(char *host, int port)
 {
 	struct sockaddr_in serv_addr;
-	struct hostent *server;
+	static struct hostent *server;
+	static char last_host[256];
 	int servfd;
-	int res;
 	char **p;
 
-	if(!(server = gethostbyname(host))) {
-		WARNING(("failed to look up server (%s:%d)\n%d: %s", host, port,
-					h_errno, hstrerror(h_errno)));
-		return -1;
+	if(last_host[0] || strcasecmp(last_host, host)!=0) {
+		if(!(server = gethostbyname(host))) {
+			WARNING(("failed to look up server (%s:%d)\n%d: %s", 
+						host, port,
+						h_errno, strerror(h_errno)));
+			return -1;
+		}
+		strncpy(last_host, host, 255);
 	}
 
 	if((servfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		WARNING(("Socket create error (%d): %s", errno, 
-					strerror(errno)));
+		WARNING(("Socket create error (%d): %s", errno, strerror(errno)));
 		return -1;
 	}
 
-	LOG(("connecting to %s:%d\n", host, port));
+	LOG(("connecting to %s:%d", host, port));
 
 	for (p = server->h_addr_list; *p; p++)
 	{
@@ -544,18 +547,21 @@ int ext_yahoo_connect(char *host, int port)
 		memcpy(&serv_addr.sin_addr.s_addr, *p, server->h_length);
 		serv_addr.sin_port = htons(port);
 
-		res = -1;
-		res = connect(servfd, (struct sockaddr *) &serv_addr, 
-				sizeof(serv_addr));
-
-		if(res == 0 ) {
+		LOG(("trying %s", *p));
+		if(connect(servfd, (struct sockaddr *) &serv_addr, 
+					sizeof(serv_addr)) == -1) {
+			if(errno!=ECONNREFUSED && errno!=ETIMEDOUT && 
+					errno!=ENETUNREACH) {
+				break;
+			}
+		} else {
 			LOG(("connected"));
 			return servfd;
 		}
 	}
 
-	WARNING(("Could not connect to %s:%d\n%d:%s", host, port,
-				errno, strerror(errno)));
+	WARNING(("Could not connect to %s:%d\n%d:%s", host, port, errno, 
+				strerror(errno)));
 	close(servfd);
 	return -1;
 }
@@ -900,6 +906,7 @@ int main(int argc, char * argv[])
 
 	printf("Log Level: ");
 	scanf("%d", &log_level);
+	do_yahoo_debug=log_level;
 
 	register_callbacks();
 	yahoo_set_log_level(log_level);

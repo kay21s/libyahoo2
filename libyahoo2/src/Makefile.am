@@ -2,12 +2,12 @@ lib_LTLIBRARIES = libyahoo2.la
 
 EXTRA_DIST = sample_client.c sample_makefile
 
-noinst_HEADERS = md5.h yahoo_debug.h yahoo_util.h
+noinst_HEADERS = md5.h yahoo_debug.h yahoo_util.h sha.h
 
 AM_CFLAGS = $(GLIB_CFLAGS) -g -Wall
 LIBS = @LIBS@ $(GLIB_LIBS)
 
-libyahoo2_la_SOURCES = libyahoo2.c crypt.c md5.c \
+libyahoo2_la_SOURCES = libyahoo2.c crypt.c md5.c sha.c \
 	yahoo_httplib.c yahoo_util.c yahoo_list.c
 
 libyahoo2_la_LDFLAGS = -module -version-info $(YAHOO2_VERSION)

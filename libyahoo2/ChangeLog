@@ -1,3 +1,6 @@
+* Sun Sep 28 2003 Philip
+- Auth fixed by Sean Egan (gaim).
+
 * Sat Sep 27 2003 Philip
 - Added more fallback ports
 - Fix crash in process_auth

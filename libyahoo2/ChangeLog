@@ -1,3 +1,10 @@
+* Sat Sep 20 2003 Philip
+- No more extern vars (almost)
+- yahoo_init now takes optional key/value pairs to set server settings
+see the README or yahoo2.h for full details
+- These variables no longer need to be exported from the sourcefile that
+uses the library
+
 * Fri Sep 12 2003 Philip 0.7.1
 - configure checks for socket library and won't build sample client
 if not found

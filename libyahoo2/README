@@ -38,7 +38,28 @@ and passing the username and password of the account.  yahoo_init returns
 a connection id that will be used to identify this connection for all other
 calls.
 
-int yahoo_init(const char *username, const char *password);
+int yahoo_init(const char *username, const char *password, ...);
+
+The optional parameters to init are key/value pairs that specify server 
+settings to use.  This list must be NULL terminated - even if the list is 
+empty.  If a parameter isn't set, a default value will be used.  Parameter 
+keys are strings, parameter values are either strings or ints, depending on 
+the key.  Values passed in are copied, so you can use const/auto/static/
+pointers/whatever you want.  Parameters are:
+
+	NAME			TYPE		DEFAULT
+	-------------------     -------         ---------------------------
+	pager_host		char *		scs.yahoo.com
+	pager_port		int		5050
+	filetransfer_host	char *		filetransfer.msg.yahoo.com
+	filetransfer_port	int		80
+	webcam_host		char *		webcam.yahoo.com
+	webcam_port		int		5100
+	webcam_description	char *		""
+	local_host		char *		""
+	conn_type		int		Y_WCM_DSL
+
+You should set at least local_host if you intend to use webcams
 
 Remember to close the connection by calling yahoo_close when you no longer
 need it.  This will free all resources allocated to the connection.

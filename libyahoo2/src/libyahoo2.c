@@ -124,16 +124,17 @@ int yahoo_set_log_level(enum yahoo_log_level level)
 	return l;
 }
 
-extern char pager_host[];
-extern char pager_port[];
+/* default values for servers */
+static char pager_host[] = "scs.yahoo.com";
+static int pager_port = 5050;
 static int fallback_ports[]={23, 25, 80, 5050, 0};
-extern char filetransfer_host[];
-extern char filetransfer_port[];
-extern char webcam_host[];
-extern char webcam_port[];
-extern char webcam_description[];
-extern char local_host[];
-extern int conn_type;
+static char filetransfer_host[]="filetransfer.msg.yahoo.com";
+static int filetransfer_port=80;
+static char webcam_host[]="webcam.yahoo.com";
+static int webcam_port=5100;
+static char webcam_description[]="";
+static char local_host[]="";
+static int conn_type=Y_WCM_DSL;
 
 static char profile_url[] = "http://profiles.yahoo.com/";
 
@@ -218,6 +219,103 @@ struct yahoo_input_data {
 	unsigned char	*rxqueue;
 	int   rxlen;
 };
+
+struct yahoo_server_settings {
+	char *pager_host;
+	int   pager_port;
+	char *filetransfer_host;
+	int   filetransfer_port;
+	char *webcam_host;
+	int   webcam_port;
+	char *webcam_description;
+	char *local_host;
+	int   conn_type;
+};
+
+static void * _yahoo_default_server_settings()
+{
+	struct yahoo_server_settings *yss = y_new0(struct yahoo_server_settings, 1);
+
+	yss->pager_host = strdup(pager_host);
+	yss->pager_port = pager_port;
+	yss->filetransfer_host = strdup(filetransfer_host);
+	yss->filetransfer_port = filetransfer_port;
+	yss->webcam_host = strdup(webcam_host);
+	yss->webcam_port = webcam_port;
+	yss->webcam_description = strdup(webcam_description);
+	yss->local_host = strdup(local_host);
+	yss->conn_type = conn_type;
+
+	return yss;
+}
+
+static void * _yahoo_assign_server_settings(va_list ap)
+{
+	struct yahoo_server_settings *yss = _yahoo_default_server_settings();
+	char *key;
+	char *svalue;
+	int   nvalue;
+
+	while(1) {
+		key = va_arg(ap, char *);
+		if(key == NULL)
+			break;
+
+		if(!strcmp(key, "pager_host")) {
+			svalue = va_arg(ap, char *);
+			free(yss->pager_host);
+			yss->pager_host = strdup(svalue);
+		} else if(!strcmp(key, "pager_port")) {
+			nvalue = va_arg(ap, int);
+			yss->pager_port = nvalue;
+		} else if(!strcmp(key, "filetransfer_host")) {
+			svalue = va_arg(ap, char *);
+			free(yss->filetransfer_host);
+			yss->filetransfer_host = strdup(svalue);
+		} else if(!strcmp(key, "filetransfer_port")) {
+			nvalue = va_arg(ap, int);
+			yss->filetransfer_port = nvalue;
+		} else if(!strcmp(key, "webcam_host")) {
+			svalue = va_arg(ap, char *);
+			free(yss->webcam_host);
+			yss->webcam_host = strdup(svalue);
+		} else if(!strcmp(key, "webcam_port")) {
+			nvalue = va_arg(ap, int);
+			yss->webcam_port = nvalue;
+		} else if(!strcmp(key, "webcam_description")) {
+			svalue = va_arg(ap, char *);
+			free(yss->webcam_description);
+			yss->webcam_description = svalue;
+		} else if(!strcmp(key, "local_host")) {
+			svalue = va_arg(ap, char *);
+			free(yss->local_host);
+			yss->local_host = strdup(svalue);
+		} else if(!strcmp(key, "conn_type")) {
+			nvalue = va_arg(ap, int);
+			yss->conn_type = nvalue;
+		} else {
+			WARNING(("Unknown key passed to yahoo_init, "
+				"perhaps you didn't terminate the list "
+				"with NULL"));
+		}
+	}
+
+	return yss;
+}
+
+static void yahoo_free_server_settings(struct yahoo_server_settings *yss)
+{
+	if(!yss)
+		return;
+
+	free(yss->pager_host);
+	free(yss->filetransfer_host);
+	free(yss->webcam_host);
+	free(yss->webcam_description);
+	free(yss->local_host);
+
+	free(yss);
+}
 
 static YList *conns=NULL;
 static YList *inputs=NULL;
@@ -380,6 +478,8 @@ static void yahoo_free_data(struct yahoo_data *yd)
 	yahoo_free_buddies(yd->buddies);
 	yahoo_free_buddies(yd->ignore);
 	yahoo_free_identities(yd->identities);
+
+	yahoo_free_server_settings(yd->server_settings);
 
 	FREE(yd);
 }
@@ -1764,6 +1864,7 @@ static void _yahoo_webcam_get_server_connected(int fd, int error, void *d)
 static void yahoo_webcam_get_server(struct yahoo_input_data *y, char *who, char *key)
 {
 	struct yahoo_input_data *yid = y_new0(struct yahoo_input_data, 1);
+	struct yahoo_server_settings *yss = y->yd->server_settings;
 
 	yid->type = YAHOO_CONNECTION_WEBCAM_MASTER;
 	yid->yd = y->yd;
@@ -1772,7 +1873,7 @@ static void yahoo_webcam_get_server(struct yahoo_input_data *y, char *who, char 
 	yid->wcm->direction = who?YAHOO_WEBCAM_DOWNLOAD:YAHOO_WEBCAM_UPLOAD;
 	yid->wcm->key = strdup(key);
 
-	YAHOO_CALLBACK(ext_yahoo_connect_async)(yid->yd->client_id, webcam_host, atoi(webcam_port), 
+	YAHOO_CALLBACK(ext_yahoo_connect_async)(yid->yd->client_id, yss->webcam_host, yss->webcam_port, 
 			_yahoo_webcam_get_server_connected, yid);
 
 }
@@ -2475,6 +2576,7 @@ static void yahoo_webcam_connect(struct yahoo_input_data *y)
 {
 	struct yahoo_webcam *wcm = y->wcm;
 	struct yahoo_input_data *yid;
+	struct yahoo_server_settings *yss;
 
 	if (!wcm || !wcm->server || !wcm->key)
 		return;
@@ -2487,10 +2589,12 @@ static void yahoo_webcam_connect(struct yahoo_input_data *y)
 	yid->wcm = y->wcm;
 	y->wcm = NULL;
 
+	yss = y->yd->server_settings;
+
 	yid->wcd = y_new0(struct yahoo_webcam_data, 1);
 
-	LOG(("Connecting to: %s:%s", wcm->server, webcam_port));
-	YAHOO_CALLBACK(ext_yahoo_connect_async)(y->yd->client_id, wcm->server, atoi(webcam_port),
+	LOG(("Connecting to: %s:%d", wcm->server, wcm->port));
+	YAHOO_CALLBACK(ext_yahoo_connect_async)(y->yd->client_id, wcm->server, wcm->port,
 			_yahoo_webcam_connected, yid);
 
 }
@@ -2498,16 +2602,19 @@ static void yahoo_webcam_connect(struct yahoo_input_data *y)
 static void yahoo_process_webcam_master_connection(struct yahoo_input_data *yid)
 {
 	char* server;
+	struct yahoo_server_settings *yss;
 
 	server = yahoo_getwebcam_master(yid);
 
 	if (server)
 	{
+		yss = yid->yd->server_settings;
 		yid->wcm->server = strdup(server);
-		yid->wcm->conn_type = conn_type;
-		yid->wcm->my_ip = strdup(local_host);
+		yid->wcm->port = yss->webcam_port;
+		yid->wcm->conn_type = yss->conn_type;
+		yid->wcm->my_ip = strdup(yss->local_host);
 		if (yid->wcm->direction == YAHOO_WEBCAM_UPLOAD)
-			yid->wcm->description = strdup(webcam_description);
+			yid->wcm->description = strdup(yss->webcam_description);
 		yahoo_webcam_connect(yid);
 		FREE(server);
 	}
@@ -2572,8 +2679,9 @@ int yahoo_read_ready(int id, int fd, void *data)
 	return len;
 }
 
-int yahoo_init(const char *username, const char *password)
+int yahoo_init(const char *username, const char *password, ...)
 {
+	va_list ap;
 	struct yahoo_data *yd;
 
 	yd = y_new0(struct yahoo_data, 1);
@@ -2591,6 +2699,10 @@ int yahoo_init(const char *username, const char *password)
 
 	add_to_list(yd);
 
+	va_start(ap, password);
+	yd->server_settings = _yahoo_assign_server_settings(ap);
+	va_end(ap);
+
 	return yd->client_id;
 }
 
@@ -2606,12 +2718,14 @@ static void yahoo_connected(int fd, int error, void *data)
 	struct yahoo_data *yd = ccd->yd;
 	struct yahoo_packet *pkt;
 	struct yahoo_input_data *yid;
+	struct yahoo_server_settings *yss = yd->server_settings;
 
 	if(error) {
 		if(fallback_ports[ccd->i]) {
 			int tag;
-			tag = YAHOO_CALLBACK(ext_yahoo_connect_async)(yd->client_id, pager_host,
-					fallback_ports[ccd->i++], yahoo_connected, ccd);
+			yss->pager_port = fallback_ports[ccd->i++];
+			tag = YAHOO_CALLBACK(ext_yahoo_connect_async)(yd->client_id, yss->pager_host,
+					yss->pager_port, yahoo_connected, ccd);
 
 			if(tag > 0)
 				ccd->tag=tag;
@@ -2648,16 +2762,19 @@ void yahoo_login(int id, int initial)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct connect_callback_data *ccd;
+	struct yahoo_server_settings *yss;
 	int tag;
 
 	if(!yd)
 		return;
 
+	yss = yd->server_settings;
+
 	yd->initial_status = initial;
 
 	ccd = y_new0(struct connect_callback_data, 1);
 	ccd->yd = yd;
-	tag = YAHOO_CALLBACK(ext_yahoo_connect_async)(yd->client_id, pager_host, atoi(pager_port), 
+	tag = YAHOO_CALLBACK(ext_yahoo_connect_async)(yd->client_id, yss->pager_host, yss->pager_port, 
 			yahoo_connected, ccd);
 
 	/*
@@ -3537,6 +3654,7 @@ void yahoo_send_file(int id, const char *who, const char *msg,
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_input_data *yid;
+	struct yahoo_server_settings *yss;
 	struct yahoo_packet *pkt = NULL;
 	char size_str[10];
 	long content_length=0;
@@ -3546,6 +3664,8 @@ void yahoo_send_file(int id, const char *who, const char *msg,
 
 	if(!yd)
 		return;
+
+	yss = yd->server_settings;
 
 	yid = y_new0(struct yahoo_input_data, 1);
 	yid->yd = yd;
@@ -3563,8 +3683,8 @@ void yahoo_send_file(int id, const char *who, const char *msg,
 
 	content_length = YAHOO_PACKET_HDRLEN + yahoo_packet_length(pkt);
 
-	snprintf(url, sizeof(url), "http://%s:%s/notifyft", 
-			filetransfer_host, filetransfer_port);
+	snprintf(url, sizeof(url), "http://%s:%d/notifyft", 
+			yss->filetransfer_host, yss->filetransfer_port);
 	snprintf((char *)buff, sizeof(buff), "Y=%s; T=%s",
 			yd->cookie_y, yd->cookie_t);
 	inputs = y_list_prepend(inputs, yid);

@@ -43,7 +43,31 @@ int  yahoo_set_log_level(enum yahoo_log_level level);
 /* init returns a connection id used to identify the connection hereon */
 /* or 0 on failure */
 /* you must call init before calling any other function */
-int  yahoo_init(const char *username, const char *password);
+/*
+ * The optional parameters to init are key/value pairs that specify 
+ * server settings to use.  This list must be NULL terminated - even
+ * if the list is empty.  If a parameter isn't set, a default value
+ * will be used.  Parameter keys are strings, parameter values are
+ * either strings or ints, depending on the key.  Values passed in
+ * are copied, so you can use const/auto/static/pointers/whatever
+ * you want.  Parameters are:
+ * 	NAME			TYPE		DEFAULT
+ *	pager_host		char *		scs.yahoo.com
+ *	pager_port		int		5050
+ *	filetransfer_host	char *		filetransfer.msg.yahoo.com
+ *	filetransfer_port	int		80
+ *	webcam_host		char *		webcam.yahoo.com
+ *	webcam_port		int		5100
+ *	webcam_description	char *		""
+ *	local_host		char *		""
+ *	conn_type		int		Y_WCM_DSL
+ *
+ * You should set at least local_host if you intend to use webcams
+ */
+int  yahoo_init(const char *username, const char *password, ...);
+
+
+
 /* release all resources held by this session */
 /* you need to call yahoo_close for a session only if
  * yahoo_logoff is never called for it (ie, it was never logged in) */

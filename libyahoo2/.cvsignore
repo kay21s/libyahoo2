@@ -22,3 +22,4 @@ debug
 depcomp
 stamp-h1
 libyahoo2-*.tar.*
+autom4te.cache

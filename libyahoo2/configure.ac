@@ -49,9 +49,25 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h stdlib.h string.h strings.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_C_BIGENDIAN
 AC_C_CONST
+AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_STRUCT_TM
+
+AC_CHECK_TYPE([uint8_t],,
+[AC_DEFINE([uint8_t], [unsigned char],
+[Define to `unsigned char' if not defined.])])
+AC_CHECK_TYPE([uint32_t],,
+[AC_DEFINE([uint32_t], [unsigned int],
+[Define to `unsigned int' if not defined.])])
+AC_CHECK_TYPE([uint64_t],,
+[AC_DEFINE([uint64_t], [unsigned long long],
+[Define to `unsigned long long' if not defined.])])
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS(strerror)
+
 
 # Checks for library functions.
 AC_FUNC_MALLOC

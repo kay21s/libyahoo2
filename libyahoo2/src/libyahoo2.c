@@ -1955,6 +1955,7 @@ void yahoo_add_yab(int id, struct yab * yab)
 	struct yahoo_data *nyd;
 	char url[1024];
 	char buff[1024];
+	char *temp;
 
 	if(!yd)
 		return;
@@ -1969,33 +1970,49 @@ void yahoo_add_yab(int id, struct yab * yab)
 
 	if(yab->fname) {
 		strncat(url, "&fn=", sizeof(url) - strlen(url));
-		strncat(url, yab->fname, sizeof(url) - strlen(url));
+		temp = yahoo_urlencode(yab->fname);
+		strncat(url, temp, sizeof(url) - strlen(url));
+		free(temp);
 	}
 	if(yab->lname) {
 		strncat(url, "&ln=", sizeof(url) - strlen(url));
-		strncat(url, yab->lname, sizeof(url) - strlen(url));
+		temp = yahoo_urlencode(yab->lname);
+		strncat(url, temp, sizeof(url) - strlen(url));
+		free(temp);
 	}
 	strncat(url, "&yid=", sizeof(url) - strlen(url));
-	strncat(url, yab->id, sizeof(url) - strlen(url));
+	temp = yahoo_urlencode(yab->id);
+	strncat(url, temp, sizeof(url) - strlen(url));
+	free(temp);
 	if(yab->nname) {
 		strncat(url, "&nn=", sizeof(url) - strlen(url));
-		strncat(url, yab->nname, sizeof(url) - strlen(url));
+		temp = yahoo_urlencode(yab->nname);
+		strncat(url, temp, sizeof(url) - strlen(url));
+		free(temp);
 	}
 	if(yab->email) {
 		strncat(url, "&e=", sizeof(url) - strlen(url));
-		strncat(url, yab->email, sizeof(url) - strlen(url));
+		temp = yahoo_urlencode(yab->email);
+		strncat(url, temp, sizeof(url) - strlen(url));
+		free(temp);
 	}
 	if(yab->hphone) {
 		strncat(url, "&hp=", sizeof(url) - strlen(url));
-		strncat(url, yab->hphone, sizeof(url) - strlen(url));
+		temp = yahoo_urlencode(yab->hphone);
+		strncat(url, temp, sizeof(url) - strlen(url));
+		free(temp);
 	}
 	if(yab->wphone) {
 		strncat(url, "&wp=", sizeof(url) - strlen(url));
-		strncat(url, yab->wphone, sizeof(url) - strlen(url));
+		temp = yahoo_urlencode(yab->wphone);
+		strncat(url, temp, sizeof(url) - strlen(url));
+		free(temp);
 	}
 	if(yab->mphone) {
 		strncat(url, "&mp=", sizeof(url) - strlen(url));
-		strncat(url, yab->mphone, sizeof(url) - strlen(url));
+		temp = yahoo_urlencode(yab->mphone);
+		strncat(url, temp, sizeof(url) - strlen(url));
+		free(temp);
 	}
 	strncat(url, "&pp=0", sizeof(url) - strlen(url));
 

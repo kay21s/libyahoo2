@@ -169,6 +169,18 @@ typedef struct {
 	int joined;
 } conf_room;
 
+static char * get_buddy_name(char * yid)
+{
+	YList * b;
+	for (b = buddies; b; b = b->next) {
+		yahoo_account * ya = b->data;
+		if(!strcmp(yid, ya->yahoo_id))
+			return ya->name?ya->name:ya->yahoo_id;
+	}
+
+	return yid;
+}
+
 static conf_room * find_conf_room_by_name_and_id(int id, const char * name)
 {
 	YList * l;
@@ -261,6 +273,8 @@ void ext_yahoo_conf_message(int id, char *who, char *room, char *msg, int utf8)
 	if(utf8)
 		umsg = y_utf8_to_str(msg);
 
+	who = get_buddy_name(who);
+
 	print_message(("%s (in %s): %s", who, room, umsg));
 
 	if(utf8)
@@ -295,6 +309,12 @@ void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 
 void ext_yahoo_got_buddies(int id, YList * buds)
 {
+	while(buddies) {
+		FREE(buddies->data);
+		buddies = buddies->next;
+		if(buddies)
+			FREE(buddies->prev);
+	}
 	for(; buds; buds = buds->next) {
 		yahoo_account *ya = y_new0(yahoo_account, 1);
 		struct yahoo_buddy *bud = buds->data;
@@ -305,7 +325,7 @@ void ext_yahoo_got_buddies(int id, YList * buds)
 		ya->status = YAHOO_STATUS_OFFLINE;
 		buddies = y_list_append(buddies, ya);
 
-		print_message(("%s is %s", bud->id, bud->real_name)) 
+/*		print_message(("%s is %s", bud->id, bud->real_name)) */
 	}
 }
 
@@ -328,6 +348,8 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat, int utf8)
 	if(utf8)
 		umsg = y_utf8_to_str(msg);
 	
+	who = get_buddy_name(who);
+
 	if(tm) {
 		char timestr[255];
 

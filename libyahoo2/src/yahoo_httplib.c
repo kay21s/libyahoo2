@@ -154,7 +154,7 @@ char *yahoo_urlencode(const char *instr)
 		if(!instr[ipos])
 			break;
 		
-		snprintf(&str[bpos], 3, "%%%.2x", instr[ipos]);
+		snprintf(&str[bpos], 4, "%%%.2x", instr[ipos]);
 		bpos+=3;
 		ipos++;
 	}

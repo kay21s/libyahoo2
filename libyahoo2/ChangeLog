@@ -1,3 +1,6 @@
+* Thu Feb 26 2004 Philip Tellis
+- fix memory leak in auth thanks to Wilmer van der Gaast
+
 * Thu Feb 26 2004 Gennady Feldman <gennady_feldman at gena01.com>
 - Allow sending of "add me" message to buddy when we add them
 

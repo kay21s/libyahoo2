@@ -1,4 +1,7 @@
-* Mon Sep 21 2003 Philip
+* Wed Sep 24 2003 Philip
+- Messenger host name changed to scs.msg.yahoo.com
+
+* Mon Sep 22 2003 Philip
 - Forgot a strdup
 
 * Sat Sep 20 2003 Philip

@@ -112,13 +112,14 @@ enum yahoo_webcam_direction_type {
 };
 
 struct webcam {
-	int direction;
+	int direction;     /* Uploading or downloading */
+	int conn_type;     /* 0=Dialup, 1=DSL/Cable, 2=T1/Lan */
 
-	char *user;
-	char *server;
-	char *key;
-	char *description;
-	char *my_ip;
+	char *user;        /* user we are viewing */
+	char *server;      /* webcam server to connect to */
+	char *key;         /* key to connect to the server with */
+	char *description; /* webcam description */
+	char *my_ip;       /* own ip number */
 
 	unsigned int data_size;
 	unsigned int to_read;

@@ -989,7 +989,7 @@ int ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond, void *data
 	return c->tag;
 }
 
-void ext_yahoo_remove_handler(int tag)
+void ext_yahoo_remove_handler(int id, int tag)
 {
 	YList *l;
 	for(l = connections; l; l = y_list_next(l)) {
@@ -1016,7 +1016,7 @@ static void connect_complete(void *data, int source, yahoo_input_condition condi
 	struct connect_callback_data *ccd = data;
 	int error, err_size = sizeof(error);
 
-	ext_yahoo_remove_handler(ccd->tag);
+	ext_yahoo_remove_handler(0, ccd->tag);
 	getsockopt(source, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&err_size);
 
 	if(error) {
@@ -1093,6 +1093,9 @@ int ext_yahoo_connect_async(int id, char *host, int port,
 		ccd->tag = ext_yahoo_add_handler(-1, servfd, YAHOO_INPUT_WRITE, ccd);
 		return ccd->tag;
 	} else {
+		if(error == -1) {
+			LOG(("%s", strerror(errno)));
+		}
 		close(servfd);
 		return -1;
 	}

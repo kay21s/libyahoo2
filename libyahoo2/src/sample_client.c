@@ -255,6 +255,26 @@ void ext_yahoo_conf_userleave(int id, char *who, char *room)
 }
 void ext_yahoo_conf_message(int id, char *who, char *room, char *msg)
 {
+	unsigned char * umsg = (unsigned char *)msg;
+
+	while(umsg[i]) {
+		if(umsg[i] < (unsigned char)0x80) {	/* 7 bit ASCII */
+			umsg[j] = umsg[i];
+			i++; 
+		} else if(umsg[i] < (unsigned char)0xC4) {/* ISOLatin1 */
+			umsg[j] = (umsg[i]<<6) | (umsg[i+1] & 0x3F);
+			i+=2;
+		} else if(umsg[i] < (unsigned char)0xE0) {
+			umsg[j] = '.';
+			i+=3;
+		} else if(umsg[i] < (unsigned char)0xF0) {
+			umsg[j] = '.';
+			i+=4;
+		}
+		j++;
+	}
+	umsg[j]='\0';
+
 	print_message(("%s (in %s): %s", who, room, msg));
 }
 void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
@@ -303,6 +323,8 @@ void ext_yahoo_got_ignore(int id, YList * igns)
 void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 {
 	int i=0,j=0;
+	unsigned char *umsg = (unsigned char *)msg;
+
 	if(stat == 2) {
 		LOG(("Error sending message to %s", who));
 		return;
@@ -311,27 +333,24 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 	if(!msg)
 		return;
 
-
-	/* need to typecast to (char) otherwise it never matches, since
-	 * 0x80 > max(char) == 0x7f
-	 */
-	while(msg[i]) {
-		if(msg[i] < (char)0x80) {	/* 7 bit ASCII */
-			msg[j] = msg[i];
-			i++;
-		} else if(msg[i] < (char)0xC4) {/* ISOLatin1 */
-			msg[j] = (msg[i]<<6) | (msg[i+1] & 0xC0);
+	while(umsg[i]) {
+		if(umsg[i] < (unsigned char)0x80) {	/* 7 bit ASCII */
+			umsg[j] = umsg[i];
+			i++; 
+		} else if(umsg[i] < (unsigned char)0xC4) {/* ISOLatin1 */
+			umsg[j] = (umsg[i]<<6) | (umsg[i+1] & 0x3F);
 			i+=2;
-		} else if(msg[i] < (char)0xE0) {
-			msg[j] = '.';
+		} else if(umsg[i] < (unsigned char)0xE0) {
+			umsg[j] = '.';
 			i+=3;
-		} else if(msg[i] < (char)0xF0) {
-			msg[j] = '.';
+		} else if(umsg[i] < (unsigned char)0xF0) {
+			umsg[j] = '.';
 			i+=4;
 		}
 		j++;
 	}
-
+	umsg[j]='\0';
+	
 	if(tm) {
 		char timestr[255];
 

@@ -1,3 +1,7 @@
+* Wed Jan 15 2003 Philip
+- added utf-8 decode to conference messages too.  I need to move this into
+a separate function
+
 * Tue Jan 14 2003 Philip
 - changed the accent character hack to proper UTF-8 decode supplied by Alan
 

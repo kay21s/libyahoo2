@@ -187,11 +187,11 @@ int yahoo_set_log_level(enum yahoo_log_level level)
 }
 
 /* Free a buddy list */
-static void yahoo_free_buddies(struct yahoo_data *yd)
+static void yahoo_free_buddies(YList * list)
 {
 	YList *l;
 
-	for(l = yd->buddies; l; l = l->next)
+	for(l = list; l; l = l->next)
 	{
 		struct yahoo_buddy *bud = l->data;
 		if(!bud)
@@ -204,21 +204,19 @@ static void yahoo_free_buddies(struct yahoo_data *yd)
 		l->data = bud = NULL;
 	}
 
-	y_list_free(yd->buddies);
-	yd->buddies=NULL;
+	y_list_free(list);
 }
 
 /* Free an identities list */
-static void yahoo_free_identities(struct yahoo_data *yd)
+static void yahoo_free_identities(YList * list)
 {
 	YList * l;
-	for (l = yd->identities; l; l=l->next) {
+	for (l = list; l; l=l->next) {
 		FREE(l->data);
 		l->data=NULL;
 	}
 
-	y_list_free(yd->identities);
-	yd->identities=NULL;
+	y_list_free(list);
 }
 
 static void yahoo_free_data(struct yahoo_data *yd)
@@ -227,14 +225,16 @@ static void yahoo_free_data(struct yahoo_data *yd)
 	FREE(yd->password);
 	FREE(yd->cookie_y);
 	FREE(yd->cookie_t);
+	FREE(yd->cookie_c);
 	FREE(yd->login_cookie);
 	FREE(yd->login_id);
 
 	FREE(yd->rxqueue);
 	yd->rxlen = 0;
 
-	yahoo_free_buddies(yd);
-	yahoo_free_identities(yd);
+	yahoo_free_buddies(yd->buddies);
+	yahoo_free_buddies(yd->ignore);
+	yahoo_free_identities(yd->identities);
 
 	FREE(yd);
 }
@@ -781,24 +781,26 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 			from = pair->value;
 		else if (pair->key == 4)
 			from = pair->value;
-		else if (pair->key == 14)
-			msg = pair->value;
 		else if (pair->key == 15)
 			tm = strtol(pair->value, NULL, 10);
-		else if (pair->key == 16)	/* system message */
+		else if (pair->key == 14 || pair->key == 16) {
+			/* user message */  /* sys message */
 			msg = pair->value;
+			if (pkt->service == YAHOO_SERVICE_SYSMESSAGE) {
+				YAHOO_CALLBACK(ext_yahoo_system_message)(yd->client_id, msg);
+			} else if (pkt->status <= 2 || pkt->status == 5) {
+				YAHOO_CALLBACK(ext_yahoo_got_im)(yd->client_id, from, msg, tm, pkt->status);
+			} else if (pkt->status == 0xffffffff) {
+				YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
+			}
+			tm = 0L;
+			msg = from = real_from = NULL;
+		}
 		else
 			LOG(("yahoo_process_message: status: %d, key: %d, value: %s",
 					pkt->status, pair->key, pair->value));
 	}
 
-	if (pkt->service == YAHOO_SERVICE_SYSMESSAGE) {
-		YAHOO_CALLBACK(ext_yahoo_system_message)(yd->client_id, msg);
-	} else if (pkt->status <= 2 || pkt->status == 5) {
-		YAHOO_CALLBACK(ext_yahoo_got_im)(yd->client_id, from, msg, tm, pkt->status);
-	} else if (pkt->status == 0xffffffff) {
-		YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
-	}
 }
 
 
@@ -999,7 +1001,7 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	unsigned char *result96 = malloc(25);
 
 	sv = seed[15];
-	sv = sv % 8;
+	sv = (sv % 8) % 5;
 
 	md5_init(&ctx);
 	md5_append(&ctx, (md5_byte_t *)yd->password, strlen(yd->password));
@@ -1012,7 +1014,7 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	md5_finish(&ctx, result);
 	to_y64(crypt_hash, result, 16);
 
-	switch (sv%5) {
+	switch (sv) {
 	case 0:
 		checksum = seed[seed[7] % 16];
 		snprintf((char *)hash_string_p, strlen(sn) + 50,
@@ -1068,6 +1070,8 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 		
 	yahoo_send_packet(yd, pack, 0);
 		
+	FREE(result6);
+	FREE(result96);
 	FREE(password_hash);
 	FREE(crypt_hash);
 	FREE(hash_string_p);

@@ -604,7 +604,7 @@ void ext_yahoo_got_webcam_key(int id, char *key)
 
 void ext_yahoo_got_webcam_server(int id, char *ip)
 {
-	struct webcam *wcm = NULL;
+	struct yahoo_webcam *wcm = NULL;
 
 	if (!ip || !ip[0])
 	{
@@ -613,7 +613,7 @@ void ext_yahoo_got_webcam_server(int id, char *ip)
 	}
 
 	print_message(("Got webcam server: %s", ip));
-	wcm = y_new0(struct webcam, 1);
+	wcm = y_new0(struct yahoo_webcam, 1);
 	wcm->key = strdup(ylad->webcam_key);
 	wcm->server = strdup(ip);
 	wcm->my_ip = strdup(MY_IP);
@@ -977,7 +977,6 @@ void ext_yahoo_remove_handler(int id, int fd)
 			ycam->id=0;
 			break;
 	}
-	del_from_list(yd);
 }
 /*
  * Callback handling code ends here

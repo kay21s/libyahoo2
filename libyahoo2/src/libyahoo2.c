@@ -1176,6 +1176,7 @@ static void yahoo_process_contact(struct yahoo_data *yd, struct yahoo_packet *pk
 	char *who = NULL;
 	char *msg = NULL;
 	char *name = NULL;
+	long tm = 0L;
 	int state = YAHOO_STATUS_AVAILABLE;
 	int online = FALSE;
 	int away = 0;
@@ -1194,6 +1195,8 @@ static void yahoo_process_contact(struct yahoo_data *yd, struct yahoo_packet *pk
 			name = pair->value;
 		else if (pair->key == 10)
 			state = strtol(pair->value, NULL, 10);
+		else if (pair->key == 15)
+			tm = strtol(pair->value, NULL, 10);
 		else if (pair->key == 13)
 			online = strtol(pair->value, NULL, 10);
 		else if (pair->key == 47)
@@ -1637,6 +1640,10 @@ void yahoo_send_im(int id, const char *from, const char *who, const char *what, 
 
 	if(utf8)
 		yahoo_packet_hash(pkt, 97, "1");
+
+	yahoo_packet_hash(pkt, 63, ";0");
+	yahoo_packet_hash(pkt, 64, "0");
+
 
 	yahoo_send_packet(yd, pkt, 0);
 

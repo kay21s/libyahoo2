@@ -1,5 +1,7 @@
 * Tue Jan 21 2003 Philip
 - Added CHAT service codes from yach
+- Fixed the problem with Offline UTF-8 encoded messages
+it no longer sends an extra bell
 
 * Sat Jan 18 2003 Philip
 - utf-8 encoding/decoding functions are in yahoo_util

@@ -650,8 +650,11 @@ static void process_commands(char *line)
 		if(to && msg) {
 			if(!strcmp(msg, "\a"))
 				yahoo_send_im(ylad->id, NULL, to, "<ding>", 0);
-			else
-				yahoo_send_im(ylad->id, NULL, to, msg, 0);
+			else {
+				msg = y_str_to_utf8(msg);
+				yahoo_send_im(ylad->id, NULL, to, msg, 1);
+				FREE(msg);
+			}
 		}
 	} else if(!strncasecmp(cmd, "CMS", strlen("CMS"))) {
 		/* send a message */

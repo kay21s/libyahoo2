@@ -1,0 +1,37 @@
+<div class="linkcontainer">
+<div class="links">
+<h2>Quick Links</h2>
+<p class="links">
+<a href="http://libyahoo2.sourceforge.net/"
+	title="The libyahoo2 home page">Home</a><br>
+<a href="http://www.sourceforge.net/projects/libyahoo2/"
+	title="This is the project page on sourceforge.  Submit bugs and patches here.">Project Page</a><br>
+<a href="http://sourceforge.net/project/showfiles.php?group_id=58181"
+	title="Download the latest release.">Download</a><br>
+<a href="http://lists.sourceforge.net/lists/listinfo/libyahoo2-users/"
+	title="Ok, so I have a mailing list too.  Why not?">Mailing List</a><br>
+<a href="ChangeLog" title="Complete log of changes">ChangeLog</a><br>
+<a href="README" title="Some kind of documentation">README</a><br>
+<a href="cvs.shtml" title="How to get the code by CVS">CVS Info</a><br>
+<a href="http://lists.sourceforge.net/lists/listinfo/libyahoo2-cvs/"
+	title="Mailing list for developers">CVS Mailing List</a><br>
+<a href="bugs.shtml" title="Search for bugs or report a new bug">Bugs</a><br>
+</p>
+</div>
+
+<div class="links">
+<h2>Licence</h2>
+<p class="links">
+<a href="Copying" title="The GNU General Public Licence">GNU GPL</a><br>
+</p>
+</div>
+
+<div class="links">
+<h2>Related Links</h2>
+<p class="links">
+<a href="http://www.everybuddy.com/" title="The Everybuddy Homepage">Everybuddy</a><br>
+<a href="http://blackhole.wincoll.ac.uk:81/msn/" title="Meredydd's libmsn2 page">libmsn2</a><br>
+</p>
+</div>
+
+</div>

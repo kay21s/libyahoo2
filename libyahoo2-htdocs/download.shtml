@@ -1,0 +1,29 @@
+<html>
+<head>
+<title>HTML.Template.java</title>
+<!--#include virtual="stylehead.shtml" -->
+</head>
+
+<body>
+<h1>HTML.Template.java</h1>
+
+<!--#include virtual="links.shtml" -->
+
+<div class="content">
+<h2>Download Information</h2>
+<p>
+You can download all releases from the <a 
+href="http://sourceforge.net/project/showfiles.php?group_id=48554"
+title="Download all releases">project download page</a>, or get
+the <a 
+href="http://cvs.sourceforge.net/cvstarballs/html-tmpl-java-cvsroot.tar.gz"
+title="The latest source">nightly CVS tarball</a> if you want the absolute
+latest version.
+</p>
+
+</div>
+
+<!--#include virtual="footer.shtml" -->
+
+</body>
+</html>

@@ -50,7 +50,7 @@
 #define y_new0(type, n)		(type *)calloc((n), sizeof(type))
 #define y_renew(type, mem, n)	(type *)realloc(mem, n)
 
-void * y_memdup(void * addr, int n);
+void * y_memdup(const void * addr, int n);
 char ** y_strsplit(char * str, char * sep, int nelem);
 void y_strfreev(char ** vector);
 

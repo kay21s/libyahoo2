@@ -1344,12 +1344,15 @@ static struct yahoo_packet * yahoo_getdata(struct yahoo_data * yd)
 	yahoo_packet_read(pkt, yd->rxqueue + pos, pktlen);
 
 	yd->rxlen -= YAHOO_PACKET_HDRLEN + pktlen;
-	if (yd->rxlen) {
+	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
+	if (yd->rxlen>0) {
 		char *tmp = y_memdup(yd->rxqueue + YAHOO_PACKET_HDRLEN 
 				+ pktlen, yd->rxlen);
 		FREE(yd->rxqueue);
 		yd->rxqueue = tmp;
+		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
 	} else {
+		DEBUG_MSG(("freed rxqueue == %p", yd->rxqueue));
 		FREE(yd->rxqueue);
 	}
 
@@ -1463,8 +1466,7 @@ static void yahoo_close(struct yahoo_data *yd)
 
 	if (yd->fd >= 0)
 		close(yd->fd);
-	if (yd->rxqueue)
-		FREE(yd->rxqueue);
+	FREE(yd->rxqueue);
 	yd->rxlen = 0;
 	yahoo_free_data(yd);
 }

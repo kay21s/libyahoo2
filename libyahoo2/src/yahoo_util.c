@@ -96,9 +96,11 @@ char ** y_strsplit(char * str, char * sep, int nelem)
 	return vector;
 }
 
-void * y_memdup(void * addr, int n)
+void * y_memdup(const void * addr, int n)
 {
-	void * new_chunk = y_new(void, n);
-	return memcpy(new_chunk, addr, n);
+	void * new_chunk = malloc(n);
+	if(new_chunk)
+		memcpy(new_chunk, addr, n);
+	return new_chunk;
 }
 

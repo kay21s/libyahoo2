@@ -6,6 +6,9 @@
 /* Define if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
+/* Define if you have glib 1.2.0 or higher */
+#undef HAVE_GLIB
+
 /* Define if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 

@@ -62,7 +62,7 @@ char filetransfer_port[MAX_PREF_LEN]="80";
 typedef struct {
 	char yahoo_id[255];
 	char password[255];
-	guint32 id;
+	int id;
 	int fd;
 	gint input;
 	gint ping_timeout_tag;
@@ -76,7 +76,7 @@ typedef struct {
 } yahoo_idlabel;
 
 typedef struct {
-	guint32 id;
+	int id;
 	char *who;
 } yahoo_authorize_data;
 
@@ -141,7 +141,7 @@ gint yahoo_ping_timeout_callback(gpointer data)
 	return 1;
 }
 
-void ext_yahoo_status_changed(guint32 id, char *who, int stat, char *msg, int away)
+void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 {
 	if(msg)
 		print_message(("%s is now %s", who, msg))
@@ -150,15 +150,15 @@ void ext_yahoo_status_changed(guint32 id, char *who, int stat, char *msg, int aw
 					yahoo_status_code(stat)))
 }
 
-void ext_yahoo_got_buddies(guint32 id, GList * buds)
+void ext_yahoo_got_buddies(int id, YList * buds)
 {
 }
 
-void ext_yahoo_got_ignore(guint32 id, GList * igns)
+void ext_yahoo_got_ignore(int id, YList * igns)
 {
 }
 
-void ext_yahoo_got_im(guint32 id, char *who, char *msg, long tm, int stat)
+void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 {
 	if(stat == 2) {
 		LOG(("Error sending message to %s", who));
@@ -181,14 +181,14 @@ void ext_yahoo_got_im(guint32 id, char *who, char *msg, long tm, int stat)
 	}
 }
 
-void ext_yahoo_rejected(guint32 id, char *who, char *msg)
+void ext_yahoo_rejected(int id, char *who, char *msg)
 {
 	print_message(("%s has rejected you%s%s", who, 
 				(msg?" with the message:\n":"."), 
 				(msg?msg:"")));
 }
 
-void ext_yahoo_contact_added(guint32 id, char *myid, char *who, char *msg)
+void ext_yahoo_contact_added(int id, char *myid, char *who, char *msg)
 {
 	char buff[1024];
 	char choice;
@@ -210,17 +210,17 @@ void ext_yahoo_contact_added(guint32 id, char *myid, char *who, char *msg)
 */
 }
 
-void ext_yahoo_typing_notify(guint32 id, char *who, int stat)
+void ext_yahoo_typing_notify(int id, char *who, int stat)
 {
 	if(stat && do_typing_notify)
 		print_message(("%s is typing...", who));
 }
 
-void ext_yahoo_game_notify(guint32 id, char *who, int stat)
+void ext_yahoo_game_notify(int id, char *who, int stat)
 {
 }
 
-void ext_yahoo_mail_notify(guint32 id, char *from, char *subj, int cnt)
+void ext_yahoo_mail_notify(int id, char *from, char *subj, int cnt)
 {
 	char buff[1024] = {0};
 	
@@ -243,7 +243,7 @@ void ext_yahoo_mail_notify(guint32 id, char *from, char *subj, int cnt)
 		print_message((buff));
 }
 
-void ext_yahoo_system_message(guint32 id, char *msg)
+void ext_yahoo_system_message(int id, char *msg)
 {
 	if(ignore_system)
 		return;
@@ -286,7 +286,7 @@ void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 			(void *) yahoo_ping_timeout_callback, ylad);
 }
 
-void ext_yahoo_login_response(guint32 id, int succ, char *url)
+void ext_yahoo_login_response(int id, int succ, char *url)
 {
 	char buff[1024];
 
@@ -312,7 +312,7 @@ void ext_yahoo_login_response(guint32 id, int succ, char *url)
 	yahoo_logout();
 }
 
-void ext_yahoo_error(guint32 id, char *err, int fatal)
+void ext_yahoo_error(int id, char *err, int fatal)
 {
 	fprintf(stderr, "Yahoo Error: %s", err);
 	if(fatal)
@@ -388,7 +388,7 @@ int ext_yahoo_connect(char *host, int port)
  * Callback handling code starts here
  */
 typedef struct {
-	guint32 id;
+	int id;
 	gpointer data;
 	int tag;
 } yahoo_callback_data;
@@ -434,26 +434,26 @@ void yahoo_callback(gpointer data, gint source, GdkInputCondition condition)
 		print_message((buff));
 }
 
-GList * handlers = NULL;
+YList * handlers = NULL;
 
-void ext_yahoo_add_handler(guint32 id, int fd, yahoo_input_condition cond)
+void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond)
 {
 	yahoo_callback_data *d = g_new0(yahoo_callback_data, 1);
 	d->id = id;
 	d->tag = gdk_input_add(fd, cond, yahoo_callback, d);
 
-	handlers = g_list_append(handlers, d);
+	handlers = y_list_append(handlers, d);
 }
 
-void ext_yahoo_remove_handler(guint32 id, int fd)
+void ext_yahoo_remove_handler(int id, int fd)
 {
-	GList * l;
+	YList * l;
 	for(l = handlers; l; l = l->next)
 	{
 		yahoo_callback_data *d = l->data;
 		if(d->id == id) {
 			gdk_input_remove(d->tag);
-			handlers = g_list_remove_link(handlers, l);
+			handlers = y_list_remove_link(handlers, l);
 			break;
 		}
 	}
@@ -577,21 +577,21 @@ int main(int argc, char * argv[])
 	return 0;
 }
 
-void ext_yahoo_got_conf_invite(guint32 id, char *who, char *room, char *msg, GList *members)
+void ext_yahoo_got_conf_invite(int id, char *who, char *room, char *msg, YList *members)
 {
 }
-void ext_yahoo_conf_userdecline(guint32 id, char *who, char *room, char *msg)
+void ext_yahoo_conf_userdecline(int id, char *who, char *room, char *msg)
 {
 }
-void ext_yahoo_conf_userjoin(guint32 id, char *who, char *room)
+void ext_yahoo_conf_userjoin(int id, char *who, char *room)
 {
 }
-void ext_yahoo_conf_userleave(guint32 id, char *who, char *room)
+void ext_yahoo_conf_userleave(int id, char *who, char *room)
 {
 }
-void ext_yahoo_conf_message(guint32 id, char *who, char *room, char *msg)
+void ext_yahoo_conf_message(int id, char *who, char *room, char *msg)
 {
 }
-void ext_yahoo_got_file(guint32 id, char *who, char *url, long expires, char *msg, char *fname, unsigned long fesize)
+void ext_yahoo_got_file(int id, char *who, char *url, long expires, char *msg, char *fname, unsigned long fesize)
 {
 }

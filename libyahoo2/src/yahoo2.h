@@ -22,6 +22,17 @@
 #ifndef YAHOO2_H
 #define YAHOO2_H
 
+#ifdef __MINGW32__
+# include <winsock2.h>
+# define write(a,b,c) send(a,b,c,0)
+# define read(a,b,c)  recv(a,b,c,0)
+#endif
+
+#if HAVE_GLIB
+# include <glib.h>
+# define snprintf g_snprintf
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -68,11 +79,6 @@ const YList * yahoo_get_identities(int id);
 const char  * yahoo_get_cookie(int id, const char *which);
 
 int yahoo_get_url_handle(int id, const char *url, char *filename, unsigned long *filesize);
-
-#ifdef USE_STRUCT_CALLBACKS
-#include "yahoo2_callbacks.h"
-void yahoo_register_callbacks(struct yahoo_callbacks * yc);
-#endif
 
 #include "yahoo_httplib.h"
 

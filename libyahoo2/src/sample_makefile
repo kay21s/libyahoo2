@@ -1,14 +1,14 @@
 CC = gcc
 LD = gcc
 
-CPPFLAGS = -g -Wall `gtk-config --cflags` -I .
+CPPFLAGS = -g -Wall `gtk-config --cflags` -I . -I .. -DHAVE_CONFIG_H=1
 LDDFLAGS = -g -Wall `gtk-config --libs`
 
 ifdef DEBUG
 	CPPFLAGS := $(CPPFLAGS) -DDEBUG
 endif
 
-OBJFILES = md5.o crypt.o libyahoo2.o yahoo_connections.o yahoo_httplib.o sample_client.o
+OBJFILES = md5.o crypt.o libyahoo2.o yahoo_connections.o yahoo_httplib.o yahoo_list.o yahoo_util.o sample_client.o
 PROGNAME = yahoo
 
 all: $(PROGNAME)

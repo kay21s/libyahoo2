@@ -28,6 +28,7 @@ AC_STRUCT_TM
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset strchr strcspn strdup strncasecmp strrchr strstr strtol])
 
+AM_PATH_GLIB(1.2.0, [AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib 1.2.0 or higher])])
 CFLAGS="$CFLAGS -Wall"
 
 AC_OUTPUT([Makefile src/Makefile])

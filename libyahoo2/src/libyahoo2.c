@@ -898,10 +898,12 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			} 
 
 			break;
+		case 3: /* my id */
 		case 90: /* 1 */
 		case 100: /* 0 */
 		case 101: /* NULL */
-		case 93: /* 86400 */
+		case 102: /* NULL */
+		case 93: /* 86400/1440 */
 			break;
 		}
 	}

@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/libyahoo2.c)
-AM_INIT_AUTOMAKE([libyahoo2], [0.5.cvs])
+AM_INIT_AUTOMAKE([libyahoo2], [0.5])
 
 # Checks for programs.
 AC_PROG_CC

@@ -83,6 +83,8 @@ void yahoo_conference_message(int id, const char * from, YList *who, const char 
 void yahoo_conference_logon(int id, const char * from, YList *who, const char *room);
 void yahoo_conference_logoff(int id, const char * from, YList *who, const char *room);
 
+/* Get a list of chatrooms */
+void yahoo_get_chatrooms(int id,int chatroomid);
 /* join room with specified roomname and roomid */
 void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid);
 /* Send message "msg" to room with specified roomname, msgtype is 1-normal message or 2-/me mesage */

@@ -174,6 +174,7 @@ static yahoo_local_account * ylad = NULL;
 static yahoo_connection * ylab = NULL;
 static yahoo_connection * ywcm = NULL;
 static yahoo_connection * ycam = NULL;
+static yahoo_connection * ycht = NULL;
 static YList * buddies = NULL;
 
 static int expired(time_t timer)
@@ -916,7 +917,6 @@ void yahoo_callback(int id)
 		return;
 
 	ret = yahoo_read_ready(id, yd->fd);
-
 	if(ret == -1)
 		snprintf(buff, sizeof(buff), 
 			"Yahoo read error (%d): %s", errno, strerror(errno));
@@ -949,6 +949,10 @@ void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond)
 			ycam->fd=fd;
 			ycam->id=id;
 			break;
+		case YAHOO_CONNECTION_CHATCAT:
+			ycht->fd=fd;
+			ycht->id=id;
+			break;
 	}
 }
 
@@ -975,6 +979,10 @@ void ext_yahoo_remove_handler(int id, int fd)
 		case YAHOO_CONNECTION_WEBCAM:
 			ycam->fd=0;
 			ycam->id=0;
+			break;
+		case YAHOO_CONNECTION_CHATCAT:
+			ycht->fd=0;
+			ycht->id=0;
 			break;
 	}
 }
@@ -1173,6 +1181,10 @@ static void process_commands(char *line)
 		FREE(cr);
 
 
+	} else if(!strncasecmp(cmd, "CHL", strlen("CHL"))) {
+		int *roomid;
+		roomid = atoi(copy);
+		yahoo_get_chatrooms(ylad->id, roomid);
 	} else if(!strncasecmp(cmd, "CHJ", strlen("CHJ"))) {
 		char *roomid, *roomname;
 /* Linux, FreeBSD, Solaris:1 */
@@ -1337,6 +1349,7 @@ int main(int argc, char * argv[])
 	ylab = y_new0(yahoo_connection, 1);
 	ywcm = y_new0(yahoo_connection, 1);
 	ycam = y_new0(yahoo_connection, 1);
+	ycht = y_new0(yahoo_connection, 1);
 
 	printf("Yahoo Id: ");
 	scanf("%s", ylad->yahoo_id);
@@ -1377,6 +1390,7 @@ int main(int argc, char * argv[])
 		if (ylab->fd) FD_SET(ylab->fd, &inp);
 		if (ywcm->fd) FD_SET(ywcm->fd, &inp);
 		if (ycam->fd) FD_SET(ycam->fd, &inp);
+		if (ycht->fd) FD_SET(ycht->fd, &inp);
 		tv.tv_sec=1;
 		tv.tv_usec=0;
 		lfd=0;
@@ -1384,6 +1398,7 @@ int main(int argc, char * argv[])
 		if(lfd < ylab->fd) lfd=ylab->fd;
 		if(lfd < ywcm->fd) lfd=ywcm->fd;
 		if(lfd < ycam->fd) lfd=ycam->fd;
+		if(lfd < ycht->fd) lfd=ycht->fd;
 		select(lfd + 1, &inp, NULL, NULL, &tv);
 		time(&curTime);
 
@@ -1392,6 +1407,7 @@ int main(int argc, char * argv[])
 		if(ylab->fd && FD_ISSET(ylab->fd, &inp)) yahoo_callback(ylab->id);
 		if(ywcm->fd && FD_ISSET(ywcm->fd, &inp)) yahoo_callback(ywcm->id);
 		if(ycam->fd && FD_ISSET(ycam->fd, &inp)) yahoo_callback(ycam->id);
+		if(ycht->fd && FD_ISSET(ycht->fd, &inp)) yahoo_callback(ycht->id);
 		if(expired(pingTimer))		yahoo_ping_timeout_callback();
 		if(expired(webcamTimer))	yahoo_webcam_timeout_callback(ycam->id);
 	}
@@ -1402,6 +1418,7 @@ int main(int argc, char * argv[])
 	FREE(ylab);
 	FREE(ywcm);
 	FREE(ycam);
+	FREE(ycht);
 
 	return 0;
 }

@@ -2068,6 +2068,11 @@ static void yahoo_process_ft_connection(struct yahoo_data *yd)
 {
 }
 
+static void yahoo_process_chatcat_connection(struct yahoo_data *yd)
+{
+	printf("Got:\n%s",yd->rxqueue);
+}
+
 static void yahoo_process_yab_connection(struct yahoo_data *yd)
 {
 	struct yab *yab;
@@ -2128,7 +2133,8 @@ static void (*yahoo_process_connection[])(struct yahoo_data *) = {
 	yahoo_process_ft_connection,
 	yahoo_process_yab_connection,
 	yahoo_process_webcam_master_connection,
-	yahoo_process_webcam_connection
+	yahoo_process_webcam_connection,
+	yahoo_process_chatcat_connection
 };
 
 int yahoo_read_ready(int id, int fd)
@@ -2152,7 +2158,7 @@ int yahoo_read_ready(int id, int fd)
 
 		yd->current_status = -1;
 		YAHOO_CALLBACK(ext_yahoo_remove_handler)(id, fd);
-		if(yd->type == YAHOO_CONNECTION_YAB)
+		if(yd->type == YAHOO_CONNECTION_YAB || yd->type == YAHOO_CONNECTION_CHATCAT)
 			yd->buddies = NULL;
 		yahoo_close(yd);
 
@@ -2758,6 +2764,40 @@ void yahoo_conference_message(int id, const char * from, YList *who, const char 
 
 	yahoo_packet_free(pkt);
 }
+
+
+void yahoo_get_chatrooms(int id, int chatroomid)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_data *nyd;
+	char url[1024];
+	char buff[1024];
+
+	if(!yd)
+		return;
+
+	nyd = y_new0(struct yahoo_data, 1);
+	nyd->id = yd->id;
+	nyd->client_id = ++last_id;
+	nyd->type = YAHOO_CONNECTION_CHATCAT;
+	nyd->buddies = yd->buddies;
+
+	if (chatroomid == 0) {
+		snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?chatcat=0");
+	} else {
+		snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?chatroom_%d=0",chatroomid);
+	}
+
+	snprintf(buff, sizeof(buff), "Y=%s; T=%s", yd->cookie_y, yd->cookie_t);
+
+	nyd->fd = yahoo_http_get(url, buff);
+
+	add_to_list(nyd, nyd->fd);
+
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
+
+}
+
 
 void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid)
 {

@@ -173,7 +173,8 @@ the connection alive.
 8. Other functions
 
 You can call yahoo_get_identities and yahoo_get_cookie to get some other
-information about your connection.  Currently identities are null.
+information about your connection.  See the comments in yahoo2.h for more
+information.
 
 You can also call yahoo_urldecode and yahoo_urlencode utility functions
 to url decode/encode a given string.  This will be useful for getting the

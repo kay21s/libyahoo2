@@ -56,7 +56,17 @@ fi
 
 YAHOOPKGREQ=""
 AC_ARG_WITH([glib], [AC_HELP_STRING([--without-glib], [don't use glib even if found])])
-if test "$with_glib" != "no"; then
+if test "$with_glib" = "1"; then
+	AM_PATH_GLIB(1.2.8, [
+		AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib support])
+		YAHOOPKGREQ="glib >= 1.2.8"
+	])
+elif test "$with_glib" = "2"; then
+	AM_PATH_GLIB_2_0(2.0.0, [
+		AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib support])
+		YAHOOPKGREQ="glib-2.0"
+	])
+elif test "$with_glib" != "no" -a "$with_glib" != "0"; then
 	AM_PATH_GLIB_2_0(2.0.0, [
 		AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib support])
 		YAHOOPKGREQ="glib-2.0"

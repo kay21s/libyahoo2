@@ -1,26 +1,21 @@
-%define name       @PACKAGE@
-%define version    @VERSION@
-%define release    @RELEASE@
-%define prefix     /usr
-
 Summary:	Library for the Yahoo! Messenger Protocol
-Name:		%{name}
-Version:	%{version}
-Release:	%{release}
+Name:		@PACKAGE@
+Version:	@VERSION@
+Release:	@RELEASE@
 Group:		System Environment/Libraries
 License:	GPL
 Url:		http://libyahoo2.sourceforge.net/
 Source:		%{name}-%{version}.tar.gz
-BuildRoot:	/var/tmp/%{name}-%{version}-%{release}-root
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
 libyahoo2 is a C library interface to the new Yahoo! Messenger protocol. It
 supports almost all current features of the protocol.
 
 %package devel
-Summary:	Headers and development libraries for libyahoo2
+Summary:	Headers and development files for libyahoo2
 Group:		Development/Libraries
-Requires:	%{name} == %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 
 %description devel
 The header files and some documentation that you'll need to develop with
@@ -30,7 +25,7 @@ libyahoo2
 %setup
 
 %build
-./configure --prefix=%{prefix} --with-struct-callbacks
+%configure --with-struct-callbacks
 make
 
 %install
@@ -42,16 +37,17 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%attr(755,root,root) %{_libdir}/*.so.*
+%doc COPYING AUTHORS ChangeLog
+%{_libdir}/*.so.*
 
 %files devel
 %defattr(-,root,root)
 %doc doc/ymsg-9.txt NEWS COPYING AUTHORS README ChangeLog
-%{_includedir}/@PACKAGE@/*
+%{_includedir}/*
 %{_libdir}/*.so
 %{_libdir}/*.a
-%{_libdir}/*.la
 
 
 %changelog
 @CHANGELOG@
+

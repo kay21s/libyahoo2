@@ -90,12 +90,12 @@ void yahoo_register_callbacks(struct yahoo_callbacks * tyc)
 
 int yahoo_log_message(char * fmt, ...)
 {
-	int ret;
+	char out[1024];
 	va_list ap;
 	va_start(ap, fmt);
-	ret = YAHOO_CALLBACK(ext_yahoo_log)(fmt, ap);
+	vsnprintf(out, sizeof(out), fmt, ap);
 	va_end(ap);
-	return ret;
+	return YAHOO_CALLBACK(ext_yahoo_log)(fmt, ap);
 }
 
 int yahoo_connect(char * host, int port)

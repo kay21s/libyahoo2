@@ -72,3 +72,9 @@ nname may not contain spaces, commas, or single/double quotes
 The response to this request is the YAB entry in the above XML format.
 
 
+
+To modify an addressbook entry, the above request is slightly modified.
+Just after addab2=0 and before fname=..., we add the following url parameters:
+&ee=1&ow=1&id=<db_id>
+
+where db_id is the record number for this entry, set by the server.

@@ -102,6 +102,7 @@ void yahoo_chat_logoff(int id, const char *from);
 /* requests a webcam feed */
 /* who is the person who's webcam you would like to view */
 void yahoo_webcam_get_feed(int id, const char *who);
+void yahoo_webcam_close_feed(int id, const char *who);
 
 /* sends an image when uploading */
 /* image points to a JPEG-2000 image, lenght is the length of the image */

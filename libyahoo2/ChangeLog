@@ -1,4 +1,8 @@
 * Thu May 1 2003 Philip
+- allow closing of webcam connections
+- more reliable finding of webcam connections
+
+* Thu May 1 2003 Philip
 - send who's images along with webcam image
 
 * Thu May 1 2003 Philip

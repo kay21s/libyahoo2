@@ -255,6 +255,19 @@ static struct yahoo_input_data * find_input_by_id(int id)
 }
 */
 
+static struct yahoo_input_data * find_input_by_id_and_webcam_user(int id, const char * who)
+{
+	YList *l;
+	LOG(("find_input_by_id_and_webcam_user"));
+	for(l = inputs; l; l = y_list_next(l)) {
+		struct yahoo_input_data *yid = l->data;
+		if(yid->type == YAHOO_CONNECTION_WEBCAM && yid->yd->client_id == id 
+				&& yid->wcm && yid->wcm->user && !strcmp(who, yid->wcm->user))
+			return yid;
+	}
+	return NULL;
+}
+
 static struct yahoo_input_data * find_input_by_id_and_type(int id, enum yahoo_connection_type type)
 {
 	YList *l;
@@ -267,7 +280,6 @@ static struct yahoo_input_data * find_input_by_id_and_type(int id, enum yahoo_co
 	return NULL;
 }
 
-/*
 static struct yahoo_input_data * find_input_by_id_and_fd(int id, int fd)
 {
 	YList *l;
@@ -278,7 +290,7 @@ static struct yahoo_input_data * find_input_by_id_and_fd(int id, int fd)
 			return yid;
 	}
 	return NULL;
-}*/
+}
 
 static int count_inputs_with_id(int id)
 {
@@ -2465,9 +2477,10 @@ static void yahoo_process_webcam_master_connection(struct yahoo_input_data *yid)
 static void yahoo_process_webcam_connection(struct yahoo_input_data *yid)
 {
 	int id = yid->yd->client_id;
+	int fd = yid->fd;
 
 	/* as long as we still have packets available keep processing them */
-	while (find_input_by_id_and_type(id, YAHOO_CONNECTION_WEBCAM) 
+	while (find_input_by_id_and_fd(id, fd) 
 			&& yahoo_get_webcam_data(yid) == 1);
 }
 
@@ -3320,6 +3333,14 @@ void yahoo_chat_logoff(int id, const char *from)
 	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
+}
+
+void yahoo_webcam_close_feed(int id, const char *who)
+{
+	struct yahoo_input_data *yid = find_input_by_id_and_webcam_user(id, who);
+
+	if(yid)
+		yahoo_input_close(yid);
 }
 
 void yahoo_webcam_get_feed(int id, const char *who)

@@ -15,3 +15,4 @@ install-sh
 config.h
 stamp-h
 libyahoo2.pc
+libyahoo2.spec

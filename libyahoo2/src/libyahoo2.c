@@ -99,7 +99,7 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_VOICECHAT = 0x4A,
 	YAHOO_SERVICE_NOTIFY = 0x4B,
 	YAHOO_SERVICE_P2PFILEXFER = 0x4D,
-	YAHOO_SERVICE_UNKNOWN2 = 0x4F,	/* PEERTOPEER */
+	YAHOO_SERVICE_PEERTOPEER = 0x4F,	/* PEERTOPEER */
 	YAHOO_SERVICE_AUTHRESP = 0x54,
 	YAHOO_SERVICE_LIST = 0x55,
 	YAHOO_SERVICE_AUTH = 0x57,
@@ -1275,6 +1275,7 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_CHATMSG:
 	case YAHOO_SERVICE_VOICECHAT:
 	case YAHOO_SERVICE_REJECTCONTACT:
+	case YAHOO_SERVICE_PEERTOPEER:
 		WARNING(("unhandled service 0x%02x", pkt->service));
 		yahoo_dump_unhandled(pkt);
 		break;

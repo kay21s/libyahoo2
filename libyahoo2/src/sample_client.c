@@ -314,7 +314,7 @@ void ext_yahoo_login_response(guint32 id, int succ, char *url)
 
 void ext_yahoo_error(guint32 id, char *err, int fatal)
 {
-	print_message(("Yahoo Error: %s", err));
+	fprintf(stderr, "Yahoo Error: %s", err);
 	if(fatal)
 		yahoo_logout();
 }
@@ -546,6 +546,7 @@ static void local_input_callback(gpointer data, gint source, GdkInputCondition c
 int main(int argc, char * argv[])
 {
 	int status;
+	int log_level;
 	int l;
 
 	ylad = g_new0(yahoo_local_account, 1);
@@ -557,6 +558,11 @@ int main(int argc, char * argv[])
 
 	printf("Initial Status: ");
 	scanf("%d", &status);
+
+	printf("Log Level: ");
+	scanf("%d", &log_level);
+
+	yahoo_set_log_level(log_level);
 
 	gdk_init(&argc, &argv);
 

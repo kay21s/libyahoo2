@@ -1563,11 +1563,7 @@ static void yahoo_process_auth_pre_0x0b(struct yahoo_input_data *yid,
 }
 
 /*
- * New auth protocol cracked by Sean Egan from the Gaim team
- * Dude you Rock!
- *
- * I should say thanks again to gaim without which this library
- * would not have been possible
+ * New auth protocol cracked by Cerulean Studios and sent in to Gaim
  */
 static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *seed, const char *sn)
 {
@@ -1969,7 +1965,7 @@ static void yahoo_process_auth(struct yahoo_input_data *yid, struct yahoo_packet
 	char *seed = NULL;
 	char *sn   = NULL;
 	YList *l = pkt->hash;
-	int m = 1;
+	int m = 0;
 
 	while (l) {
 		struct yahoo_pair *pair = l->data;

@@ -1,3 +1,6 @@
+* Mon Sep 29 2003 Philip
+- attribute new auth to Cerulean studios (which is where gaim got it from)
+
 * Sun Sep 28 2003 Philip 0.7.2-2
 - made yahoo_init do what it did before, and renamed the new yahoo_init
 to yahoo_init_with_attributes.  This should help not break old code.

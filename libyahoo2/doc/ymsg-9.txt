@@ -15,7 +15,8 @@ source of libyahoo2.
 
 The YMSG packet structure is as follows:
 
-(5 chars == 1 byte, field includes | at the end)
+(each byte is represented by 5 spaces in the following diagram,
+including the | at the end)
 
      <------- 4B -------><------- 4B -------><---2B--->
     +-------------------+-------------------+---------+

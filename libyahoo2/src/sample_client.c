@@ -34,6 +34,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <termios.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -567,14 +568,29 @@ int main(int argc, char * argv[])
 	fd_set inp;
 	struct timeval tv;
 
+
+	int fd_stdin = fileno(stdin);
+
 	ylad = y_new0(yahoo_local_account, 1);
 
 	printf("Yahoo Id: ");
 	scanf("%s", ylad->yahoo_id);
 	printf("Password: ");
-	system("stty -echo");
-	scanf("%s", ylad->password);
-	system("stty echo");
+	{
+		tcflag_t oflags;
+		struct termios term;
+		tcgetattr(fd_stdin, &term);
+		oflags = term.c_lflag;
+		term.c_lflag = oflags & ~(ECHO | ECHOK | ICANON);
+		term.c_cc[VTIME] = 1;
+		tcsetattr(fd_stdin, TCSANOW, &term);
+		
+		scanf("%s", ylad->password);
+
+		term.c_lflag = oflags;
+		term.c_cc[VTIME] = 0;
+		tcsetattr(fd_stdin, TCSANOW, &term);
+	}
 	printf("\n");
 
 	printf("Initial Status: ");
@@ -590,14 +606,14 @@ int main(int argc, char * argv[])
 
 	while(poll_loop) {
 		FD_ZERO(&inp);
-		FD_SET(0, &inp);
+		FD_SET(fd_stdin, &inp);
 		FD_SET(ylad->fd, &inp);
 		tv.tv_sec=600000;
 		tv.tv_usec=0;
 		select(ylad->fd + 1, &inp, NULL, NULL, &tv);
 
 		if(call_timeout)		yahoo_ping_timeout_callback();
-		if(FD_ISSET(0, &inp)) 		local_input_callback(0);
+		if(FD_ISSET(fd_stdin, &inp))	local_input_callback(0);
 		if(FD_ISSET(ylad->fd, &inp))	yahoo_callback(ylad->fd);
 	}
 

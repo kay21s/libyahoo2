@@ -51,7 +51,8 @@ enum yahoo_login_status {
 	YAHOO_LOGIN_OK = 0,
 	YAHOO_LOGIN_PASSWD = 13,
 	YAHOO_LOGIN_LOCK = 14,
-	YAHOO_LOGIN_DUPL = 99
+	YAHOO_LOGIN_DUPL = 99,
+	YAHOO_LOGIN_SOCK = -1
 };
 
 enum yahoo_error {
@@ -151,24 +152,16 @@ struct yahoo_data {
 	YList *identities;
 	char  *login_id;
 
-	int   fd;
-	int   type;
-
 	int   current_status;
 	int   initial_status;
 	int   logged_in;
 
-	int id;
+	int   session_id;
 
-	int client_id;
+	int   client_id;
 
-	unsigned char	*rxqueue;
-	int   rxlen;
-	char *rawbuddylist;
-	char *ignorelist;
-
-	struct yahoo_webcam *wcm;
-	struct yahoo_webcam_data *wcd;
+	char  *rawbuddylist;
+	char  *ignorelist;
 };
 
 struct yab {
@@ -189,6 +182,18 @@ struct yahoo_buddy {
 	char *real_name;
 	struct yab *yab_entry;
 };
+
+/*
+ * Function pointer to be passed to http get/post and send file
+ */
+typedef void (*yahoo_get_fd_callback)(int id, int fd, int error, void *data);
+
+/*
+ * Function pointer to be passed to yahoo_get_url_handle
+ */
+typedef void (*yahoo_get_url_handle_callback)(int id, int fd, int error,
+		const char *filename, unsigned long size, void *data);
+
 
 struct yahoo_chat_member {
 	char *id;

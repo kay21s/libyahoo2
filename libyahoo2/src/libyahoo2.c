@@ -66,17 +66,26 @@ char *strchr (), *strrchr ();
 
 #include <sys/types.h>
 
+#ifdef __MINGW32__
+# include <winsock2.h>
+# define write(a,b,c) send(a,b,c,0)
+# define read(a,b,c)  recv(a,b,c,0)
+#endif
+
 #include <stdlib.h>
 #include <ctype.h>
 
 #include "md5.h"
 #include "yahoo2.h"
-#include "yahoo_connections.h"
 #include "yahoo_httplib.h"
 #include "yahoo_util.h"
 
 #include "yahoo2_callbacks.h"
 #include "yahoo_debug.h"
+#ifdef __MINGW32__
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#endif
 
 #ifdef USE_STRUCT_CALLBACKS
 struct yahoo_callbacks *yc=NULL;
@@ -104,6 +113,15 @@ int yahoo_log_message(char * fmt, ...)
 int yahoo_connect(char * host, int port)
 {
 	return YAHOO_CALLBACK(ext_yahoo_connect)(host, port);
+}
+
+enum yahoo_log_level log_level = YAHOO_LOG_NONE;
+
+int yahoo_set_log_level(enum yahoo_log_level level)
+{
+	enum yahoo_log_level l = log_level;
+	log_level = level;
+	return l;
 }
 
 extern char pager_host[];
@@ -187,18 +205,95 @@ struct yahoo_packet {
 	YList *hash;
 };
 
+struct yahoo_input_data {
+	struct yahoo_data *yd;
+	struct yahoo_webcam *wcm;
+	struct yahoo_webcam_data *wcd;
+
+	int   fd;
+	enum yahoo_connection_type type;
+	unsigned char	*rxqueue;
+	int   rxlen;
+};
+
+static YList *conns=NULL;
+static YList *inputs=NULL;
 static int last_id=0;
 
-extern char *yahoo_crypt(char *, char *);
-
-enum yahoo_log_level log_level = YAHOO_LOG_NONE;
-
-int yahoo_set_log_level(enum yahoo_log_level level)
+static void add_to_list(struct yahoo_data *yd)
 {
-	enum yahoo_log_level l = log_level;
-	log_level = level;
-	return l;
+	conns = y_list_prepend(conns, yd);
 }
+static struct yahoo_data * find_conn_by_id(int id)
+{
+	YList *l;
+	for(l = conns; l; l = y_list_next(l)) {
+		struct yahoo_data *yd = l->data;
+		if(yd->client_id == id)
+			return yd;
+	}
+	return NULL;
+}
+static void del_from_list(struct yahoo_data *yd)
+{
+	conns = y_list_remove(conns, yd);
+}
+
+/* call repeatedly to get the next one */
+/*
+static struct yahoo_input_data * find_input_by_id(int id)
+{
+	YList *l;
+	for(l = inputs; l; l = y_list_next(l)) {
+		struct yahoo_input_data *yid = l->data;
+		if(yid->yd->client_id == id)
+			return yid;
+	}
+	return NULL;
+}
+*/
+
+static struct yahoo_input_data * find_input_by_id_and_type(int id, enum yahoo_connection_type type)
+{
+	YList *l;
+	LOG(("find_input_by_id_and_type"));
+	for(l = inputs; l; l = y_list_next(l)) {
+		struct yahoo_input_data *yid = l->data;
+		if(yid->type == type && yid->yd->client_id == id)
+			return yid;
+	}
+	return NULL;
+}
+
+/*
+static struct yahoo_input_data * find_input_by_id_and_fd(int id, int fd)
+{
+	YList *l;
+	LOG(("find_input_by_id_and_fd"));
+	for(l = inputs; l; l = y_list_next(l)) {
+		struct yahoo_input_data *yid = l->data;
+		if(yid->fd == fd && yid->yd->client_id == id)
+			return yid;
+	}
+	return NULL;
+}*/
+
+static int count_inputs_with_id(int id)
+{
+	int c=0;
+	YList *l;
+	LOG(("counting %d", id));
+	for(l = inputs; l; l = y_list_next(l)) {
+		struct yahoo_input_data *yid = l->data;
+		if(yid->yd->client_id == id)
+			c++;
+	}
+	LOG(("%d", c));
+	return c;
+}
+
+
+extern char *yahoo_crypt(char *, char *);
 
 /* Free a buddy list */
 static void yahoo_free_buddies(YList * list)
@@ -267,16 +362,9 @@ static void yahoo_free_data(struct yahoo_data *yd)
 	FREE(yd->login_cookie);
 	FREE(yd->login_id);
 
-	FREE(yd->rxqueue);
-	yd->rxlen = 0;
-
 	yahoo_free_buddies(yd->buddies);
 	yahoo_free_buddies(yd->ignore);
 	yahoo_free_identities(yd->identities);
-	yahoo_free_webcam(yd->wcm);
-
-	FREE(yd->wcd);
-
 	FREE(yd);
 }
 
@@ -477,7 +565,7 @@ static void to_y64(unsigned char *out, const unsigned char *in, int inlen)
 	*out = '\0';
 }
 
-static int yahoo_send_packet(struct yahoo_data *yd, struct yahoo_packet *pkt, int extra_pad)
+static int yahoo_send_packet(int fd, struct yahoo_packet *pkt, int extra_pad)
 {
 	int pktlen = yahoo_packet_length(pkt);
 	int len = YAHOO_PACKET_HDRLEN + pktlen;
@@ -486,7 +574,7 @@ static int yahoo_send_packet(struct yahoo_data *yd, struct yahoo_packet *pkt, in
 	unsigned char *data;
 	int pos = 0;
 
-	if (yd->fd < 0)
+	if (fd < 0)
 		return -1;
 
 	data = y_new0(unsigned char, len + 1);
@@ -504,7 +592,7 @@ static int yahoo_send_packet(struct yahoo_data *yd, struct yahoo_packet *pkt, in
 	yahoo_packet_dump(data, len);
 	
 	do {
-		ret = write(yd->fd, data, len);
+		ret = write(fd, data, len);
 	} while(ret == -1 && errno==EINTR);
 
 	LOG(("wrote packet"));
@@ -527,17 +615,17 @@ static void yahoo_packet_free(struct yahoo_packet *pkt)
 	FREE(pkt);
 }
 
-static int yahoo_send_data(struct yahoo_data *yd, char *data, int len)
+static int yahoo_send_data(int fd, char *data, int len)
 {
 	int ret;
 
-	if (yd->fd < 0)
+	if (fd < 0)
 		return -1;
 
 	yahoo_packet_dump((unsigned char*) data, len);
 
 	do {
-		ret = write(yd->fd, data, len);
+		ret = write(fd, data, len);
 	} while(ret == -1 && errno==EINTR);
 
 	LOG(("wrote data"));
@@ -545,19 +633,35 @@ static int yahoo_send_data(struct yahoo_data *yd, char *data, int len)
 	return ret;
 }
 
-static void yahoo_close(struct yahoo_data *yd) 
+void yahoo_close(int id) 
 {
-	int id = yd->client_id;
+	struct yahoo_data *yd = find_conn_by_id(id);
+	if(!yd)
+		return;
+
 	del_from_list(yd);
 
-	if (yd->fd >= 0)
-		close(yd->fd);
-	FREE(yd->rxqueue);
-	yd->rxlen = 0;
 	yahoo_free_data(yd);
 	if(id == last_id)
 		last_id--;
+}
 
+static void yahoo_input_close(struct yahoo_input_data *yid) 
+{
+	inputs = y_list_remove(inputs, yid);
+
+	YAHOO_CALLBACK(ext_yahoo_remove_handler)(yid->yd->client_id, yid->fd);
+	if(yid->fd)
+		close(yid->fd);
+	yid->fd = 0;
+	FREE(yid->rxqueue);
+	if(count_inputs_with_id(yid->yd->client_id) == 0) {
+		LOG(("closing %d", yid->yd->client_id));
+		yahoo_close(yid->yd->client_id);
+		yahoo_free_webcam(yid->wcm);
+		FREE(yid->wcd);
+	}
+	FREE(yid);
 }
 
 static int is_same_bud(const void * a, const void * b) {
@@ -651,8 +755,9 @@ static char * getlcookie(char *cookie)
 	return login_cookie;
 }
 
-static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_notify(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *msg = NULL;
 	char *from = NULL;
 	int stat = 0;
@@ -699,8 +804,9 @@ static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt
 		LOG(("Got unknown notification: %s", msg));
 }
 
-static void yahoo_process_filetransfer(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_filetransfer(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *from=NULL;
 	char *to=NULL;
 	char *msg=NULL;
@@ -754,8 +860,9 @@ static void yahoo_process_filetransfer(struct yahoo_data *yd, struct yahoo_packe
 
 }
 
-static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_conference(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *msg = NULL;
 	char *host = NULL;
 	char *who = NULL;
@@ -852,8 +959,7 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 	}
 }
 
-
-static void yahoo_process_chat(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_chat(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	char *msg = NULL;
 	char *who = NULL;
@@ -949,7 +1055,7 @@ static void yahoo_process_chat(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			WARNING(("Count of members doesn't match No. of members we got"));
 		}
 		if(firstjoin && members) {
-			YAHOO_CALLBACK(ext_yahoo_chat_join)(yd->client_id, room, topic, members);
+			YAHOO_CALLBACK(ext_yahoo_chat_join)(yid->yd->client_id, room, topic, members);
 		} else if(who) {
 			if(y_list_length(members) != 1) {
 				WARNING(("Got more than 1 member on a normal join"));
@@ -958,27 +1064,28 @@ static void yahoo_process_chat(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			while(members) {
 				YList *n = members->next;
 				currentmember = members->data;
-				YAHOO_CALLBACK(ext_yahoo_chat_userjoin)(yd->client_id, room, currentmember);
-				FREE(members);
+				YAHOO_CALLBACK(ext_yahoo_chat_userjoin)(yid->yd->client_id, room, currentmember);
+				y_list_free_1(members);
 				members=n;
 			}
 		}
 		break;
 	case YAHOO_SERVICE_CHATEXIT:
 		if(who) {
-			YAHOO_CALLBACK(ext_yahoo_chat_userleave)(yd->client_id, room, who);
+			YAHOO_CALLBACK(ext_yahoo_chat_userleave)(yid->yd->client_id, room, who);
 		}
 		break;
 	case YAHOO_SERVICE_COMMENT:
 		if(who) {
-			YAHOO_CALLBACK(ext_yahoo_chat_message)(yd->client_id, who, room, msg, msgtype, utf8);
+			YAHOO_CALLBACK(ext_yahoo_chat_message)(yid->yd->client_id, who, room, msg, msgtype, utf8);
 		}
 		break;
 	}
 }
 
-static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_message(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	YList *l;
 	YList * messages = NULL;
 
@@ -1037,9 +1144,10 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 }
 
 
-static void yahoo_process_status(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_status(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	YList *l;
+	struct yahoo_data *yd = yid->yd;
 	char *name = NULL;
 	int state = 0;
 	int away = 0;
@@ -1113,8 +1221,9 @@ static void yahoo_process_status(struct yahoo_data *yd, struct yahoo_packet *pkt
 	}
 }
 
-static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_list(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	YList *l;
 
 	if (!yd->logged_in) {
@@ -1180,6 +1289,7 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 				FREE(yd->cookie_c);
 				yd->cookie_c = getcookie(pair->value);
 			} 
+
 			if(yd->cookie_y && yd->cookie_t && yd->cookie_c)
 				YAHOO_CALLBACK(ext_yahoo_got_cookies)(yd->client_id);
 
@@ -1195,8 +1305,9 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	}
 }
 
-static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_auth(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *seed = NULL;
 	char *sn   = NULL;
 	YList *l;
@@ -1310,7 +1421,7 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	yahoo_packet_hash(pack, 96, (char *)result96);
 	yahoo_packet_hash(pack, 1, yd->user);
 		
-	yahoo_send_packet(yd, pack, 0);
+	yahoo_send_packet(yid->fd, pack, 0);
 		
 	FREE(result6);
 	FREE(result96);
@@ -1324,8 +1435,9 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	}
 }
 
-static void yahoo_process_auth_resp(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_auth_resp(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *login_id;
 	char *handle;
 	char *url=NULL;
@@ -1351,8 +1463,9 @@ static void yahoo_process_auth_resp(struct yahoo_data *yd, struct yahoo_packet *
 	}
 }
 
-static void yahoo_process_mail(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_mail(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *who = NULL;
 	char *email = NULL;
 	char *subj = NULL;
@@ -1381,8 +1494,9 @@ static void yahoo_process_mail(struct yahoo_data *yd, struct yahoo_packet *pkt)
 		YAHOO_CALLBACK(ext_yahoo_mail_notify)(yd->client_id, NULL, NULL, count);
 }
 
-static void yahoo_process_contact(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_contact(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *id = NULL;
 	char *who = NULL;
 	char *msg = NULL;
@@ -1422,8 +1536,9 @@ static void yahoo_process_contact(struct yahoo_data *yd, struct yahoo_packet *pk
 		YAHOO_CALLBACK(ext_yahoo_rejected)(yd->client_id, who, msg);
 }
 
-static void yahoo_process_buddyadd(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_buddyadd(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *who = NULL;
 	char *where = NULL;
 	int status = 0;
@@ -1461,8 +1576,9 @@ static void yahoo_process_buddyadd(struct yahoo_data *yd, struct yahoo_packet *p
 /*	YAHOO_CALLBACK(ext_yahoo_status_changed)(yd->client_id, who, status, NULL, (status==YAHOO_STATUS_AVAILABLE?0:1)); */
 }
 
-static void yahoo_process_buddydel(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_buddydel(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
+	struct yahoo_data *yd = yid->yd;
 	char *who = NULL;
 	char *where = NULL;
 	int unk_66 = 0;
@@ -1507,7 +1623,7 @@ static void yahoo_process_buddydel(struct yahoo_data *yd, struct yahoo_packet *p
 	}
 }
 
-static void yahoo_process_ignore(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_ignore(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	char *who = NULL;
 	int  status = 0;
@@ -1541,7 +1657,7 @@ static void yahoo_process_ignore(struct yahoo_data *yd, struct yahoo_packet *pkt
 */	
 }
 
-static void yahoo_process_voicechat(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_voicechat(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	char *who = NULL;
 	char *me = NULL;
@@ -1573,25 +1689,33 @@ static void yahoo_process_voicechat(struct yahoo_data *yd, struct yahoo_packet *
 	 */
 }
 
-static void yahoo_process_webcam_key(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_process_webcam_key(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	char *me = NULL;
 	char *key = NULL;
 
 	YList *l;
+	yahoo_dump_unhandled(pkt);
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 		if (pair->key == 5)
 			me = pair->value;
 		if (pair->key == 61) 
 			key=pair->value;
+		/* TODO
+		 * who's key is this
+		 */
 	}
 
+	/* TODO
+	 * Instead of calling a callback, decide over here if it is
+	 * upload or download, and get the server
+	 */
 	if (me && key)
-		YAHOO_CALLBACK(ext_yahoo_got_webcam_key)(yd->client_id, key);
+		YAHOO_CALLBACK(ext_yahoo_got_webcam_key)(yid->yd->client_id, key);
 }
 
-static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt)
+static void yahoo_packet_process(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	DEBUG_MSG(("yahoo_packet_process: 0x%02x", pkt->service));
 	switch (pkt->service)
@@ -1605,30 +1729,30 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_GAMELOGOFF:
 	case YAHOO_SERVICE_IDACT:
 	case YAHOO_SERVICE_IDDEACT:
-		yahoo_process_status(yd, pkt);
+		yahoo_process_status(yid, pkt);
 		break;
 	case YAHOO_SERVICE_NOTIFY:
-		yahoo_process_notify(yd, pkt);
+		yahoo_process_notify(yid, pkt);
 		break;
 	case YAHOO_SERVICE_MESSAGE:
 	case YAHOO_SERVICE_GAMEMSG:
 	case YAHOO_SERVICE_SYSMESSAGE:
-		yahoo_process_message(yd, pkt);
+		yahoo_process_message(yid, pkt);
 		break;
 	case YAHOO_SERVICE_NEWMAIL:
-		yahoo_process_mail(yd, pkt);
+		yahoo_process_mail(yid, pkt);
 		break;
 	case YAHOO_SERVICE_NEWCONTACT:
-		yahoo_process_contact(yd, pkt);
+		yahoo_process_contact(yid, pkt);
 		break;
 	case YAHOO_SERVICE_LIST:
-		yahoo_process_list(yd, pkt);
+		yahoo_process_list(yid, pkt);
 		break;
 	case YAHOO_SERVICE_AUTH:
-		yahoo_process_auth(yd, pkt);
+		yahoo_process_auth(yid, pkt);
 		break;
 	case YAHOO_SERVICE_AUTHRESP:
-		yahoo_process_auth_resp(yd, pkt);
+		yahoo_process_auth_resp(yid, pkt);
 		break;
 	case YAHOO_SERVICE_CONFINVITE:
 	case YAHOO_SERVICE_CONFADDINVITE:
@@ -1636,7 +1760,7 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_CONFLOGON:
 	case YAHOO_SERVICE_CONFLOGOFF:
 	case YAHOO_SERVICE_CONFMSG:
-		yahoo_process_conference(yd, pkt);
+		yahoo_process_conference(yid, pkt);
 		break;
 	case YAHOO_SERVICE_CHATONLINE:
 	case YAHOO_SERVICE_CHATGOTO:
@@ -1646,26 +1770,26 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_CHATLOGOUT:
 	case YAHOO_SERVICE_CHATPING:
 	case YAHOO_SERVICE_COMMENT:
-		yahoo_process_chat(yd, pkt);
+		yahoo_process_chat(yid, pkt);
 		break;
 	case YAHOO_SERVICE_P2PFILEXFER:
 	case YAHOO_SERVICE_FILETRANSFER:
-		yahoo_process_filetransfer(yd, pkt);
+		yahoo_process_filetransfer(yid, pkt);
 		break;
 	case YAHOO_SERVICE_ADDBUDDY:
-		yahoo_process_buddyadd(yd, pkt);
+		yahoo_process_buddyadd(yid, pkt);
 		break;
 	case YAHOO_SERVICE_REMBUDDY:
-		yahoo_process_buddydel(yd, pkt);
+		yahoo_process_buddydel(yid, pkt);
 		break;
 	case YAHOO_SERVICE_IGNORECONTACT:
-		yahoo_process_ignore(yd, pkt);
+		yahoo_process_ignore(yid, pkt);
 		break;
 	case YAHOO_SERVICE_VOICECHAT:
-		yahoo_process_voicechat(yd, pkt);
+		yahoo_process_voicechat(yid, pkt);
 		break;
 	case YAHOO_SERVICE_WEBCAM:
-		yahoo_process_webcam_key(yd, pkt);
+		yahoo_process_webcam_key(yid, pkt);
 		break;
 	case YAHOO_SERVICE_IDLE:
 	case YAHOO_SERVICE_MAILSTAT:
@@ -1693,17 +1817,18 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	}
 }
 
-static struct yahoo_packet * yahoo_getdata(struct yahoo_data * yd)
+static struct yahoo_packet * yahoo_getdata(struct yahoo_input_data * yid)
 {
 	struct yahoo_packet *pkt;
+	struct yahoo_data *yd = yid->yd;
 	int pos = 0;
 	int pktlen;
 
 	if(!yd)
 		return NULL;
 
-	DEBUG_MSG(("rxlen is %d", yd->rxlen));
-	if (yd->rxlen < YAHOO_PACKET_HDRLEN) {
+	DEBUG_MSG(("rxlen is %d", yid->rxlen));
+	if (yid->rxlen < YAHOO_PACKET_HDRLEN) {
 		DEBUG_MSG(("len < YAHOO_PACKET_HDRLEN"));
 		return NULL;
 	}
@@ -1712,41 +1837,41 @@ static struct yahoo_packet * yahoo_getdata(struct yahoo_data * yd)
 	pos += 2;
 	pos += 2;
 
-	pktlen = yahoo_get16(yd->rxqueue + pos); pos += 2;
+	pktlen = yahoo_get16(yid->rxqueue + pos); pos += 2;
 	DEBUG_MSG(("%d bytes to read, rxlen is %d", 
-			pktlen, yd->rxlen));
+			pktlen, yid->rxlen));
 
-	if (yd->rxlen < (YAHOO_PACKET_HDRLEN + pktlen)) {
+	if (yid->rxlen < (YAHOO_PACKET_HDRLEN + pktlen)) {
 		DEBUG_MSG(("len < YAHOO_PACKET_HDRLEN + pktlen"));
 		return NULL;
 	}
 
 	LOG(("reading packet"));
-	yahoo_packet_dump(yd->rxqueue, YAHOO_PACKET_HDRLEN + pktlen);
+	yahoo_packet_dump(yid->rxqueue, YAHOO_PACKET_HDRLEN + pktlen);
 
 	pkt = yahoo_packet_new(0, 0, 0);
 
-	pkt->service = yahoo_get16(yd->rxqueue + pos); pos += 2;
-	pkt->status = yahoo_get32(yd->rxqueue + pos); pos += 4;
+	pkt->service = yahoo_get16(yid->rxqueue + pos); pos += 2;
+	pkt->status = yahoo_get32(yid->rxqueue + pos); pos += 4;
 	DEBUG_MSG(("Yahoo Service: 0x%02x Status: %d", pkt->service,
 		       pkt->status));
-	pkt->id = yahoo_get32(yd->rxqueue + pos); pos += 4;
+	pkt->id = yahoo_get32(yid->rxqueue + pos); pos += 4;
 
-	yd->id = pkt->id;
+	yd->session_id = pkt->id;
 
-	yahoo_packet_read(pkt, yd->rxqueue + pos, pktlen);
+	yahoo_packet_read(pkt, yid->rxqueue + pos, pktlen);
 
-	yd->rxlen -= YAHOO_PACKET_HDRLEN + pktlen;
-	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
-	if (yd->rxlen>0) {
-		unsigned char *tmp = y_memdup(yd->rxqueue + YAHOO_PACKET_HDRLEN 
-				+ pktlen, yd->rxlen);
-		FREE(yd->rxqueue);
-		yd->rxqueue = tmp;
-		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
+	yid->rxlen -= YAHOO_PACKET_HDRLEN + pktlen;
+	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
+	if (yid->rxlen>0) {
+		unsigned char *tmp = y_memdup(yid->rxqueue + YAHOO_PACKET_HDRLEN 
+				+ pktlen, yid->rxlen);
+		FREE(yid->rxqueue);
+		yid->rxqueue = tmp;
+		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
 	} else {
-		DEBUG_MSG(("freed rxqueue == %p", yd->rxqueue));
-		FREE(yd->rxqueue);
+		DEBUG_MSG(("freed rxqueue == %p", yid->rxqueue));
+		FREE(yid->rxqueue);
 	}
 
 	return pkt;
@@ -1758,7 +1883,7 @@ static void yahoo_yab_read(struct yab *yab, unsigned char *d, int len)
 	char *data = (char *)d;
 	data[len]='\0';
 
-	NOTICE(("Got yab: %s", data));
+	DEBUG_MSG(("Got yab: %s", data));
 	st = strstr(data, "userid=\"") + strlen("userid=\"");
 	en = strchr(st, '"');
 	*en++ = '\0';
@@ -1822,90 +1947,91 @@ static void yahoo_yab_read(struct yab *yab, unsigned char *d, int len)
 	}
 }
 
-static struct yab * yahoo_getyab(struct yahoo_data *yd)
+static struct yab * yahoo_getyab(struct yahoo_input_data *yid)
 {
 	struct yab *yab = NULL;
 	int pos = 0, end=0;
+	struct yahoo_data *yd = yid->yd;
 
 	if(!yd)
 		return NULL;
 
-	DEBUG_MSG(("rxlen is %d", yd->rxlen));
+	DEBUG_MSG(("rxlen is %d", yid->rxlen));
 
 	/* start with <record */
-	while(pos < yd->rxlen-strlen("<record")+1 
-			&& memcmp(yd->rxqueue + pos, "<record", strlen("<record")))
+	while(pos < yid->rxlen-strlen("<record")+1 
+			&& memcmp(yid->rxqueue + pos, "<record", strlen("<record")))
 		pos++;
 
-	if(pos >= yd->rxlen-1)
+	if(pos >= yid->rxlen-1)
 		return NULL;
 
 	end = pos+2;
 	/* end with /> */
-	while(end < yd->rxlen-strlen("/>")+1 && memcmp(yd->rxqueue + end, "/>", strlen("/>")))
+	while(end < yid->rxlen-strlen("/>")+1 && memcmp(yid->rxqueue + end, "/>", strlen("/>")))
 	       	end++;
 
-	if(end >= yd->rxlen-1)
+	if(end >= yid->rxlen-1)
 		return NULL;
 
 	yab = y_new0(struct yab, 1);
-	yahoo_yab_read(yab, yd->rxqueue + pos, end+2-pos);
+	yahoo_yab_read(yab, yid->rxqueue + pos, end+2-pos);
 	
 
-	yd->rxlen -= end+1;
-	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
-	if (yd->rxlen>0) {
-		unsigned char *tmp = y_memdup(yd->rxqueue + end + 1, yd->rxlen);
-		FREE(yd->rxqueue);
-		yd->rxqueue = tmp;
-		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
+	yid->rxlen -= end+1;
+	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
+	if (yid->rxlen>0) {
+		unsigned char *tmp = y_memdup(yid->rxqueue + end + 1, yid->rxlen);
+		FREE(yid->rxqueue);
+		yid->rxqueue = tmp;
+		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
 	} else {
-		DEBUG_MSG(("freed rxqueue == %p", yd->rxqueue));
-		FREE(yd->rxqueue);
+		DEBUG_MSG(("freed rxqueue == %p", yid->rxqueue));
+		FREE(yid->rxqueue);
 	}
 
 
 	return yab;
 }
 
-static char * yahoo_getwebcam_master(struct yahoo_data *yd)
+static char * yahoo_getwebcam_master(struct yahoo_input_data *yid)
 {
 	unsigned int pos=0;
 	unsigned int len=0;
 	char *server;
 
-	if(!yd)
+	if(!yid)
 		return NULL;
 
-	DEBUG_MSG(("rxlen is %d", yd->rxlen));
+	DEBUG_MSG(("rxlen is %d", yid->rxlen));
 
-	len = yd->rxqueue[pos++];
-	if (yd->rxlen < len)
+	len = yid->rxqueue[pos++];
+	if (yid->rxlen < len)
 		return NULL;
 
 	pos += 3; /* skip next 3 bytes */
 
-	server =  y_memdup(yd->rxqueue+pos, 16);
+	server =  y_memdup(yid->rxqueue+pos, 16);
 	pos += 16;
 
 	/* skip rest of the data */
 
-	yd->rxlen -= len;
-	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
-	if (yd->rxlen>0) {
-		unsigned char *tmp = y_memdup(yd->rxqueue + pos, yd->rxlen);
-		FREE(yd->rxqueue);
-		yd->rxqueue = tmp;
-		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
+	yid->rxlen -= len;
+	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
+	if (yid->rxlen>0) {
+		unsigned char *tmp = y_memdup(yid->rxqueue + pos, yid->rxlen);
+		FREE(yid->rxqueue);
+		yid->rxqueue = tmp;
+		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
 	} else {
-		DEBUG_MSG(("freed rxqueue == %p", yd->rxqueue));
-		FREE(yd->rxqueue);
+		DEBUG_MSG(("freed rxqueue == %p", yid->rxqueue));
+		FREE(yid->rxqueue);
 	}
 
 	return server;
 }
 
-static int yahoo_get_webcam_data(struct yahoo_data *yd)
+static int yahoo_get_webcam_data(struct yahoo_input_data *yid)
 {
 	unsigned char reason=0;
 	unsigned int pos=0;
@@ -1914,34 +2040,38 @@ static int yahoo_get_webcam_data(struct yahoo_data *yd)
 	unsigned char header_len=0;
 	char *who;
 	int connect=0;
+	struct yahoo_data *yd = yid->yd;
 
-	if(!yd->wcm || !yd->wcd || !yd->rxlen)
+	if(!yd)
 		return -1;
 
-	DEBUG_MSG(("rxlen is %d", yd->rxlen));
+	if(!yid->wcm || !yid->wcd || !yid->rxlen)
+		return -1;
+
+	DEBUG_MSG(("rxlen is %d", yid->rxlen));
 
 	/* if we are not reading part of image then read header */
-	if (!yd->wcd->to_read)
+	if (!yid->wcd->to_read)
 	{
-		header_len=yd->rxqueue[pos++];
-		yd->wcd->packet_type=0;
+		header_len=yid->rxqueue[pos++];
+		yid->wcd->packet_type=0;
 
-		if (yd->rxlen < header_len)
+		if (yid->rxlen < header_len)
 			return 0;
 
 		if (header_len >= 8)
 		{
-			reason = yd->rxqueue[pos++];
+			reason = yid->rxqueue[pos++];
 			/* next 2 bytes should always be 05 00 */
 			pos += 2;
-			yd->wcd->data_size = yahoo_get32(yd->rxqueue + pos);
+			yid->wcd->data_size = yahoo_get32(yid->rxqueue + pos);
 			pos += 4;
-			yd->wcd->to_read = yd->wcd->data_size;
+			yid->wcd->to_read = yid->wcd->data_size;
 		}
 		if (header_len >= 13)
 		{
-			yd->wcd->packet_type = yd->rxqueue[pos++];
-			yd->wcd->timestamp = yahoo_get32(yd->rxqueue + pos);
+			yid->wcd->packet_type = yid->rxqueue[pos++];
+			yid->wcd->timestamp = yahoo_get32(yid->rxqueue + pos);
 			pos += 4;
 		}
 
@@ -1950,33 +2080,33 @@ static int yahoo_get_webcam_data(struct yahoo_data *yd)
 	}
 
 	begin = pos;
-	pos += yd->wcd->to_read;
-	if (pos > yd->rxlen) pos = yd->rxlen;
+	pos += yid->wcd->to_read;
+	if (pos > yid->rxlen) pos = yid->rxlen;
 
 	/* if it is not an image then make sure we have the whole packet */
-	if (yd->wcd->packet_type != 0x02) {
-		if ((pos - begin) != yd->wcd->data_size) {
-			yd->wcd->to_read = 0;
+	if (yid->wcd->packet_type != 0x02) {
+		if ((pos - begin) != yid->wcd->data_size) {
+			yid->wcd->to_read = 0;
 			return 0;
 		} else {
-			yahoo_packet_dump(yd->rxqueue + begin, pos - begin);
+			yahoo_packet_dump(yid->rxqueue + begin, pos - begin);
 		}
 	}
 
-	DEBUG_MSG(("packet type %.2X, data length %d", yd->wcd->packet_type,
-		yd->wcd->data_size));
+	DEBUG_MSG(("packet type %.2X, data length %d", yid->wcd->packet_type,
+		yid->wcd->data_size));
 
 	/* find out what kind of packet we got */
-	switch (yd->wcd->packet_type)
+	switch (yid->wcd->packet_type)
 	{
 		case 0x00: /* user requests to view webcam */
-			if (yd->wcd->data_size) {
+			if (yid->wcd->data_size) {
 				end = begin;
-				while (end <= yd->rxlen &&
-					yd->rxqueue[end++] != 13);
+				while (end <= yid->rxlen &&
+					yid->rxqueue[end++] != 13);
 				if (end > begin)
 				{
-					who = y_memdup(yd->rxqueue + begin, end - begin);
+					who = y_memdup(yid->rxqueue + begin, end - begin);
 					who[end - begin - 1] = 0;
 					YAHOO_CALLBACK(ext_yahoo_webcam_viewer)
 						(yd->client_id, who + 2, 2);
@@ -1990,14 +2120,14 @@ static int yahoo_get_webcam_data(struct yahoo_data *yd)
 			break;
 		case 0x02: /* image data */
 			YAHOO_CALLBACK(ext_yahoo_got_webcam_image)
-				(yd->client_id, yd->rxqueue + begin,
-				yd->wcd->data_size, pos - begin,
-				yd->wcd->timestamp);
+				(yd->client_id, yid->rxqueue + begin,
+				yid->wcd->data_size, pos - begin,
+				yid->wcd->timestamp);
 			break;
 		case 0x05: /* response packets when uploading */
-			if (!yd->wcd->data_size) {
+			if (!yid->wcd->data_size) {
 				YAHOO_CALLBACK(ext_yahoo_webcam_data_request)
-					(yd->client_id, yd->wcd->timestamp);
+					(yd->client_id, yid->wcd->timestamp);
 			}
 			break;
 		case 0x07: /* connection is closing */
@@ -2007,10 +2137,10 @@ static int yahoo_get_webcam_data(struct yahoo_data *yd)
 			break;
 		case 0x0C: /* user connected */
 		case 0x0D: /* user disconnected */
-			if (yd->wcd->data_size) {
-				who = y_memdup(yd->rxqueue + begin, pos - begin + 1);
+			if (yid->wcd->data_size) {
+				who = y_memdup(yid->rxqueue + begin, pos - begin + 1);
 				who[pos - begin] = 0;
-				if (yd->wcd->packet_type == 0x0C)
+				if (yid->wcd->packet_type == 0x0C)
 					connect=1;
 				else
 					connect=0;
@@ -2025,64 +2155,68 @@ static int yahoo_get_webcam_data(struct yahoo_data *yd)
 		case 0x17: /* ?? */
 			break;
 	}
-	yd->wcd->to_read -= pos - begin;
+	yid->wcd->to_read -= pos - begin;
 
-	yd->rxlen -= pos;
-	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
-	if (yd->rxlen>0) {
-		unsigned char *tmp = y_memdup(yd->rxqueue + pos, yd->rxlen);
-		FREE(yd->rxqueue);
-		yd->rxqueue = tmp;
-		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yd->rxlen, yd->rxqueue));
+	yid->rxlen -= pos;
+	DEBUG_MSG(("rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
+	if (yid->rxlen>0) {
+		unsigned char *tmp = y_memdup(yid->rxqueue + pos, yid->rxlen);
+		FREE(yid->rxqueue);
+		yid->rxqueue = tmp;
+		DEBUG_MSG(("new rxlen == %d, rxqueue == %p", yid->rxlen, yid->rxqueue));
 	} else {
-		DEBUG_MSG(("freed rxqueue == %p", yd->rxqueue));
-		FREE(yd->rxqueue);
+		DEBUG_MSG(("freed rxqueue == %p", yid->rxqueue));
+		FREE(yid->rxqueue);
 	}
 
 	/* If we read a complete packet return success */
-	if (!yd->wcd->to_read)
+	if (!yid->wcd->to_read)
 		return 1;
 
 	return 0;
 }
 
-int yahoo_write_ready(int id, int fd)
+int yahoo_write_ready(int id, int fd, void *data)
 {
 	return 1;
 }
 
-static void yahoo_process_pager_connection(struct yahoo_data *yd)
+static void yahoo_process_pager_connection(struct yahoo_input_data *yid)
 {
 	struct yahoo_packet *pkt;
+	struct yahoo_data *yd = yid->yd;
 	int id = yd->client_id;
 
-	while (find_conn_by_id(id) && (pkt = yahoo_getdata(yd)) != NULL) {
+	while (find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER) 
+			&& (pkt = yahoo_getdata(yid)) != NULL) {
 
-		yahoo_packet_process(yd, pkt);
+		yahoo_packet_process(yid, pkt);
 
 		yahoo_packet_free(pkt);
 	}
 }
 
-static void yahoo_process_ft_connection(struct yahoo_data *yd)
+static void yahoo_process_ft_connection(struct yahoo_input_data *yid)
 {
 }
 
-static void yahoo_process_chatcat_connection(struct yahoo_data *yd)
+static void yahoo_process_chatcat_connection(struct yahoo_input_data *yid)
 {
-	if (strstr((char*)yd->rxqueue+(yd->rxlen-20), "</content>")) {
-		YAHOO_CALLBACK(ext_yahoo_chat_cat_xml)(yd->client_id, (char*)yd->rxqueue);
+	if (strstr((char*)yid->rxqueue+(yid->rxlen-20), "</content>")) {
+		YAHOO_CALLBACK(ext_yahoo_chat_cat_xml)(yid->yd->client_id, (char*)yid->rxqueue);
 	}
 }
 
-static void yahoo_process_yab_connection(struct yahoo_data *yd)
+static void yahoo_process_yab_connection(struct yahoo_input_data *yid)
 {
+	struct yahoo_data *yd = yid->yd;
 	struct yab *yab;
 	YList *buds;
 	int changed=0;
 	int id = yd->client_id;
 
-	while(find_conn_by_id(id) && (yab = yahoo_getyab(yd)) != NULL) {
+	while(find_input_by_id_and_type(id, YAHOO_CONNECTION_YAB) 
+			&& (yab = yahoo_getyab(yid)) != NULL) {
 		changed=1;
 		for(buds = yd->buddies; buds; buds=buds->next) {
 			struct yahoo_buddy * bud = buds->data;
@@ -2109,28 +2243,33 @@ static void yahoo_process_yab_connection(struct yahoo_data *yd)
 		YAHOO_CALLBACK(ext_yahoo_got_buddies)(yd->client_id, yd->buddies);
 }
 
-static void yahoo_process_webcam_master_connection(struct yahoo_data *yd)
+static void yahoo_process_webcam_master_connection(struct yahoo_input_data *yid)
 {
 	char* server;
 
-	server = yahoo_getwebcam_master(yd);
+	server = yahoo_getwebcam_master(yid);
 
 	if (server)
 	{
-		YAHOO_CALLBACK(ext_yahoo_got_webcam_server)(yd->client_id, server);
+		/* TODO
+		 * Call an error if server is NULL, else
+		 * connect to the server with yahoo_webcam_connect
+		 */
+		YAHOO_CALLBACK(ext_yahoo_got_webcam_server)(yid->yd->client_id, server);
 		FREE(server);
 	}
 }
 
-static void yahoo_process_webcam_connection(struct yahoo_data *yd)
+static void yahoo_process_webcam_connection(struct yahoo_input_data *yid)
 {
-	int id = yd->client_id;
+	int id = yid->yd->client_id;
 
 	/* as long as we still have packets available keep processing them */
-	while (find_conn_by_id(id) && yahoo_get_webcam_data(yd) == 1);
+	while (find_input_by_id_and_type(id, YAHOO_CONNECTION_WEBCAM) 
+			&& yahoo_get_webcam_data(yid) == 1);
 }
 
-static void (*yahoo_process_connection[])(struct yahoo_data *) = {
+static void (*yahoo_process_connection[])(struct yahoo_input_data *) = {
 	yahoo_process_pager_connection,
 	yahoo_process_ft_connection,
 	yahoo_process_yab_connection,
@@ -2139,15 +2278,15 @@ static void (*yahoo_process_connection[])(struct yahoo_data *) = {
 	yahoo_process_chatcat_connection
 };
 
-int yahoo_read_ready(int id, int fd)
+int yahoo_read_ready(int id, int fd, void *data)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = data;
 	char buf[1024];
 	int len;
 
-	DEBUG_MSG(("callback"));
+	LOG(("read callback"));
 
-	if(!yd)
+	if(!yid)
 		return -2;
 	
 	do {
@@ -2158,11 +2297,9 @@ int yahoo_read_ready(int id, int fd)
 		int e = errno;
 		DEBUG_MSG(("len == %d (<= 0)", len));
 
-		yd->current_status = -1;
-		YAHOO_CALLBACK(ext_yahoo_remove_handler)(id, fd);
-		if(yd->type == YAHOO_CONNECTION_YAB || yd->type == YAHOO_CONNECTION_CHATCAT)
-			yd->buddies = NULL;
-		yahoo_close(yd);
+		if(yid->type == YAHOO_CONNECTION_PAGER)
+			yid->yd->current_status = -1;
+		yahoo_input_close(yid);
 
 		/* no need to return an error, because we've already fixed it */
 		if(len == 0)
@@ -2172,77 +2309,133 @@ int yahoo_read_ready(int id, int fd)
 		return -1;
 	}
 
-	yd->rxqueue = realloc(yd->rxqueue, len + yd->rxlen);
-	memcpy(yd->rxqueue + yd->rxlen, buf, len);
-	yd->rxlen += len;
+	yid->rxqueue = realloc(yid->rxqueue, len + yid->rxlen);
+	memcpy(yid->rxqueue + yid->rxlen, buf, len);
+	yid->rxlen += len;
 
-	yahoo_process_connection[yd->type](yd);
+	yahoo_process_connection[yid->type](yid);
 
 	return len;
 }
 
-int yahoo_login(const char *username, const char *password, int initial)
+int yahoo_init(const char *username, const char *password)
 {
 	struct yahoo_data *yd;
-	struct yahoo_packet *pkt;
-	int fd;
-	int i;
-
-	fd = YAHOO_CALLBACK(ext_yahoo_connect)(pager_host, atoi(pager_port));
-
-	for(i=0; fd <=0 && fallback_ports[i]; i++) {
-		fd = YAHOO_CALLBACK(ext_yahoo_connect)(pager_host, 
-				fallback_ports[i]);
-	}
-
-	if(fd <= 0)
-		return fd;
 
 	yd = y_new0(struct yahoo_data, 1);
-	yd->fd = fd;
+
+	if(!yd)
+		return 0;
 
 	yd->user = strdup(username);
 	yd->password = strdup(password);
 
-	yd->initial_status = initial;
+	yd->initial_status = -1;
 	yd->current_status = -1;
 
 	yd->client_id = ++last_id;
 
-	add_to_list(yd, yd->fd);
+	add_to_list(yd);
+
+	return yd->client_id;
+}
+
+struct connect_callback_data {
+	struct yahoo_data *yd;
+	int tag;
+	int i;
+};
+
+static void yahoo_connected(int fd, int error, void *data)
+{
+	struct connect_callback_data *ccd = data;
+	struct yahoo_data *yd = ccd->yd;
+	struct yahoo_packet *pkt;
+	struct yahoo_input_data *yid;
+
+	if(error) {
+		if(fallback_ports[ccd->i]) {
+			int tag;
+			tag = YAHOO_CALLBACK(ext_yahoo_connect_async)(yd->client_id, pager_host,
+					fallback_ports[ccd->i++], yahoo_connected, ccd);
+
+			if(tag > 0)
+				ccd->tag=tag;
+		} else {
+			FREE(ccd);
+			YAHOO_CALLBACK(ext_yahoo_login_response)(yd->client_id, YAHOO_LOGIN_SOCK, NULL);
+		}
+		return;
+	}
+
+	FREE(ccd);
+
+	/* fd < 0 && error == 0 means connect was cancelled */
+	if(fd < 0)
+		return;
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YAHOO_STATUS_AVAILABLE, 0);
 
-	yahoo_packet_hash(pkt, 1, username);
+	yahoo_packet_hash(pkt, 1, yd->user);
 	NOTICE(("Sending initial packet"));
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(yd->client_id, yd->fd, YAHOO_INPUT_READ);
+	yid = y_new0(struct yahoo_input_data, 1);
+	yid->yd = yd;
+	yid->fd = fd;
+	inputs = y_list_prepend(inputs, yid);
 
-	return yd->client_id;
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(yd->client_id, yid->fd, YAHOO_INPUT_READ, yid);
+}
+
+void yahoo_login(int id, int initial)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct connect_callback_data *ccd;
+	int tag;
+
+	if(!yd)
+		return;
+
+	yd->initial_status = initial;
+
+	ccd = y_new0(struct connect_callback_data, 1);
+	ccd->yd = yd;
+	tag = YAHOO_CALLBACK(ext_yahoo_connect_async)(yd->client_id, pager_host, atoi(pager_port), 
+			yahoo_connected, ccd);
+
+	/*
+	 * if tag <= 0, then callback has already been called
+	 * so ccd will have been freed
+	 */
+	if(tag > 0)
+		ccd->tag = tag;
 }
 
 
 int yahoo_get_fd(int id)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
-	if(!yd)
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	if(!yid)
 		return 0;
 	else
-		return yd->fd;
+		return yid->fd;
 }
 
 void yahoo_send_im(int id, const char *from, const char *who, const char *what, int utf8)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
 	struct yahoo_packet *pkt = NULL;
+	struct yahoo_data *yd;
 
-	if(!yd)
+	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_MESSAGE, YAHOO_STATUS_OFFLINE, yd->id);
+	yd = yid->yd;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_MESSAGE, YAHOO_STATUS_OFFLINE, yd->session_id);
 
 	if(from && strcmp(from, yd->user))
 		yahoo_packet_hash(pkt, 0, yd->user);
@@ -2257,19 +2450,21 @@ void yahoo_send_im(int id, const char *from, const char *who, const char *what, 
 	yahoo_packet_hash(pkt, 64, "0");
 
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_send_typing(int id, const char *from, const char *who, int typ)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
-	if(!yd)
+	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YAHOO_STATUS_NOTIFY, yd->id);
+	yd = yid->yd;
+	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YAHOO_STATUS_NOTIFY, yd->session_id);
 
 	yahoo_packet_hash(pkt, 5, who);
 	yahoo_packet_hash(pkt, 4, from?from:yd->user);
@@ -2277,20 +2472,23 @@ void yahoo_send_typing(int id, const char *from, const char *who, int typ)
 	yahoo_packet_hash(pkt, 13, typ ? "1" : "0");
 	yahoo_packet_hash(pkt, 49, "TYPING");
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_set_away(int id, enum yahoo_status state, const char *msg, int away)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 	int service;
 	char s[4];
 
-	if(!yd)
+	if(!yid)
 		return;
+
+	yd = yid->yd;
 
 	if (msg) {
 		yd->current_status = YAHOO_STATUS_CUSTOM;
@@ -2302,7 +2500,7 @@ void yahoo_set_away(int id, enum yahoo_status state, const char *msg, int away)
 		service = YAHOO_SERVICE_ISBACK;
 	else
 		service = YAHOO_SERVICE_ISAWAY;
-	pkt = yahoo_packet_new(service, yd->current_status, yd->id);
+	pkt = yahoo_packet_new(service, yd->current_status, yd->session_id);
 	snprintf(s, sizeof(s), "%d", yd->current_status);
 	yahoo_packet_hash(pkt, 10, s);
 	if (yd->current_status == YAHOO_STATUS_CUSTOM) {
@@ -2310,82 +2508,99 @@ void yahoo_set_away(int id, enum yahoo_status state, const char *msg, int away)
 		yahoo_packet_hash(pkt, 47, away?"1":"0");
 	}
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_logoff(int id)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
+
+	LOG(("yahoo_logoff: current status: %d", yd->current_status));
 
 	if(yd->current_status != -1) {
-
-		pkt = yahoo_packet_new(YAHOO_SERVICE_LOGOFF, YAHOO_STATUS_AVAILABLE, yd->id);
+		pkt = yahoo_packet_new(YAHOO_SERVICE_LOGOFF, YAHOO_STATUS_AVAILABLE, yd->session_id);
 		yd->current_status = -1;
 
 		if (pkt) {
-			yahoo_send_packet(yd, pkt, 0);
+			yahoo_send_packet(yid->fd, pkt, 0);
 			yahoo_packet_free(pkt);
 		}
 	}
 
-	YAHOO_CALLBACK(ext_yahoo_remove_handler)(id, yd->fd);
-	yahoo_close(yd);
+	
+/*	do {
+		yahoo_input_close(yid);
+	} while((yid = find_input_by_id(id)));*/
+	
 }
 
 void yahoo_get_list(int id)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_LIST, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_LIST, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	if (pkt) {
-		yahoo_send_packet(yd, pkt, 0);
+		yahoo_send_packet(yid->fd, pkt, 0);
 		yahoo_packet_free(pkt);
 	}
+}
+
+static void _yahoo_http_connected(int id, int fd, int error, void *data)
+{
+	struct yahoo_input_data *yid = data;
+	if(fd <= 0) {
+		inputs = y_list_remove(inputs, yid);
+		FREE(yid);
+		return;
+	}
+
+	yid->fd = fd;
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(id, fd, YAHOO_INPUT_READ, yid);
 }
 
 void yahoo_get_yab(int id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
-	struct yahoo_data *nyd;
+	struct yahoo_input_data *yid;
 	char url[1024];
 	char buff[1024];
 
 	if(!yd)
 		return;
 
-	nyd = y_new0(struct yahoo_data, 1);
-	nyd->id = yd->id;
-	nyd->client_id = ++last_id;
-	nyd->type = YAHOO_CONNECTION_YAB;
-	nyd->buddies = yd->buddies;
+	yid = y_new0(struct yahoo_input_data, 1);
+	yid->yd = yd;
+	yid->type = YAHOO_CONNECTION_YAB;
 
 	snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?ab2=0");
 
 	snprintf(buff, sizeof(buff), "Y=%s; T=%s",
 			yd->cookie_y, yd->cookie_t);
 
-	nyd->fd = yahoo_http_get(url, buff);
+	inputs = y_list_prepend(inputs, yid);
 
-	add_to_list(nyd, nyd->fd);
-
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
-
+	yahoo_http_get(yid->yd->client_id, url, buff, 
+			_yahoo_http_connected, yid);
 }
 
 void yahoo_set_yab(int id, struct yab * yab)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
-	struct yahoo_data *nyd;
+	struct yahoo_input_data *yid;
 	char url[1024];
 	char buff[1024];
 	char *temp;
@@ -2394,11 +2609,9 @@ void yahoo_set_yab(int id, struct yab * yab)
 	if(!yd)
 		return;
 
-	nyd = y_new0(struct yahoo_data, 1);
-	nyd->id = yd->id;
-	nyd->client_id = ++last_id;
-	nyd->type = YAHOO_CONNECTION_YAB;
-	nyd->buddies = yd->buddies;
+	yid = y_new0(struct yahoo_input_data, 1);
+	yid->type = YAHOO_CONNECTION_YAB;
+	yid->yd = yd;
 
 	strncpy(url, "http://insider.msg.yahoo.com/ycontent/?addab2=0", size);
 
@@ -2461,182 +2674,201 @@ void yahoo_set_yab(int id, struct yab * yab)
 	snprintf(buff, sizeof(buff), "Y=%s; T=%s",
 			yd->cookie_y, yd->cookie_t);
 
-	nyd->fd = yahoo_http_get(url, buff);
+	inputs = y_list_prepend(inputs, yid);
 
-	add_to_list(nyd, nyd->fd);
-
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
+	yahoo_http_get(yid->yd->client_id, url, buff, 
+			_yahoo_http_connected, yid);
 }
 
 void yahoo_set_identity_status(int id, const char * identity, int active)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
 	pkt = yahoo_packet_new(active?YAHOO_SERVICE_IDACT:YAHOO_SERVICE_IDDEACT,
-			YAHOO_STATUS_AVAILABLE, yd->id);
+			YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 3, identity);
 	if (pkt) {
-		yahoo_send_packet(yd, pkt, 0);
+		yahoo_send_packet(yid->fd, pkt, 0);
 		yahoo_packet_free(pkt);
 	}
 }
 
 void yahoo_refresh(int id)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_USERSTAT, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_USERSTAT, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	if (pkt) {
-		yahoo_send_packet(yd, pkt, 0);
+		yahoo_send_packet(yid->fd, pkt, 0);
 		yahoo_packet_free(pkt);
 	}
 }
 
 void yahoo_keepalive(int id)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt=NULL;
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_PING, YAHOO_STATUS_AVAILABLE, yd->id);
-	yahoo_send_packet(yd, pkt, 0);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_PING, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_add_buddy(int id, const char *who, const char *group)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
 	if (!yd->logged_in)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, group);
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_remove_buddy(int id, const char *who, const char *group)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, group);
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_reject_buddy(int id, const char *who, const char *msg)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
 	if (!yd->logged_in)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_REJECTCONTACT, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_REJECTCONTACT, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 14, msg);
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_ignore_buddy(int id, const char *who, int unignore)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
 	if (!yd->logged_in)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_IGNORECONTACT, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_IGNORECONTACT, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 13, unignore?"2":"1");
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_change_buddy_group(int id, const char *who, const char *old_group, const char *new_group)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, new_group);
 	yahoo_packet_hash(pkt, 14, " ");
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, old_group);
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_group_rename(int id, const char *old_group, const char *new_group)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt = NULL;
 
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_GROUPRENAME, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_GROUPRENAME, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 65, old_group);
 	yahoo_packet_hash(pkt, 67, new_group);
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_conference_addinvite(int id, const char * from, const char *who, const char *room, const YList * members, const char *msg)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFADDINVITE, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFADDINVITE, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 51, who);
@@ -2649,20 +2881,22 @@ void yahoo_conference_addinvite(int id, const char * from, const char *who, cons
 	}
 	/* 52, 53 -> other members? */
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_conference_invite(int id, const char * from, YList *who, const char *room, const char *msg)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFINVITE, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFINVITE, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 50, yd->user);
@@ -2673,20 +2907,22 @@ void yahoo_conference_invite(int id, const char * from, YList *who, const char *
 	yahoo_packet_hash(pkt, 58, msg);
 	yahoo_packet_hash(pkt, 13, "0");
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_conference_logon(int id, const char *from, YList *who, const char *room)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGON, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGON, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -2694,20 +2930,22 @@ void yahoo_conference_logon(int id, const char *from, YList *who, const char *ro
 	}
 	yahoo_packet_hash(pkt, 57, room);
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_conference_decline(int id, const char * from, YList *who, const char *room, const char *msg)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFDECLINE, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFDECLINE, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -2716,20 +2954,22 @@ void yahoo_conference_decline(int id, const char * from, YList *who, const char 
 	yahoo_packet_hash(pkt, 57, room);
 	yahoo_packet_hash(pkt, 14, msg);
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_conference_logoff(int id, const char * from, YList *who, const char *room)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGOFF, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGOFF, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -2737,20 +2977,22 @@ void yahoo_conference_logoff(int id, const char * from, YList *who, const char *
 	}
 	yahoo_packet_hash(pkt, 57, room);
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_conference_message(int id, const char * from, YList *who, const char *room, const char *msg, int utf8)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
+	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFMSG, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFMSG, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -2762,27 +3004,24 @@ void yahoo_conference_message(int id, const char * from, YList *who, const char 
 	if(utf8)
 		yahoo_packet_hash(pkt, 97, "1");
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
-
 void yahoo_get_chatrooms(int id, int chatroomid)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
-	struct yahoo_data *nyd;
+	struct yahoo_input_data *yid;
 	char url[1024];
 	char buff[1024];
 
 	if(!yd)
 		return;
 
-	nyd = y_new0(struct yahoo_data, 1);
-	nyd->id = yd->id;
-	nyd->client_id = ++last_id;
-	nyd->type = YAHOO_CONNECTION_CHATCAT;
-	nyd->buddies = yd->buddies;
+	yid = y_new0(struct yahoo_input_data, 1);
+	yid->yd = yd;
+	yid->type = YAHOO_CONNECTION_CHATCAT;
 
 	if (chatroomid == 0) {
 		snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?chatcat=0");
@@ -2792,41 +3031,40 @@ void yahoo_get_chatrooms(int id, int chatroomid)
 
 	snprintf(buff, sizeof(buff), "Y=%s; T=%s", yd->cookie_y, yd->cookie_t);
 
-	nyd->fd = yahoo_http_get(url, buff);
+	inputs = y_list_prepend(inputs, yid);
 
-	add_to_list(nyd, nyd->fd);
-
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
-
+	yahoo_http_get(yid->yd->client_id, url, buff, _yahoo_http_connected, yid);
 }
-
 
 void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATONLINE, YAHOO_STATUS_AVAILABLE, yd->id);
+	yd = yid->yd;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATONLINE, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 109, yd->user);
 	yahoo_packet_hash(pkt, 6, "abcde");
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATJOIN, YAHOO_STATUS_AVAILABLE, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATJOIN, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 104, room);
 	yahoo_packet_hash(pkt, 129, roomid);
 	yahoo_packet_hash(pkt, 62, "2"); /* ??? */
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
@@ -2834,14 +3072,17 @@ void yahoo_chat_logon(int id, const char *from, const char *room, const char *ro
 
 void yahoo_chat_message(int id, const char *from, const char *room, const char *msg, const int msgtype, const int utf8)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 	char buf[2];
 		
-	if(!yd)
+	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_COMMENT, YAHOO_STATUS_AVAILABLE, yd->id);
+	yd = yid->yd;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_COMMENT, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 104, room);
@@ -2853,7 +3094,7 @@ void yahoo_chat_message(int id, const char *from, const char *room, const char *
 	if(utf8)
 		yahoo_packet_hash(pkt, 97, "1");
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
@@ -2861,35 +3102,41 @@ void yahoo_chat_message(int id, const char *from, const char *room, const char *
 
 void yahoo_chat_logoff(int id, const char *from)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATLOGOUT, YAHOO_STATUS_AVAILABLE, yd->id);
+	yd = yid->yd;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATLOGOUT, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
 
 void yahoo_webcam_get_key(int id, const char *who)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_WEBCAM, YAHOO_STATUS_AVAILABLE, yd->id);
+	yd = yid->yd;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_WEBCAM, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, yd->user);
 	if (who != NULL)
 		yahoo_packet_hash(pkt, 5, who);
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
@@ -2899,32 +3146,32 @@ void yahoo_webcam_get_upload_key(int id)
 	yahoo_webcam_get_key(id, NULL);
 }
 
-void yahoo_webcam_get_server(int id, char *who)
+static void _yahoo_webcam_get_server_connected(int fd, int error, void *d)
 {
+	struct yahoo_input_data *yid = d;
+	char *who = yid->wcm->user;
 	char *data = NULL;
 	char *packet = NULL;
 	unsigned char magic_nr[] = {0, 1, 0};
 	unsigned char header_len = 8;
 	unsigned int len = 0;
 	unsigned int pos = 0;
-	struct yahoo_data *nyd;
-	struct yahoo_data *yd = find_conn_by_id(id);
 
-	nyd = y_new0(struct yahoo_data, 1);
-	nyd->id = yd->id;
-	nyd->client_id = ++last_id;
-	nyd->type = YAHOO_CONNECTION_WEBCAM_MASTER;
+	if(error) {
+		FREE(who);
+		FREE(yid);
+		return;
+	}
 
-	nyd->fd = YAHOO_CALLBACK(ext_yahoo_connect)(webcam_host, atoi(webcam_port));
-
-	add_to_list(nyd, nyd->fd);
-
+	yid->fd = fd;
+	inputs = y_list_prepend(inputs, yid);
+	
 	/* send initial packet */
 	if (who)
 		data = strdup("<RVWCFG>");
 	else
 		data = strdup("<RUPCFG>");
-	yahoo_send_data(nyd, data, strlen(data));
+	yahoo_send_data(fd, data, strlen(data));
 	FREE(data);
 
 	/* send data */
@@ -2944,11 +3191,26 @@ void yahoo_webcam_get_server(int id, char *who)
 	pos += yahoo_put32(packet + pos, len);
 	memcpy(packet + pos, data, len);
 	pos += len;
-	yahoo_send_data(nyd, packet, pos);
+	yahoo_send_data(yid->fd, packet, pos);
 	FREE(packet);
 	FREE(data);
 
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(yid->yd->client_id, fd, YAHOO_INPUT_READ, yid);
+}
+
+void yahoo_webcam_get_server(int id, char *who)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = y_new0(struct yahoo_input_data, 1);
+
+	yid->type = YAHOO_CONNECTION_WEBCAM_MASTER;
+	yid->yd = yd;
+	yid->wcm = y_new0(struct yahoo_webcam, 1);
+	yid->wcm->user = who?strdup(who):NULL;
+
+	YAHOO_CALLBACK(ext_yahoo_connect_async)(id, webcam_host, atoi(webcam_port), 
+			_yahoo_webcam_get_server_connected, yid);
+
 }
 
 void yahoo_webcam_get_upload_server(int id)
@@ -2956,8 +3218,11 @@ void yahoo_webcam_get_upload_server(int id)
 	yahoo_webcam_get_server(id, NULL);
 }
 
-void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
+static void _yahoo_webcam_connected(int fd, int error, void *d)
 {
+	struct yahoo_input_data *yid = d;
+	struct yahoo_webcam *wcm = yid->wcm;
+	struct yahoo_data *yd = yid->yd;
 	char conn_type[100];
 	char *data=NULL;
 	char *packet=NULL;
@@ -2965,31 +3230,13 @@ void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
 	unsigned header_len=0;
 	unsigned int len=0;
 	unsigned int pos=0;
-	struct yahoo_data *nyd;
-	struct yahoo_data *yd = find_conn_by_id(id);
 
-	if (!wcm || !wcm->server || !wcm->key)
+	if(error) {
+		FREE(yid);
 		return;
+	}
 
-	nyd = y_new0(struct yahoo_data, 1);
-	nyd->id = yd->id;
-	nyd->client_id = ++last_id;
-	nyd->type = YAHOO_CONNECTION_WEBCAM;
-
-	/* copy webcam data to new connection */
-	nyd->wcm = y_new0(struct yahoo_webcam, 1);
-	nyd->wcm->direction = wcm->direction;
-	nyd->wcm->server = strdup(wcm->server);
-	nyd->wcm->key = strdup(wcm->key);
-	if (wcm->my_ip) nyd->wcm->my_ip = strdup(wcm->my_ip);
-	if (wcm->user) nyd->wcm->user = strdup(wcm->user);
-	if (wcm->description) nyd->wcm->description = strdup(wcm->description);
-
-	nyd->wcd = y_new0(struct yahoo_webcam_data, 1);
-
-	nyd->fd = YAHOO_CALLBACK(ext_yahoo_connect)(wcm->server, atoi(webcam_port));
-
-	add_to_list(nyd, nyd->fd);
+	inputs = y_list_prepend(inputs, yid);
 
        	/* send initial packet */
 	switch (wcm->direction)
@@ -3003,7 +3250,7 @@ void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
 		default:
 			return;
 	}
-	yahoo_send_data(nyd, data, strlen(data));
+	yahoo_send_data(yid->fd, data, strlen(data));
 	FREE(data);
 
 	/* send data */
@@ -3020,7 +3267,7 @@ void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
 			data = y_string_append(data, "\r\ng=");
 			data = y_string_append(data, wcm->user);
 			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
-			sprintf(conn_type, "%d", wcm->conn_type);
+			snprintf(conn_type, sizeof(conn_type), "%d", wcm->conn_type);
 			data = y_string_append(data, conn_type);
 			data = y_string_append(data, "\r\n");
 			break;
@@ -3033,7 +3280,7 @@ void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
 			data = y_string_append(data, "\r\ni=");
 			data = y_string_append(data, wcm->my_ip);
 			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
-			sprintf(conn_type, "%d", wcm->conn_type);
+			snprintf(conn_type, sizeof(conn_type), "%d", wcm->conn_type);
 			data = y_string_append(data, conn_type);
 			data = y_string_append(data, "\r\nb=");
 			data = y_string_append(data, wcm->description);
@@ -3064,21 +3311,52 @@ void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
 		pos += sizeof(magic_nr);
 	}
 	memcpy(packet + pos, data, len);
-	yahoo_send_data(nyd, packet, header_len + len);
+	yahoo_send_data(yid->fd, packet, header_len + len);
 	FREE(packet);
 	FREE(data);
 
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(yd->client_id, yid->fd, YAHOO_INPUT_READ, yid);
+}
+
+void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
+{
+	struct yahoo_input_data *yid;
+	struct yahoo_data *yd = find_conn_by_id(id);
+
+	if (!wcm || !wcm->server || !wcm->key)
+		return;
+
+	yid = y_new0(struct yahoo_input_data, 1);
+	yid->type = YAHOO_CONNECTION_WEBCAM;
+	yid->yd = yd;
+
+	/* copy webcam data to new connection */
+	yid->wcm = y_new0(struct yahoo_webcam, 1);
+	yid->wcm->direction = wcm->direction;
+	yid->wcm->server = strdup(wcm->server);
+	yid->wcm->key = strdup(wcm->key);
+	if (wcm->my_ip) 
+		yid->wcm->my_ip = strdup(wcm->my_ip);
+	if (wcm->user) 
+		yid->wcm->user = strdup(wcm->user);
+	if (wcm->description) 
+		yid->wcm->description = strdup(wcm->description);
+
+	yid->wcd = y_new0(struct yahoo_webcam_data, 1);
+
+	YAHOO_CALLBACK(ext_yahoo_connect_async)(id, wcm->server, atoi(webcam_port),
+			_yahoo_webcam_connected, yid);
+
 }
 
 void yahoo_webcam_send_image(int id, unsigned char *image, unsigned int length, unsigned int timestamp)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_WEBCAM);
 	char *packet;
 	unsigned char header_len = 13;
 	unsigned int pos = 0;
 
-	if (!yd)
+	if (!yid)
 		return;
 
 	packet = y_new0(char, header_len + length);
@@ -3090,20 +3368,20 @@ void yahoo_webcam_send_image(int id, unsigned char *image, unsigned int length, 
 	packet[pos++] = 2; /* packet type, image */
 	pos += yahoo_put32(packet + pos, timestamp);
 	if (length) memcpy(packet + pos, image, length);
-	yahoo_send_data(yd, packet, header_len + length);
+	yahoo_send_data(yid->fd, packet, header_len + length);
 	FREE(packet);
 }
 
 void yahoo_webcam_accept_viewer(int id, const char* who, int accept)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_WEBCAM);
 	char *packet = NULL;
 	char *data = NULL;
 	unsigned char header_len = 13;
 	unsigned int pos = 0;
 	unsigned int len = 0;
 
-	if (!yd)
+	if (!yid)
 		return;
 
 	data = strdup("u=");
@@ -3120,56 +3398,101 @@ void yahoo_webcam_accept_viewer(int id, const char* who, int accept)
 	packet[pos++] = 0; /* packet type */
 	pos += yahoo_put32(packet + pos, accept);
 	memcpy(packet + pos, data, len);
-	yahoo_send_data(yd, packet, header_len + len);
+	yahoo_send_data(yid->fd, packet, header_len + len);
 }
 
 void yahoo_webcam_invite(int id, const char *who)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
 	struct yahoo_packet *pkt;
 		
-	if(!yd)
+	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YAHOO_STATUS_NOTIFY, yd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YAHOO_STATUS_NOTIFY, yid->yd->session_id);
 
 	yahoo_packet_hash(pkt, 49, "WEBCAMINVITE");
 	yahoo_packet_hash(pkt, 14, " ");
 	yahoo_packet_hash(pkt, 13, "0");
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 1, yid->yd->user);
 	yahoo_packet_hash(pkt, 5, who);
-	yahoo_send_packet(yd, pkt, 0);
+	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
 }
-	
 
-int yahoo_send_file(int id, const char *who, const char *msg, const char *name, long size)
+struct send_file_data {
+	struct yahoo_packet *pkt;
+	yahoo_get_fd_callback callback;
+	void *user_data;
+};
+
+static void _yahoo_send_file_connected(int id, int fd, int error, void *data)
+{
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_FT);
+	struct send_file_data *sfd = data;
+	struct yahoo_packet *pkt = sfd->pkt;
+	unsigned char buff[1024];
+
+	if(fd <= 0) {
+		sfd->callback(id, fd, error, sfd->user_data);
+		FREE(sfd);
+		yahoo_packet_free(pkt);
+		inputs = y_list_remove(inputs, yid);
+		FREE(yid);
+		return;
+	}
+
+	yid->fd = fd;
+	yahoo_send_packet(yid->fd, pkt, 8);
+	yahoo_packet_free(pkt);
+
+	snprintf((char *)buff, sizeof(buff), "29");
+	buff[2] = 0xc0;
+	buff[3] = 0x80;
+	
+	write(yid->fd, buff, 4);
+
+/*	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ); */
+
+	sfd->callback(id, fd, error, sfd->user_data);
+	FREE(sfd);
+	inputs = y_list_remove(inputs, yid);
+	/*
+	while(yahoo_tcp_readline(buff, sizeof(buff), nyd->fd) > 0) {
+		if(!strcmp(buff, ""))
+			break;
+	}
+
+	*/
+	yahoo_input_close(yid);
+}
+
+void yahoo_send_file(int id, const char *who, const char *msg, 
+		const char *name, unsigned long size, 
+		yahoo_get_fd_callback callback, void *data)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
-	struct yahoo_data *nyd;
+	struct yahoo_input_data *yid;
 	struct yahoo_packet *pkt = NULL;
 	char size_str[10];
 	long content_length=0;
 	unsigned char buff[1024];
 	char url[255];
+	struct send_file_data *sfd;
 
 	if(!yd)
-		return -1;
+		return;
 
-	nyd = y_new0(struct yahoo_data, 1);
-	nyd->id = yd->id;
-	nyd->client_id = ++last_id;
-	nyd->user = strdup(yd->user);
-	nyd->cookie_y = strdup(yd->cookie_y);
-	nyd->cookie_t = strdup(yd->cookie_t);
-	nyd->type = YAHOO_CONNECTION_FT;
+	yid = y_new0(struct yahoo_input_data, 1);
+	yid->yd = yd;
+	yid->type = YAHOO_CONNECTION_FT;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_FILETRANSFER, YAHOO_STATUS_AVAILABLE, nyd->id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_FILETRANSFER, YAHOO_STATUS_AVAILABLE, yd->session_id);
 
 	snprintf(size_str, sizeof(size_str), "%ld", size);
 
-	yahoo_packet_hash(pkt, 0, nyd->user);
+	yahoo_packet_hash(pkt, 0, yd->user);
 	yahoo_packet_hash(pkt, 5, who);
 	yahoo_packet_hash(pkt, 14, msg);
 	yahoo_packet_hash(pkt, 27, name);
@@ -3180,32 +3503,15 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 	snprintf(url, sizeof(url), "http://%s:%s/notifyft", 
 			filetransfer_host, filetransfer_port);
 	snprintf((char *)buff, sizeof(buff), "Y=%s; T=%s",
-			nyd->cookie_y, nyd->cookie_t);
-	nyd->fd = yahoo_http_post(url, (char *)buff, content_length + 4 + size);
+			yd->cookie_y, yd->cookie_t);
+	inputs = y_list_prepend(inputs, yid);
 
-	add_to_list(nyd, nyd->fd);
-
-	yahoo_send_packet(nyd, pkt, 8);
-	yahoo_packet_free(pkt);
-
-	snprintf((char *)buff, sizeof(buff), "29");
-	buff[2] = 0xc0;
-	buff[3] = 0x80;
-	
-	write(nyd->fd, buff, 4);
-
-/*	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ); */
-
-	return nyd->fd;
-
-	/*
-	while(yahoo_tcp_readline(buff, sizeof(buff), nyd->fd) > 0) {
-		if(!strcmp(buff, ""))
-			break;
-	}
-
-	yahoo_close(nyd);
-	*/
+	sfd = y_new0(struct send_file_data, 1);
+	sfd->pkt = pkt;
+	sfd->callback = callback;
+	sfd->user_data = data;
+	yahoo_http_post(yid->yd->client_id, url, (char *)buff, content_length+4+size,
+			_yahoo_send_file_connected, sfd);
 }
 
 
@@ -3257,13 +3563,14 @@ const char * yahoo_get_cookie(int id, const char *which)
 	return NULL;
 }
 
-int yahoo_get_url_handle(int id, const char *url, char *filename, unsigned long *filesize)
+void yahoo_get_url_handle(int id, const char *url, 
+		yahoo_get_url_handle_callback callback, void *data)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
-		return 0;
+		return;
 
-	return yahoo_get_url_fd(url, yd, filename, filesize);
+	yahoo_get_url_fd(id, url, yd, callback, data);
 }
 
 const char * yahoo_get_profile_url( void )

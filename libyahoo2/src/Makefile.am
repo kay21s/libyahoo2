@@ -1,13 +1,14 @@
 lib_LTLIBRARIES = libyahoo2.la
 noinst_PROGRAMS = yahoo
 
-EXTRA_DIST = md5.h yahoo_connections.h yahoo_debug.h \
-	sample_client.c sample_makefile yahoo_util.h
+EXTRA_DIST = sample_client.c sample_makefile
+
+noinst_HEADERS = md5.h yahoo_debug.h yahoo_util.h
 
 AM_CFLAGS = $(GLIB_CFLAGS) -g
 LIBS = @LIBS@ $(GLIB_LIBS)
 
-libyahoo2_la_SOURCES = libyahoo2.c crypt.c md5.c yahoo_connections.c \
+libyahoo2_la_SOURCES = libyahoo2.c crypt.c md5.c \
 	yahoo_httplib.c yahoo_util.c yahoo_list.c
 
 libyahoo2_la_LDFLAGS = -module -version-info $(YAHOO2_VERSION)

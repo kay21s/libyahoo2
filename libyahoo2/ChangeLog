@@ -1,3 +1,9 @@
+* Sat Apr 19 2003 Philip
+- Add asynchronous connects
+- Each `id' represents a single login session and everything to do with it
+- add_handler and yahoo_(read|write)_ready take a void * data argument
+- possibly introduce many bugs :D
+
 * Thu Apr 10 2003 Wayne
 - Added callback for the list of chatrooms
 

@@ -28,7 +28,7 @@ extern "C" {
 
 #include "yahoo2_types.h"
 
-/* returns the socket descriptor for a given connection. shouldn't be needed */
+/* returns the socket descriptor for a given pager connection. shouldn't be needed */
 int  yahoo_get_fd(int id);
 
 /* says how much logging to do */
@@ -37,13 +37,20 @@ int  yahoo_set_log_level(enum yahoo_log_level level);
 
 /* these functions should be self explanatory */
 /* who always means the buddy you're acting on */
-/* id is the successful value returned by yahoo_login */
+/* id is the successful value returned by yahoo_init */
 
 
-/* login returns a connection id used to identify the connection hereon */
+/* init returns a connection id used to identify the connection hereon */
+/* or 0 on failure */
+/* you must call init before calling any other function */
+int  yahoo_init(const char *username, const char *password);
+/* release all resources held by this session */
+/* you need to call yahoo_close for a session only if
+ * yahoo_logoff is never called for it (ie, it was never logged in) */
+void yahoo_close(int id);
+/* login logs in to the server */
 /* initial is of type enum yahoo_status.  see yahoo2_types.h */
-/* returns <= 0 on error - whatever ext_yahoo_connect returned */
-int  yahoo_login(const char *username, const char *password, int initial);
+void yahoo_login(int id, int initial);
 void yahoo_logoff(int id);
 /* reloads status of all buddies */
 void yahoo_refresh(int id);
@@ -129,18 +136,22 @@ void yahoo_webcam_accept_viewer(int id, const char* who, int accept);
 /* send an invitation to a user to view your webcam */
 void yahoo_webcam_invite(int id, const char *who);
 
+/* will set up a connection and initiate file transfer.
+ * callback will be called with the fd that you should write
+ * the file data to
+ */
+void yahoo_send_file(int id, const char *who, const char *msg, const char *name, unsigned long size,
+		yahoo_get_fd_callback callback, void *data);
 
-/* returns a socket file descriptor to the upload stream. */
-/* you should write your data to this stream when it returns */
-int  yahoo_send_file(int id, const char *who, const char *msg, const char *name, long size);
 /* returns a socket fd to a url for downloading a file. */
-int yahoo_get_url_handle(int id, const char *url, char *filename, unsigned long *filesize);
+void yahoo_get_url_handle(int id, const char *url, 
+		yahoo_get_url_handle_callback callback, void *data);
 
 /* these should be called when input is available on a fd */
 /* registered by ext_yahoo_add_handler */
 /* if these return negative values, errno may be set */
-int  yahoo_read_ready(int id, int fd);
-int  yahoo_write_ready(int id, int fd);
+int  yahoo_read_ready(int id, int fd, void *data);
+int  yahoo_write_ready(int id, int fd, void *data);
 
 /* utility functions. these do not hit the server */
 enum yahoo_status yahoo_current_status(int id);

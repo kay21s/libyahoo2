@@ -769,14 +769,15 @@ void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 {
 	LOG(("ext_yahoo_login"));
 
-	ylad->id = yahoo_login(ylad->yahoo_id, ylad->password, login_mode);
+	ylad->id = yahoo_init(ylad->yahoo_id, ylad->password);
 	ylad->status = YAHOO_STATUS_OFFLINE;
+	yahoo_login(ylad->id, login_mode);
 
-	if (ylad->id <= 0) {
+/*	if (ylad->id <= 0) {
 		print_message(("Could not connect to Yahoo server.  Please verify that you are connected to the net and the pager host and port are correctly entered."));
 		return;
 	}
-
+*/
 	rearm(&pingTimer, 600);
 }
 
@@ -857,6 +858,71 @@ void yahoo_set_current_state(int yahoo_state)
 		yahoo_set_away(ylad->id, yahoo_state, NULL, 1);
 }
 
+struct connect_callback_data {
+	yahoo_connect_callback callback;
+	void * callback_data;
+	int id;
+};
+
+static void connect_complete(void *data, int source, yahoo_input_condition condition)
+{
+	struct connect_callback_data *ccd = data;
+	int error, err_size = sizeof(error);
+
+	ext_yahoo_remove_handler(ccd->id, source);
+	getsockopt(source, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&err_size);
+
+	if(error) {
+		close(source);
+		source = -1;
+	}
+
+	ccd->callback(source, error, ccd->callback_data);
+	FREE(ccd);
+}
+
+int ext_yahoo_connect_async(int id, char *host, int port, 
+		yahoo_connect_callback callback, void *data)
+{
+	struct sockaddr_in serv_addr;
+	static struct hostent *server;
+	int servfd;
+	struct connect_callback_data * ccd;
+	int error;
+
+	if(!(server = gethostbyname(host))) {
+		errno=h_errno;
+		return -1;
+	}
+
+	if((servfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		return -1;
+	}
+
+	memset(&serv_addr, 0, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	memcpy(&serv_addr.sin_addr.s_addr, *server->h_addr_list, server->h_length);
+	serv_addr.sin_port = htons(port);
+
+	error = connect(servfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+
+	if(!error) {
+		callback(servfd, 0, data);
+		return 0;
+	} else if(error == -1 && errno == EINPROGRESS) {
+		ccd = calloc(1, sizeof(struct connect_callback_data));
+		ccd->callback = callback;
+		ccd->callback_data = data;
+		ccd->id = id;
+
+		ext_yahoo_add_handler(-1, servfd, YAHOO_INPUT_WRITE, ccd);
+		return 1;
+	} else {
+		close(servfd);
+		return -1;
+	}
+}
+
 int ext_yahoo_connect(char *host, int port)
 {
 	struct sockaddr_in serv_addr;
@@ -911,83 +977,60 @@ int ext_yahoo_connect(char *host, int port)
 /*************************************
  * Callback handling code starts here
  */
-void yahoo_callback(int id)
+YList *connections = NULL;
+struct _conn {
+	int id;
+	int fd;
+	yahoo_input_condition cond;
+	void *data;
+};
+
+void yahoo_callback(struct _conn *c, yahoo_input_condition cond)
 {
 	int ret=1;
 	char buff[1024]={0};
-	struct yahoo_data *yd = find_conn_by_id(id);
 
-	if (!yd)
-		return;
+	if(c->id < 0) {
+		connect_complete(c->data, c->fd, cond);
+	} else {
+		if(cond & YAHOO_INPUT_READ)
+			ret = yahoo_read_ready(c->id, c->fd, c->data);
+		if(cond & YAHOO_INPUT_WRITE)
+			ret = yahoo_write_ready(c->id, c->fd, c->data);
 
-	ret = yahoo_read_ready(id, yd->fd);
-	if(ret == -1)
-		snprintf(buff, sizeof(buff), 
-			"Yahoo read error (%d): %s", errno, strerror(errno));
-	else if(ret == 0)
-		snprintf(buff, sizeof(buff), 
-			"Yahoo read error: Server closed socket");
+		if(ret == -1)
+			snprintf(buff, sizeof(buff), 
+				"Yahoo read error (%d): %s", errno, strerror(errno));
+		else if(ret == 0)
+			snprintf(buff, sizeof(buff), 
+				"Yahoo read error: Server closed socket");
 
-	if(buff[0])
-		print_message((buff));
+		if(buff[0])
+			print_message((buff));
+	}
 }
 
-void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond)
+void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond, void *data)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
-	switch (yd->type)
-	{
-		case YAHOO_CONNECTION_PAGER:
-			ylad->fd=fd;
-			ylad->id=id;
-			break;
-		case YAHOO_CONNECTION_YAB:
-			ylab->fd=fd;
-			ylab->id=id;
-			break;
-		case YAHOO_CONNECTION_WEBCAM_MASTER:
-			ywcm->fd=fd;
-			ywcm->id=id;
-			break;
-		case YAHOO_CONNECTION_WEBCAM:
-			ycam->fd=fd;
-			ycam->id=id;
-			break;
-		case YAHOO_CONNECTION_CHATCAT:
-			ycht->fd=fd;
-			ycht->id=id;
-			break;
-	}
+	struct _conn *c = y_new0(struct _conn, 1);
+	c->id = id;
+	c->fd = fd;
+	c->cond = cond;
+	c->data = data;
+
+	connections = y_list_prepend(connections, c);
 }
 
 void ext_yahoo_remove_handler(int id, int fd)
 {
-	struct yahoo_data *yd = find_conn_by_id(id);
-	if (!yd)
-		return;
-
-	switch (yd->type)
-	{
-		case YAHOO_CONNECTION_PAGER:
-			ylad->fd=0;
-			ylad->id=0;
-			break;
-		case YAHOO_CONNECTION_YAB:
-			ylab->fd=0;
-			ylab->id=0;
-			break;
-		case YAHOO_CONNECTION_WEBCAM_MASTER:
-			ywcm->fd=0;
-			ywcm->id=0;
-			break;
-		case YAHOO_CONNECTION_WEBCAM:
-			ycam->fd=0;
-			ycam->id=0;
-			break;
-		case YAHOO_CONNECTION_CHATCAT:
-			ycht->fd=0;
-			ycht->id=0;
-			break;
+	YList *l;
+	for(l = connections; l; l = y_list_next(l)) {
+		struct _conn *c = l->data;
+		if(c->id == id && c->fd == fd) {
+			connections = y_list_remove(connections, c);
+			FREE(c);
+			return;
+		}
 	}
 }
 /*
@@ -1343,7 +1386,7 @@ int main(int argc, char * argv[])
 	int log_level;
 	int lfd=0;
 
-	fd_set inp;
+	fd_set inp, outp;
 	struct timeval tv;
 
 
@@ -1388,30 +1431,36 @@ int main(int argc, char * argv[])
 	ext_yahoo_login(ylad, status);
 
 	while(poll_loop) {
+		YList *l;
 		FD_ZERO(&inp);
+		FD_ZERO(&outp);
 		FD_SET(fd_stdin, &inp);
-		if (ylad->fd) FD_SET(ylad->fd, &inp);
-		if (ylab->fd) FD_SET(ylab->fd, &inp);
-		if (ywcm->fd) FD_SET(ywcm->fd, &inp);
-		if (ycam->fd) FD_SET(ycam->fd, &inp);
-		if (ycht->fd) FD_SET(ycht->fd, &inp);
 		tv.tv_sec=1;
 		tv.tv_usec=0;
 		lfd=0;
-		if(lfd < ylad->fd) lfd=ylad->fd;
-		if(lfd < ylab->fd) lfd=ylab->fd;
-		if(lfd < ywcm->fd) lfd=ywcm->fd;
-		if(lfd < ycam->fd) lfd=ycam->fd;
-		if(lfd < ycht->fd) lfd=ycht->fd;
-		select(lfd + 1, &inp, NULL, NULL, &tv);
+		for(l = connections; l; l = y_list_next(l)) {
+			struct _conn *c = l->data;
+			if(c->cond & YAHOO_INPUT_READ)
+				FD_SET(c->fd, &inp);
+			if(c->cond & YAHOO_INPUT_WRITE)
+				FD_SET(c->fd, &outp);
+			if(lfd < c->fd)
+				lfd = c->fd;
+		}
+
+		select(lfd + 1, &inp, &outp, NULL, &tv);
 		time(&curTime);
 
 		if(FD_ISSET(fd_stdin, &inp))	local_input_callback(0);
-		if(ylad->fd && FD_ISSET(ylad->fd, &inp)) yahoo_callback(ylad->id);
-		if(ylab->fd && FD_ISSET(ylab->fd, &inp)) yahoo_callback(ylab->id);
-		if(ywcm->fd && FD_ISSET(ywcm->fd, &inp)) yahoo_callback(ywcm->id);
-		if(ycam->fd && FD_ISSET(ycam->fd, &inp)) yahoo_callback(ycam->id);
-		if(ycht->fd && FD_ISSET(ycht->fd, &inp)) yahoo_callback(ycht->id);
+
+		for(l = connections; l; l = y_list_next(l)) {
+			struct _conn *c = l->data;
+			if(FD_ISSET(c->fd, &inp))
+				yahoo_callback(c, YAHOO_INPUT_READ);
+			if(FD_ISSET(c->fd, &outp))
+				yahoo_callback(c, YAHOO_INPUT_WRITE);
+		}
+
 		if(expired(pingTimer))		yahoo_ping_timeout_callback();
 		if(expired(webcamTimer))	yahoo_webcam_timeout_callback(ycam->id);
 	}
@@ -1476,6 +1525,7 @@ static void register_callbacks()
 	yc.ext_yahoo_add_handler = ext_yahoo_add_handler;
 	yc.ext_yahoo_remove_handler = ext_yahoo_remove_handler;
 	yc.ext_yahoo_connect = ext_yahoo_connect;
+	yc.ext_yahoo_connect_async = ext_yahoo_connect_async;
 
 	yahoo_register_callbacks(&yc);
 	

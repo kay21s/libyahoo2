@@ -11,7 +11,6 @@
 <a href="http://lists.sourceforge.net/lists/listinfo/libyahoo2-users/"
 	title="Ok, so I have a mailing list too.  Why not?">Mailing List</a><br>
 <a href="ChangeLog" title="Complete log of changes">ChangeLog</a><br>
-<a href="README" title="Some kind of documentation">README</a><br>
 <a href="cvs.shtml" title="How to get the code by CVS">CVS Info</a><br>
 <a href="http://lists.sourceforge.net/lists/listinfo/libyahoo2-cvs/"
 	title="Mailing list for developers">CVS Mailing List</a><br>
@@ -22,7 +21,7 @@
 <div class="links">
 <h2>Documentation</h2>
 <p class="links">
-<a href="README" title="Library docs">API</a><br>
+<a href="README" title="Library docs - if you can call it that">API</a><br>
 <a href="ymsg-9.txt" title="Protocol docs">YMSG-9 Protocol</a><br>
 <a href="yab.txt" title="Address Book structure">Getting/Setting YAB</a><br>
 </p>

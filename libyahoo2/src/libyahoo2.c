@@ -869,7 +869,15 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			yd->ignorelist = y_string_append(yd->ignorelist, pair->value);
 			break;
 
-		case 89: /* my id */
+		case 89: /* identities */
+			{
+			char **identities = y_strsplit(pair->value, ",", -1);
+			int i;
+			for(i=0; identities[i]; i++)
+				yd->identities = y_list_append(yd->identities, 
+						strdup(identities[i]));
+			y_strfreev(identities);
+			}
 			break;
 		case 59: /* cookies add C cookie */
 			if(yd->ignorelist) {
@@ -900,16 +908,7 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			} 
 
 			break;
-		case 3: /* TODO comma separated identities, active first */
-/*			{
-			char **identities = y_strsplit(pair->value, ",", -1);
-			int i;
-			for(i=0; identities[i]; i++)
-				yd->identities = y_list_append(yd->identities, 
-						identities[i]);
-			y_strfreev(identities);
-			}
-*/			break;
+		case 3: /* my id */
 		case 90: /* 1 */
 		case 100: /* 0 */
 		case 101: /* NULL */

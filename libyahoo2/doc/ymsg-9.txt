@@ -7,6 +7,10 @@ this document, we will speak about the YMSG packets, after stripping out
 any other protocol data, but will mention this other data if it is of 
 relevance.
 
+This document is incomplete.  For anything not mentioned here, refer to the
+source of libyahoo2.
+
+
 1. The YMSG packet structure
 
 The YMSG packet structure is as follows:
@@ -310,3 +314,10 @@ AUTH_RESP packet.
 	7: buddy_to_reject
 	14: reject message
 	
+
+-----------------------------------------------------------------------
+
+What?  Is that all?
+
+   Use the source Luke!
+

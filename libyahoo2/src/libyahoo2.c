@@ -723,14 +723,16 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 
 	switch(pkt->service) {
 	case YAHOO_SERVICE_CONFINVITE:
-		if(members)
+		if(pkt->status == 2)
+			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, E_CONFNOTAVAIL, who, 0);
+		else if(members)
 			YAHOO_CALLBACK(ext_yahoo_got_conf_invite)(yd->client_id, host, room, msg, members);
 		else if(msg)
-			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
+			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, E_CUSTOM, msg, 0);
 		break;
 	case YAHOO_SERVICE_CONFADDINVITE:
 		if(pkt->status == 2)
-			;
+			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, E_CONFNOTAVAIL, who, 0);
 		else
 			YAHOO_CALLBACK(ext_yahoo_got_conf_invite)(yd->client_id, host, room, msg, members);
 		break;
@@ -802,7 +804,7 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 	} else if (pkt->status == 2) {
 		YAHOO_CALLBACK(ext_yahoo_got_im)(yd->client_id, from, NULL, tm, 2);
 	} else if (pkt->status == 0xffffffff) {
-		YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
+		YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, E_CUSTOM, msg, 0);
 	}
 }
 
@@ -874,7 +876,7 @@ static void yahoo_process_status(struct yahoo_data *yd, struct yahoo_packet *pkt
 			NOTICE(("key %d:%s", pair->key, pair->value));
 			 break;
 		case 16: /* Custom error message */
-			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, pair->value, 0);
+			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, E_CUSTOM, pair->value, 0);
 			break;
 		default:
 			WARNING(("unknown status key %d:%s", pair->key, pair->value));
@@ -1291,6 +1293,9 @@ static void yahoo_process_ignore(struct yahoo_data *yd, struct yahoo_packet *pkt
 	 * 	3  - not in ignore list, could not delete
 	 * 	12 - is a buddy, could not add
 	 */
+
+	if(status)
+		YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, status, who, 0);
 	
 }
 

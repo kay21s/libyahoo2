@@ -55,10 +55,14 @@ enum yahoo_login_status {
 };
 
 enum yahoo_error {
+	E_CUSTOM = 0,
+
 	/* responses from ignore buddy */
 	E_IGNOREDUP = 2,
 	E_IGNORENONE = 3,
 	E_IGNORECONF = 12,
+	
+	/* conference */
 	E_CONFNOTAVAIL = 20,
 };
 

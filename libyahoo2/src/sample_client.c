@@ -467,9 +467,27 @@ void ext_yahoo_login_response(int id, int succ, char *url)
 	poll_loop=0;
 }
 
-void ext_yahoo_error(int id, char *err, int fatal)
+void ext_yahoo_error(int id, enum yahoo_error num, char *err, int fatal)
 {
-	fprintf(stdout, "Yahoo Error: %s", err);
+	fprintf(stdout, "Yahoo Error: ");
+	switch(num) {
+		case E_CUSTOM:
+			fprintf(stdout, "%s", err);
+			break;
+		case E_CONFNOTAVAIL:
+			fprintf(stdout, "%s is not available for the conference", err);
+			break;
+		case E_IGNOREDUP:
+			fprintf(stdout, "%s is already ignored", err);
+			break;
+		case E_IGNORENONE:
+			fprintf(stdout, "%s is not in the ignore list", err);
+			break;
+		case E_IGNORECONF:
+			fprintf(stdout, "%s is in buddy list - cannot ignore ", err);
+			break;
+	}
+	fprintf(stdout, "\n");
 	if(fatal)
 		yahoo_logout();
 }

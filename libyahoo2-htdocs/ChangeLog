@@ -1,3 +1,12 @@
+* Sun Nov 28 2004 A. Craig West
+- changed interface to include which id incoming messages are intended for
+- changed error reporting interface
+- added autoresonder sample program, which is a trivial Yahoo autoresponder
+- removed inline from methods
+
+* Tue Oct 19 2004 Matt Rogers
+- Add a new version of the SHA1 implementation that's GPL compatible.
+
 * Fri Aug  8 2004 A. Craig West
 - up version number 0.7.5
 

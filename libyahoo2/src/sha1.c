@@ -91,7 +91,7 @@ static const char rcsid[] =
 
 #define BYTESWAP(x) ((ROTR((x), 8) & 0xff00ff00L) | (ROTL((x), 8) & 0x00ff00ffL))
 
-static inline uint64_t _byteswap64(uint64_t x)
+static uint64_t _byteswap64(uint64_t x)
 {
 	uint32_t a = x >> 32;
 	uint32_t b = (uint32_t) x;
@@ -113,14 +113,14 @@ static inline uint64_t _byteswap64(uint64_t x)
 		      (ROTL((x), 8) & 0x00ff00ffL))
 #define _BYTESWAP64(x) __byteswap64(x)
 
-static inline uint64_t __byteswap64(uint64_t x)
+static uint64_t __byteswap64(uint64_t x)
 {
   uint32_t a = x >> 32;
   uint32_t b = (uint32_t) x;
   return ((uint64_t) _BYTESWAP(b) << 32) | (uint64_t) _BYTESWAP(a);
 }
 
-static inline uint32_t _byteswap(int littleEndian, uint32_t x)
+static uint32_t _byteswap(int littleEndian, uint32_t x)
 {
   if (!littleEndian)
     return x;
@@ -128,7 +128,7 @@ static inline uint32_t _byteswap(int littleEndian, uint32_t x)
     return _BYTESWAP(x);
 }
 
-static inline uint64_t _byteswap64(int littleEndian, uint64_t x)
+static uint64_t _byteswap64(int littleEndian, uint64_t x)
 {
   if (!littleEndian)
     return x;
@@ -136,7 +136,7 @@ static inline uint64_t _byteswap64(int littleEndian, uint64_t x)
     return _BYTESWAP64(x);
 }
 
-static inline void setEndian(int *littleEndianp)
+static void setEndian(int *littleEndianp)
 {
   union {
     uint32_t w;

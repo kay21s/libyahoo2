@@ -1,9 +1,9 @@
 /*
  * libyahoo2: libyahoo2.c
  *
- * Some code copyright (C) 2002, Philip S Tellis <philip . tellis AT gmx . net>
+ * Some code copyright (C) 2002-2004, Philip S Tellis <philip.tellis AT gmx.net>
  *
- * Yahoo Search copyright (C) 2003, Konstantin Klyagin <konst@konst.org.ua>
+ * Yahoo Search copyright (C) 2003, Konstantin Klyagin <konst AT konst.org.ua>
  *
  * Much of this code was taken and adapted from the yahoo module for
  * gaim released under the GNU GPL.  This code is also released under the 
@@ -1714,6 +1714,7 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 			loc = strchr(challenge_lookup, *magic_ptr);
 			if (!loc) {
 				/* This isn't good */
+				WARNING(("character %c not found in lookup", *magic_ptr));
 				continue;
 			}
 
@@ -1730,14 +1731,17 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 			loc = strchr(operand_lookup, *magic_ptr);
 			if (!loc) {
 				/* Also not good. */
+				WARNING(("operator %c not found in lookup", *magic_ptr));
 				continue;
 			}
 
 			local_store = loc - operand_lookup;
 
 			/* Oops; how did this happen? */
-			if (magic_cnt >= 64) 
+			if (magic_cnt >= 64) {
+				WARNING(("magic_cnt(%d) >= 64", magic_cnt));
 				break;
+			}
 
 			magic[magic_cnt++] = magic_work | local_store;
 			magic_ptr++;
@@ -1758,8 +1762,10 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 		/* Bad.  Abort.
 		 */
 		if ((magic_cnt + 1 > magic_len) || 
-				(magic_cnt > magic_len))
+				(magic_cnt > magic_len)) {
+			WARNING(("magic_cnt(%d)  magic_len(%d)", magic_cnt, magic_len))
 			break;
+		}
 
 		byte1 = magic[magic_cnt];
 		byte2 = magic[magic_cnt+1];
@@ -1785,6 +1791,7 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 		if (magic_cnt > magic_len)
 			break;
 
+		LOG(("cl == 0x%04x, bl == 0x%04x", cl, bl));
 		if (cl <= 0x7f)
 			bl = cl;
 		else {
@@ -1814,6 +1821,7 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 
 		magic_cnt += 3;
 
+		LOG(("times == %d", times));
 		if (times == 0) {
 			value |= (bl & 0xff) << 8; 
 			value |= (bl & 0xff00) >> 8;

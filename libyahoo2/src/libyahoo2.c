@@ -1,9 +1,9 @@
 /*
  * libyahoo2: libyahoo2.c
  *
- * Some code copyright (C) 2002-2004, Philip S Tellis <philip.tellis AT gmx.net>
+ * Some code copyright (C) 2002, Philip S Tellis <philip . tellis AT gmx . net>
  *
- * Yahoo Search copyright (C) 2003, Konstantin Klyagin <konst AT konst.org.ua>
+ * Yahoo Search copyright (C) 2003, Konstantin Klyagin <konst@konst.org.ua>
  *
  * Much of this code was taken and adapted from the yahoo module for
  * gaim released under the GNU GPL.  This code is also released under the 
@@ -82,6 +82,7 @@ char *strchr (), *strrchr ();
 #include "yahoo2.h"
 #include "yahoo_httplib.h"
 #include "yahoo_util.h"
+#include "yahoo_fn.h"
 
 #include "yahoo2_callbacks.h"
 #include "yahoo_debug.h"
@@ -133,7 +134,8 @@ int yahoo_set_log_level(enum yahoo_log_level level)
 }
 
 /* default values for servers */
-static char pager_host[] = "scs.msg.yahoo.com";
+/* static char pager_host[] = "wcs1.msg.dcn.yahoo.com"; */
+static char pager_host[] = "scs.msg.yahoo.com"; 
 static int pager_port = 5050;
 static int fallback_ports[]={23, 25, 80, 20, 119, 8001, 8002, 5050, 0};
 static char filetransfer_host[]="filetransfer.msg.yahoo.com";
@@ -811,7 +813,9 @@ static void yahoo_input_close(struct yahoo_input_data *yid)
 {
 	inputs = y_list_remove(inputs, yid);
 
+	LOG(("yahoo_input_close(read)")); 
 	YAHOO_CALLBACK(ext_yahoo_remove_handler)(yid->read_tag);
+	LOG(("yahoo_input_close(write)")); 
 	YAHOO_CALLBACK(ext_yahoo_remove_handler)(yid->write_tag);
 	yid->read_tag = yid->write_tag = 0;
 	if(yid->fd)
@@ -891,15 +895,21 @@ static YList * bud_str2list(char *rawlist)
 static char * getcookie(char *rawcookie)
 {
 	char * cookie=NULL;
-	char * tmpcookie = strdup(rawcookie+2);
-	char * cookieend = strchr(tmpcookie, ';');
+	char * tmpcookie; 
+	char * cookieend;
+
+	if (strlen(rawcookie) < 2) 
+		return NULL;
+
+	tmpcookie = strdup(rawcookie+2);
+	cookieend = strchr(tmpcookie, ';');
 
 	if(cookieend)
 		*cookieend = '\0';
 
 	cookie = strdup(tmpcookie);
 	FREE(tmpcookie);
-	cookieend=NULL;
+	/* cookieend=NULL;  not sure why this was there since the value is not preserved in the stack -dd */
 
 	return cookie;
 }
@@ -1658,6 +1668,7 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 	unsigned char pass_hash_xor2[64];
 	unsigned char crypt_hash_xor1[64];
 	unsigned char crypt_hash_xor2[64];
+	unsigned char chal[7];
 	char resp_6[100];
 	char resp_96[100];
 
@@ -1670,11 +1681,14 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 	unsigned int  magic_work=0;
 	unsigned int  value = 0;
 
-	int x;
+	char comparison_src[20];
+
+	int x, j, i;
 	int cnt = 0;
 	int magic_cnt = 0;
 	int magic_len;
 	int times = 0;
+	int depth =0, table =0;
 
 	memset(&pass_hash_xor1, 0, 64);
 	memset(&pass_hash_xor2, 0, 64);
@@ -1714,7 +1728,6 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 			loc = strchr(challenge_lookup, *magic_ptr);
 			if (!loc) {
 				/* This isn't good */
-				WARNING(("character %c not found in lookup", *magic_ptr));
 				continue;
 			}
 
@@ -1731,17 +1744,14 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 			loc = strchr(operand_lookup, *magic_ptr);
 			if (!loc) {
 				/* Also not good. */
-				WARNING(("operator %c not found in lookup", *magic_ptr));
 				continue;
 			}
 
 			local_store = loc - operand_lookup;
 
 			/* Oops; how did this happen? */
-			if (magic_cnt >= 64) {
-				WARNING(("magic_cnt(%d) >= 64", magic_cnt));
+			if (magic_cnt >= 64) 
 				break;
-			}
 
 			magic[magic_cnt++] = magic_work | local_store;
 			magic_ptr++;
@@ -1762,10 +1772,8 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 		/* Bad.  Abort.
 		 */
 		if ((magic_cnt + 1 > magic_len) || 
-				(magic_cnt > magic_len)) {
-			WARNING(("magic_cnt(%d)  magic_len(%d)", magic_cnt, magic_len))
+				(magic_cnt > magic_len))
 			break;
-		}
 
 		byte1 = magic[magic_cnt];
 		byte2 = magic[magic_cnt+1];
@@ -1776,68 +1784,79 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 		magic[magic_cnt+1] = byte1;
 	}
 
-	/* Magic: Phase 3.  Final phase; this gives us our 
-	 * key. */
-
-	magic_cnt = 1;
-
-	for (;;) {
-		unsigned int cl = magic[magic_cnt] & 0xff;
-		unsigned int bl = magic[magic_cnt+1] & 0xff;
-
-		if (!bl || !cl)
-			break;
-
-		if (magic_cnt > magic_len)
-			break;
-
-		LOG(("cl == 0x%04x, bl == 0x%04x", cl, bl));
-		if (cl <= 0x7f)
-			bl = cl;
-		else {
-			if (cl >= 0x0e0) {
-				cl = cl & 0x0f;
-				cl = cl << 6;
-				bl = bl & 0x3f;
-				bl = cl + bl;
-				bl = bl << 6;
-			} else {
-				cl = cl & 0x1f;
-				cl = cl << 6;
-				bl = cl;
-			}
-
-			cl = magic[magic_cnt+2];
-
-			if (!cl)
-				break;
-
-			cl = cl & 0x3f;
-			bl = bl + cl;
-		}
-
-		/* Result is bl.
-		 */
-
-		magic_cnt += 3;
-
-		LOG(("times == %d", times));
-		if (times == 0) {
-			value |= (bl & 0xff) << 8; 
-			value |= (bl & 0xff00) >> 8;
-		} else { 
-			value |= (bl & 0xff) << 24; 
-			value |= (bl & 0xff00) << 8;
+	/* Magic: Phase 3.  This computes 20 bytes.  The first 4 bytes are used as our magic 
+	 * key (and may be changed later); the next 16 bytes are an MD5 sum of the magic key 
+	 * plus 3 bytes.  The 3 bytes are found by looping, and they represent the offsets 
+	 * into particular functions we'll later call to potentially alter the magic key. 
+	 * 
+	 * %-) 
+	 */ 
+	
+	magic_cnt = 1; 
+	x = 0; 
+	
+	do { 
+		unsigned int     bl = 0;  
+		unsigned int     cl = magic[magic_cnt++]; 
+		
+		if (magic_cnt >= magic_len) 
 			break; 
-		} 
-
-		times++;
-	}
+		
+		if (cl > 0x7F) { 
+			if (cl < 0xe0)  
+				bl = cl = (cl & 0x1f) << 6;  
+			else { 
+				bl = magic[magic_cnt++];  
+                              cl = (cl & 0x0f) << 6;  
+                              bl = ((bl & 0x3f) + cl) << 6;  
+			}  
+			
+			cl = magic[magic_cnt++];  
+			bl = (cl & 0x3f) + bl;  
+		} else 
+			bl = cl;  
+		
+		comparison_src[x++] = (bl & 0xff00) >> 8;  
+		comparison_src[x++] = bl & 0xff;  
+	} while (x < 20); 
 
 	/* Dump magic key into a char for SHA1 action. */
+	
 		
-	for(x = 0; x < sizeof(int); x++, value>>=8) 
-		magic_key_char[x] = value & 0xff;
+	for(x = 0; x < 4; x++) 
+		magic_key_char[x] = comparison_src[x];
+
+	/* Compute values for recursive function table! */
+	memcpy( chal, magic_key_char, 4 );
+        x = 1;
+	for( i = 0; i < 0xFFFF && x; i++ )
+	{
+		for( j = 0; j < 5 && x; j++ )
+		{
+			chal[4] = i;
+			chal[5] = i >> 8;
+			chal[6] = j;
+			md5_init( &ctx );
+			md5_append( &ctx, chal, 7 );
+			md5_finish( &ctx, result );
+			if( memcmp( comparison_src + 4, result, 16 ) == 0 )
+			{
+				depth = i;
+				table = j;
+				x = 0;
+			}
+		}
+	}
+
+	/* Transform magic_key_char using transform table */
+	x = magic_key_char[3] << 24  | magic_key_char[2] << 16 
+		| magic_key_char[1] << 8 | magic_key_char[0];
+	x = yahoo_xfrm( table, depth, x );
+	x = yahoo_xfrm( table, depth, x );
+	magic_key_char[0] = x & 0xFF;
+	magic_key_char[1] = x >> 8 & 0xFF;
+	magic_key_char[2] = x >> 16 & 0xFF;
+	magic_key_char[3] = x >> 24 & 0xFF;
 
 	/* Get password and crypt hashes as per usual. */
 	md5_init(&ctx);
@@ -2955,6 +2974,7 @@ int yahoo_write_ready(int id, int fd, void *data)
 			yid->txqueues = y_list_remove_link(yid->txqueues, yid->txqueues);
 			y_list_free_1(l);
 		}
+		LOG(("yahoo_write_ready(%d, %d) len < 0", id, fd));
 		YAHOO_CALLBACK(ext_yahoo_remove_handler)(yid->write_tag);
 		yid->write_tag = 0;
 		errno=e;
@@ -2973,10 +2993,16 @@ int yahoo_write_ready(int id, int fd, void *data)
 		free(tx);
 		yid->txqueues = y_list_remove_link(yid->txqueues, yid->txqueues);
 		y_list_free_1(l);
+		/* having trouble with this and wanted to log its real action -dd */
+		if(!yid->txqueues) 
+			LOG(("yahoo_write_ready(%d, %d) !yxqueues", id, fd));
+		/*
 		if(!yid->txqueues) {
+			LOG(("yahoo_write_ready(%d, %d) !yxqueues", id, fd));
 			YAHOO_CALLBACK(ext_yahoo_remove_handler)(yid->write_tag);
 			yid->write_tag = 0;
 		}
+		*/
 	}
 
 	return 1;
@@ -3781,6 +3807,22 @@ void yahoo_keepalive(int id)
 	pkt = yahoo_packet_new(YAHOO_SERVICE_PING, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	yahoo_send_packet(yid, pkt, 0);
 	yahoo_packet_free(pkt);
+}
+
+void yahoo_chat_keepalive (int id)
+{
+	struct yahoo_input_data *yid = find_input_by_id_and_type (id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
+	struct yahoo_packet *pkt = NULL;
+
+	if (!yid)
+	    return;
+
+	yd = yid->yd;
+
+	pkt = yahoo_packet_new (YAHOO_SERVICE_CHATPING, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	yahoo_send_packet (yid, pkt, 0);
+	yahoo_packet_free (pkt);
 }
 
 void yahoo_add_buddy(int id, const char *who, const char *group)

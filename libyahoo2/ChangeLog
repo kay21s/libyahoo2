@@ -6,6 +6,7 @@ instead of callback functions (see yahoo2_callbacks.h and the README)
 - Code cleanups by Steve McAndrewSmith
 - Get identities from server
 - Activate/Deactivate identities
+- Use identities when sending messages
 
 - sample console client no longer requires gtk!
 

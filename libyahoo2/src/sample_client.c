@@ -485,7 +485,7 @@ static void process_commands(char *line)
 		}
 		msg = copy;
 		if(to && msg)
-			yahoo_send_im(ylad->id, to, msg);
+			yahoo_send_im(ylad->id, NULL, to, msg);
 		FREE(start);
 		return;
 	} else if(!strcasecmp(cmd, "STA")) {
@@ -590,7 +590,7 @@ int main(int argc, char * argv[])
 	scanf("%s", ylad->yahoo_id);
 	printf("Password: ");
 	{
-		tcflag_t oflags;
+/*		tcflag_t oflags;
 		struct termios term;
 		tcgetattr(fd_stdin, &term);
 		oflags = term.c_lflag;
@@ -598,12 +598,12 @@ int main(int argc, char * argv[])
 		term.c_cc[VTIME] = 1;
 		tcsetattr(fd_stdin, TCSANOW, &term);
 		
-		scanf("%s", ylad->password);
-
+*/		scanf("%s", ylad->password);
+/*
 		term.c_lflag = oflags;
 		term.c_cc[VTIME] = 0;
 		tcsetattr(fd_stdin, TCSANOW, &term);
-	}
+*/	}
 	printf("\n");
 
 	printf("Initial Status: ");

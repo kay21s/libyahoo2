@@ -572,7 +572,7 @@ static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt
 {
 	char *msg = NULL;
 	char *from = NULL;
-	char *stat = NULL;
+	int stat = 0;
 	char *game = NULL;
 	YList *l;
 	for (l = pkt->hash; l; l = l->next) {
@@ -582,15 +582,15 @@ static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt
 		if (pair->key == 49)
 			msg = pair->value;
 		if (pair->key == 13)
-			stat = pair->value;
+			stat = atoi(pair->value);
 		if (pair->key == 14)
 			game = pair->value;
 	}
 	
 	if (!strncasecmp(msg, "TYPING", strlen("TYPING"))) 
-		YAHOO_CALLBACK(ext_yahoo_typing_notify)(yd->client_id, from, *stat?1:0);
+		YAHOO_CALLBACK(ext_yahoo_typing_notify)(yd->client_id, from, stat);
 	else if (!strncasecmp(msg, "GAME", strlen("GAME"))) 
-		YAHOO_CALLBACK(ext_yahoo_game_notify)(yd->client_id, from, *stat?1:0);
+		YAHOO_CALLBACK(ext_yahoo_game_notify)(yd->client_id, from, stat);
 }
 
 static void yahoo_process_filetransfer(struct yahoo_data *yd, struct yahoo_packet *pkt)
@@ -1516,7 +1516,7 @@ static void yahoo_close(struct yahoo_data *yd)
 	yahoo_free_data(yd);
 }
 
-void yahoo_send_im(int id, const char *who, const char *what)
+void yahoo_send_im(int id, const char *from, const char *who, const char *what)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1526,7 +1526,8 @@ void yahoo_send_im(int id, const char *who, const char *what)
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_MESSAGE, YAHOO_STATUS_OFFLINE, yd->id);
 
-	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 0, yd->user);
+	yahoo_packet_hash(pkt, 1, from?from:yd->user);
 	yahoo_packet_hash(pkt, 5, who);
 	yahoo_packet_hash(pkt, 14, what);
 
@@ -1535,7 +1536,7 @@ void yahoo_send_im(int id, const char *who, const char *what)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_send_typing(int id, const char *who, int typ)
+void yahoo_send_typing(int id, const char *from, const char *who, int typ)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1545,7 +1546,7 @@ void yahoo_send_typing(int id, const char *who, int typ)
 	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YAHOO_STATUS_TYPING, yd->id);
 
 	yahoo_packet_hash(pkt, 5, who);
-	yahoo_packet_hash(pkt, 4, yd->user);
+	yahoo_packet_hash(pkt, 4, from?from:yd->user);
 	yahoo_packet_hash(pkt, 14, " ");
 	yahoo_packet_hash(pkt, 13, typ ? "1" : "0");
 	yahoo_packet_hash(pkt, 49, "TYPING");

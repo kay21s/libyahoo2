@@ -65,9 +65,10 @@ void yahoo_set_identity_status(int id, const char * identity, int active);
 void yahoo_get_list(int id);
 void yahoo_keepalive(int id);
 
-void yahoo_send_im(int id, const char *who, const char *msg);
+/* from is the identity you're sending from.  if NULL, the default is used */
+void yahoo_send_im(int id, const char *from, const char *who, const char *msg);
 /* if type is true, send typing notice, else send stopped typing notice */
-void yahoo_send_typing(int id, const char *who, int typ);
+void yahoo_send_typing(int id, const char *from, const char *who, int typ);
 
 /* used to set away/back status. */
 /* away says whether the custom message is an away message or a sig */

@@ -95,7 +95,7 @@ int yahoo_log_message(char * fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(out, sizeof(out), fmt, ap);
 	va_end(ap);
-	return YAHOO_CALLBACK(ext_yahoo_log)(fmt, out);
+	return YAHOO_CALLBACK(ext_yahoo_log)(out);
 }
 
 int yahoo_connect(char * host, int port)
@@ -333,8 +333,7 @@ static void yahoo_packet_read(struct yahoo_packet *pkt, unsigned char *data, int
 			pair->value = strdup(value);
 			FREE(value);
 			pkt->hash = y_list_append(pkt->hash, pair);
-			DEBUG_MSG(("Key: %d  \tValue: %s", 
-					pair->key, pair->value));
+			DEBUG_MSG(("Key: %d  \tValue: %s", pair->key, pair->value));
 		} else {
 			FREE(pair);
 		}

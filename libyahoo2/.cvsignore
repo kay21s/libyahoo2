@@ -1,0 +1,16 @@
+Makefile
+.deps
+.libs
+configure
+Makefile.in
+aclocal.m4
+config.log
+config.cache
+config.status
+config.guess
+config.sub
+libtool
+ltconfig
+ltmain.sh
+libltdl
+install-sh

@@ -1,3 +1,6 @@
+* Sun Sep 28 2003 Philip
+- changed g_malloc0 to malloc - thanks to Pixador
+
 * Sun Sep 28 2003 Philip 0.7.2
 - Auth fixed by Sean Egan (gaim).
 

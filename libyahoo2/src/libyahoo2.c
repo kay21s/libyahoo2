@@ -1587,8 +1587,8 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 	char *operand_lookup = "+|&%/*^-";
 	char *delimit_lookup = ",;";
 
-	unsigned char *password_hash = g_malloc0(25);
-	unsigned char *crypt_hash = g_malloc0(25);
+	unsigned char *password_hash = malloc(25);
+	unsigned char *crypt_hash = malloc(25);
 	char *crypt_result = NULL;
 	unsigned char pass_hash_xor1[64];
 	unsigned char pass_hash_xor2[64];

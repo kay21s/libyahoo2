@@ -36,11 +36,14 @@
 </div>
 
 <div class="links">
-<h2>Related Links</h2>
+<h2>Users</h2>
 <p class="links">
 <a href="http://www.nongnu.org/ayttm/" title="Are You Talking To Me?">Ayttm</a><br>
 <a href="http://www.everybuddy.com/" title="The Everybuddy Homepage">Everybuddy</a><br>
-<a href="http://blackhole.wincoll.ac.uk:81/msn/" title="Meredydd's libmsn2 page">libmsn2</a><br>
+<a href="http://fire.sourceforge.net/" title="Fire is an open-source instant 
+messaging client for MacOS X which handles simultaneous connections to Yahoo!,
+AIM, MSN, Jabber, ICQ and IRC">Fire</a><br>
+<a href="http://kyim.sf.net/" title="KDE port of yahoo instant messenger">KYIM</a><br>
 </p>
 </div>
 

@@ -279,6 +279,8 @@ static int yahoo_packet_length(struct yahoo_packet *pkt)
 	return len;
 }
 
+typedef unsigned char	u_char;
+
 #define yahoo_put16(buf, data) ( \
 		(*(buf) = (u_char)((data)>>8)&0xff), \
 		(*((buf)+1) = (u_char)(data)&0xff),  \
@@ -678,34 +680,34 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 		if (pair->key == 50)
 			host = pair->value;
 		
-		if (pair->key == 52) {		// invite
+		if (pair->key == 52) {		/* invite */
 			members = y_list_append(members, strdup(pair->value));
 		}
-		if (pair->key == 53)		// logon
+		if (pair->key == 53)		/* logon */
 			who = pair->value;
-		if (pair->key == 54)		// decline
+		if (pair->key == 54)		/* decline */
 			who = pair->value;
-		if (pair->key == 55)		// unavailable (status == 2)
+		if (pair->key == 55)		/* unavailable (status == 2) */
 			who = pair->value;
-		if (pair->key == 56)		// logoff
+		if (pair->key == 56)		/* logoff */
 			who = pair->value;
 
 		if (pair->key == 57)
 			room = pair->value;
 
-		if (pair->key == 58)		// join message
+		if (pair->key == 58)		/* join message */
 			msg = pair->value;
-		if (pair->key == 14)		// decline/conf message
+		if (pair->key == 14)		/* decline/conf message */
 			msg = pair->value;
 
 		if (pair->key == 13)
 			;
-		if (pair->key == 16)		// error
+		if (pair->key == 16)		/* error */
 			msg = pair->value;
 
-		if (pair->key == 1)		// my id
+		if (pair->key == 1)		/* my id */
 			id = pair->value;
-		if (pair->key == 3)		// message sender
+		if (pair->key == 3)		/* message sender */
 			who = pair->value;
 	}
 
@@ -721,7 +723,7 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 		if(!l)
 			members = y_list_append(members, strdup(host));
 	}
-	// invite, decline, join, left, message -> status == 1
+	/* invite, decline, join, left, message -> status == 1 */
 
 	switch(pkt->service) {
 	case YAHOO_SERVICE_CONFINVITE:
@@ -777,7 +779,7 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 			msg = pair->value;
 		else if (pair->key == 15)
 			tm = strtol(pair->value, NULL, 10);
-		else if (pair->key == 16)	// system message
+		else if (pair->key == 16)	/* system message */
 			msg = pair->value;
 		else
 			LOG(("yahoo_process_message: status: %d, key: %d, value: %s",
@@ -1817,7 +1819,7 @@ void yahoo_conference_addinvite(int id, const char * from, const char *who, cons
 		yahoo_packet_hash(pkt, 52, (char *)members->data);
 		yahoo_packet_hash(pkt, 53, (char *)members->data);
 	}
-	// 52, 53 -> other members?
+	/* 52, 53 -> other members? */
 
 	yahoo_send_packet(yd, pkt, 0);
 

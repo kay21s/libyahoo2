@@ -46,6 +46,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/*
 %{_libdir}/*.so
 %{_libdir}/*.a
+%{_libdir}/pkgconfig/*
 
 
 %changelog

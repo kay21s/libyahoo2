@@ -64,6 +64,8 @@ char *strchr (), *strrchr ();
 # endif
 #endif
 
+#include <sys/types.h>
+
 #include <stdlib.h>
 #include <ctype.h>
 #include "md5.h"
@@ -278,8 +280,6 @@ static int yahoo_packet_length(struct yahoo_packet *pkt)
 
 	return len;
 }
-
-typedef unsigned char	u_char;
 
 #define yahoo_put16(buf, data) ( \
 		(*(buf) = (u_char)((data)>>8)&0xff), \

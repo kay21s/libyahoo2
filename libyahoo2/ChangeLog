@@ -1,3 +1,6 @@
+* Thu Sep 11 2003 Philip
+- Up version number to 0x0a so that we don't get blocked
+
 * Thu Jun 5 2003 Philip
 - fix a bunch of memory leaks
 

@@ -177,6 +177,7 @@ filename from a url in the file receive code.
 
 * Copyright
 
+libyahoo2 is Copyright (C) 2002 Philip S Tellis
 Much of this code was taken and adapted from the yahoo module for
 gaim released under the GNU GPL.  This code is also released under the 
 GNU GPL.

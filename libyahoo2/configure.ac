@@ -5,7 +5,7 @@ AC_INIT(libyahoo2, 0.6.1)
 
 AC_CONFIG_SRCDIR(config.h.in)
 
-RELEASE="3-"
+RELEASE="3."
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
@@ -73,7 +73,7 @@ CHANGELOG=ChangeLog
 AC_SUBST(DATE)
 DATE=`date +"%Y%m%d"`
 
-if echo "$RELEASE" | grep '-' >/dev/null 2>&1; then
+if echo "$RELEASE" | grep '\.' >/dev/null 2>&1; then
 	RELEASE="$RELEASE$DATE"
 fi
 AC_SUBST(RELEASE)

@@ -8,8 +8,8 @@ Full documentation will come later.
 
 First include the two headers.
 
-#include <yahoo2.h>
-#include <yahoo2_callbacks.h>
+#include <libyahoo2/yahoo2.h>
+#include <libyahoo2/yahoo2_callbacks.h>
 
 
 yahoo2.h contains functions that you can call.  The data structures used 

@@ -9,14 +9,22 @@ Version:	%{version}
 Release:	%{release}
 Group:		System Environment/Libraries
 License:	GPL
-Vendor:		%_vendor
 Url:		http://libyahoo2.sourceforge.net/
 Source:		%{name}-%{version}.tar.gz
-Packager:	%_me
 BuildRoot:	/var/tmp/%{name}-%{version}-%{release}-root
-Requires:	@YAHOOPKGREQ@
 
 %description
+libyahoo2 is a C library interface to the new Yahoo! Messenger protocol. It
+supports almost all current features of the protocol.
+
+%package devel
+Summary:	Headers and development libraries for libyahoo2
+Group:		Development/Libraries
+Requires:	%{name} == %{version}-%{release}
+
+%description devel
+The header files and some documentation that you'll need to develop with
+libyahoo2
 
 %prep
 %setup
@@ -34,9 +42,15 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
+%attr(755,root,root) %{_libdir}/*.so.*
+
+%files devel
+%defattr(-,root,root)
 %doc doc/ymsg-9.txt NEWS COPYING AUTHORS README ChangeLog
-%attr(755,root,root) %{prefix}/lib/*
-%{prefix}/include/@PACKAGE@/*
+%{_includedir}/@PACKAGE@/*
+%{_libdir}/*.so
+%{_libdir}/*.a
+%{_libdir}/*.la
 
 
 %changelog

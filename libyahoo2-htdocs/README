@@ -292,7 +292,8 @@ Consult yahoo2_callbacks for the callbacks that are called on webcam
 events.
 
 You will require to be able to decode jpeg2000 images to view the webcam
-feed.  The jasper library will do this.
+feed.  You could use a library like GraphicsMagick (BSD Licence) or jasper
+(possibly non-Free) to do this.
 
 8. Yahoo Chat
 

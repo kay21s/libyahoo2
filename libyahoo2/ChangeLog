@@ -1,3 +1,6 @@
+* Tue Jan 21 2003 Philip
+- Added CHAT service codes from yach
+
 * Sat Jan 18 2003 Philip
 - utf-8 encoding/decoding functions are in yahoo_util
 - detect whether it is utf-8 or not from utf-8 flag in message

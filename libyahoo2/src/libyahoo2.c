@@ -150,16 +150,25 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_GAMEMSG = 0x2a,
 	YAHOO_SERVICE_FILETRANSFER = 0x46,
 	YAHOO_SERVICE_VOICECHAT = 0x4A,
-	YAHOO_SERVICE_NOTIFY = 0x4B,
-	YAHOO_SERVICE_P2PFILEXFER = 0x4D,
+	YAHOO_SERVICE_NOTIFY,
+	YAHOO_SERVICE_VERIFY,
+	YAHOO_SERVICE_P2PFILEXFER,
 	YAHOO_SERVICE_PEERTOPEER = 0x4F,	/* Checks if P2P possible */
 	YAHOO_SERVICE_AUTHRESP = 0x54,
-	YAHOO_SERVICE_LIST = 0x55,
+	YAHOO_SERVICE_LIST,
 	YAHOO_SERVICE_AUTH = 0x57,
 	YAHOO_SERVICE_ADDBUDDY = 0x83,
-	YAHOO_SERVICE_REMBUDDY = 0x84,
-	YAHOO_SERVICE_IGNORECONTACT = 0x85,	/* > 1, 7, 13 < 1, 66, 13, 0*/
-	YAHOO_SERVICE_REJECTCONTACT = 0x86
+	YAHOO_SERVICE_REMBUDDY,
+	YAHOO_SERVICE_IGNORECONTACT,	/* > 1, 7, 13 < 1, 66, 13, 0*/
+	YAHOO_SERVICE_REJECTCONTACT,
+	YAHOO_SERVICE_CHATONLINE = 0x96,
+	YAHOO_SERVICE_CHATGOTO,
+	YAHOO_SERVICE_CHATJOIN,
+	YAHOO_SERVICE_CHATLEAVE,
+	YAHOO_SERVICE_CHATEXIT = 0x9b,
+	YAHOO_SERVICE_CHATLOGOUT = 0xa0,
+	YAHOO_SERVICE_CHATPING,
+	YAHOO_SERVICE_COMMENT = 0xa8
 };
 
 struct yahoo_pair {
@@ -1851,12 +1860,6 @@ void yahoo_change_buddy_group(int id, const char *who, const char *old_group, co
 	if(!yd)
 		return;
 
-	/* 
-	 * this seems to work by adding the buddy to the new group, then 
-	 * removing from the old group.  there's an additional field - 14 
-	 * that probably says that this is a group rename.
-	 * I wonder what YAHOO_SERVICE_GROUPRENAME is for then
-	 */
 	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YAHOO_STATUS_AVAILABLE, yd->id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);

@@ -8,5 +8,5 @@ Description: Library for the Yahoo! Messenger Protocol
 Version: @VERSION@
 Requires: @YAHOOPKGREQ@
 Libs: -L${libdir} -lyahoo2
-Cflags: -I${includedir}/libyahoo2
+Cflags: -I${includedir}/@PACKAGE@
 

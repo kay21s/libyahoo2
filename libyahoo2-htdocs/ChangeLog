@@ -1,3 +1,7 @@
+* Wed Mar 19 2003 Mik
+- Added perliminary webcam upload support
+- Added descriptions for the webcam functions
+
 * Tue Mar 18 2003 Wayne Parrot
 - Added preliminary yahoo chat support
 

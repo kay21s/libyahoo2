@@ -1,0 +1,107 @@
+* Thu Feb 6 2003 Philip
+- renamed yahoo_add_yab to yahoo_set_yab
+
+* Wed Feb 5 2003 Philip
+- Support for modifying an address book entry
+
+* Mon Jan 27 2003 Philip
+- Support for adding address book entry on the server
+
+* Thu Jan 24 2003 Philip
+- Download address book from server and fill in real_name field
+of yahoo_buddy
+
+* Tue Jan 21 2003 Philip
+- Added CHAT service codes from yach
+- Fixed the problem with Offline UTF-8 encoded messages
+it no longer sends an extra bell
+- Implemented group renaming
+
+* Sat Jan 18 2003 Philip
+- utf-8 encoding/decoding functions are in yahoo_util
+- detect whether it is utf-8 or not from utf-8 flag in message
+
+* Wed Jan 15 2003 Philip
+- added utf-8 decode to conference messages too.  I need to move this into
+a separate function
+
+* Tue Jan 14 2003 Philip
+- changed the accent character hack to proper UTF-8 decode supplied by Alan
+
+* Mon Jan 13 2003 Philip Tellis
+- sample client handles accented characters correctly.
+
+* Thu Dec 18 2002 Philip Tellis
+- sample client now handles sending of bell with ^G and sounding of bell
+when it receives it
+
+* Tue Dec 10 2002 Philip Tellis (version 0.6.2)
+- Added some prototypes for snprintf, strdup and vsnprintf (when compiling
+with -ansi -pedantic and without glib
+- Updated version number for release
+
+* Mon Dec 9 2002 Philip Tellis
+- Changed u_char to unsigned char
+- Fixed yahoo_get16 and yahoo_get32 to work with big endian systems also
+
+* Tue Nov 19 2002 Philip Tellis
+- Added code to process a voice chat invite.  Doesn't do anything.
+
+* Mon Nov 18 2002 Philip Tellis
+- Multiple offline messages are now received correctly
+- Memory leaks cleaned up
+- Check for glib-2 as well as glib-1
+- dropped port 21 from port scan
+- Added a spec file for RPM
+
+* Sat Nov 16 2002 Rodney Dawes
+- Make libyahoo2 versioned
+- Add a pkgconfig file
+- Install headers in $(pkgincludedir)
+- Make yahoo sample client a noinst program
+- Require autoconf >= 2.50
+- Cleanups in configure.ac
+
+* Wed Nov 13 2002 Philip Tellis
+- libyahoo2 now automatically scans ports 21, 23, 25 and 80 if it cannot 
+connect on the default port.
+
+* Wed Nov 06 2002 Philip Tellis
+- added protocol documentation
+
+* Tue Nov 05 2002 Philip Tellis
+- compiles with -ansi and -pedantic
+
+* Sat Oct 19 2002 Philip Tellis
+- no longer strip colour/style codes from messages
+- added colour entry for any colour to yahoo2_types.h (Nelson Ferreira)
+
+
+* Fri Oct 18 2002 Philip Tellis (version 0.6.1)
+- fixed segfault on some weird notification packets
+- fixes for conference add invite
+- identity support for conferences
+
+- sample console client can handle conferencing
+
+* Wed Oct 9 2002 Philip Tellis (version 0.6)
+- Removed glib dependencies.  Will use glib only if available
+- Configure time option --with-struct-callbacks to use a callback struct
+instead of callback functions (see yahoo2_callbacks.h and the README)
+- Code cleanups by Steve McAndrewSmith
+- Get identities from server
+- Activate/Deactivate identities
+- Use identities when sending messages
+- Fixed buffer overflow in key/value pair reading
+
+- sample console client no longer requires gtk!
+
+* Mon Jul 22 2002 Philip Tellis (version 0.5)
+- Added basic documentation to README
+- Several minor code fixes and cleanups
+
+* Sat Jul 20 2002 Philip Tellis (version 0.5.cvs)
+This is an initial public release as a separate library
+I'll put a feature list in later.
+0.5 is just a random version number, I figure it's got half the features
+of where it should be when complete.

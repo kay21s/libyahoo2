@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libyahoo2.la
 
-CFLAGS = $(CFLAGS) $(GLIB_CFLAGS)
-LIBS = $(LIBS) $(GLIB_LIBS)
+CFLAGS := $(CFLAGS) $(GLIB_CFLAGS)
+LIBS := $(LIBS) $(GLIB_LIBS)
 
 EXTRA_DIST = md5.h yahoo_connections.h yahoo_debug.h \
 	sample_client.c sample_makefile

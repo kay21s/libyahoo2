@@ -320,9 +320,9 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 		print_message(("[Offline message at %s from %s]: %s", 
 				timestr, who, msg))
 	} else {
-		print_message(("%s: %s", who, msg))
 		if(!strcmp(msg, "<ding>")) 
 			printf("\a");
+		print_message(("%s: %s", who, msg))
 	}
 }
 

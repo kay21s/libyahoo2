@@ -2090,7 +2090,6 @@ static char * yahoo_getwebcam_master(struct yahoo_input_data *yid)
 	unsigned int len=0;
 	unsigned int status=0;
 	char *server=NULL;
-	char *msg=NULL;
 	struct yahoo_data *yd = yid->yd;
 
 	if(!yid || !yd)
@@ -2113,10 +2112,8 @@ static char * yahoo_getwebcam_master(struct yahoo_input_data *yid)
 	}
 	else if (status == 6)
 	{
-		msg = strdup(yid->wcm->user);
-		msg = y_string_append(msg, " does not have his/her webcam online");
-		YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
-		FREE(msg);
+		YAHOO_CALLBACK(ext_yahoo_webcam_closed)
+			(yd->client_id, yid->wcm->user, 4);
 	}
 
 	/* skip rest of the data */

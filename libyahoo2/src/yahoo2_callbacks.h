@@ -482,6 +482,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_invite_reply)(int id, char *from, int 
  *	         1 = user stopped broadcasting
  *	         2 = user cancelled viewing permission
  *	         3 = user declines permission
+ *	         4 = user does not have webcam online
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_closed)(int id, char *who, int
 reason);

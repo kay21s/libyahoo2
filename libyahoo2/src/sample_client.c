@@ -733,6 +733,9 @@ void ext_yahoo_webcam_closed(int id, char *who, int reason)
 		case 3:
 			print_message(("%s declines permission to view his/her webcam", who));
 			break;
+		case 4:
+			print_message(("%s does not have his/her webcam online", who));
+			break;
 	}
 }
 
@@ -1571,6 +1574,7 @@ static void register_callbacks()
 	yc.ext_yahoo_got_webcam_image = ext_yahoo_got_webcam_image;
 	yc.ext_yahoo_webcam_invite = ext_yahoo_webcam_invite;
 	yc.ext_yahoo_webcam_invite_reply = ext_yahoo_webcam_invite_reply;
+	yc.ext_yahoo_webcam_closed = ext_yahoo_webcam_closed;
 	yc.ext_yahoo_webcam_viewer = ext_yahoo_webcam_viewer;
 	yc.ext_yahoo_webcam_data_request = ext_yahoo_webcam_data_request;
 	yc.ext_yahoo_got_file = ext_yahoo_got_file;

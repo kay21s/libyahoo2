@@ -144,6 +144,7 @@ struct yab {
 	char *hphone;
 	char *wphone;
 	char *mphone;
+	int  dbid;
 };
 
 struct yahoo_buddy {

@@ -1582,6 +1582,13 @@ static void yahoo_yab_read(struct yab *yab, unsigned char *d, int len)
 		en = strchr(st, '"'); *en++ = '\0';
 		yab->mphone = yahoo_xmldecode(st);
 	}
+
+	st = strstr(en, "dbid=\"");
+	if(st) {
+		st += strlen("dbid=\"");
+		en = strchr(st, '"'); *en++ = '\0';
+		yab->dbid = atoi(st);
+	}
 }
 
 static struct yab * yahoo_getyab(struct yahoo_data *yd)
@@ -1956,6 +1963,7 @@ void yahoo_add_yab(int id, struct yab * yab)
 	char url[1024];
 	char buff[1024];
 	char *temp;
+	int size = sizeof(url)-1;
 
 	if(!yd)
 		return;
@@ -1966,55 +1974,63 @@ void yahoo_add_yab(int id, struct yab * yab)
 	nyd->type = YAHOO_CONNECTION_YAB;
 	nyd->buddies = yd->buddies;
 
-	strncpy(url, "http://insider.msg.yahoo.com/ycontent/?addab2=0", sizeof(url));
+	strncpy(url, "http://insider.msg.yahoo.com/ycontent/?addab2=0", size);
+
+	if(yab->dbid) {
+		/* change existing yab */
+		char tmp[32];
+		strncat(url, "&ee=1&ow=1&id=", size - strlen(url));
+		snprintf(tmp, sizeof(tmp), "%d", yab->dbid);
+		strncat(url, tmp, size - strlen(url));
+	}
 
 	if(yab->fname) {
-		strncat(url, "&fn=", sizeof(url) - strlen(url));
+		strncat(url, "&fn=", size - strlen(url));
 		temp = yahoo_urlencode(yab->fname);
-		strncat(url, temp, sizeof(url) - strlen(url));
+		strncat(url, temp, size - strlen(url));
 		free(temp);
 	}
 	if(yab->lname) {
-		strncat(url, "&ln=", sizeof(url) - strlen(url));
+		strncat(url, "&ln=", size - strlen(url));
 		temp = yahoo_urlencode(yab->lname);
-		strncat(url, temp, sizeof(url) - strlen(url));
+		strncat(url, temp, size - strlen(url));
 		free(temp);
 	}
-	strncat(url, "&yid=", sizeof(url) - strlen(url));
+	strncat(url, "&yid=", size - strlen(url));
 	temp = yahoo_urlencode(yab->id);
-	strncat(url, temp, sizeof(url) - strlen(url));
+	strncat(url, temp, size - strlen(url));
 	free(temp);
 	if(yab->nname) {
-		strncat(url, "&nn=", sizeof(url) - strlen(url));
+		strncat(url, "&nn=", size - strlen(url));
 		temp = yahoo_urlencode(yab->nname);
-		strncat(url, temp, sizeof(url) - strlen(url));
+		strncat(url, temp, size - strlen(url));
 		free(temp);
 	}
 	if(yab->email) {
-		strncat(url, "&e=", sizeof(url) - strlen(url));
+		strncat(url, "&e=", size - strlen(url));
 		temp = yahoo_urlencode(yab->email);
-		strncat(url, temp, sizeof(url) - strlen(url));
+		strncat(url, temp, size - strlen(url));
 		free(temp);
 	}
 	if(yab->hphone) {
-		strncat(url, "&hp=", sizeof(url) - strlen(url));
+		strncat(url, "&hp=", size - strlen(url));
 		temp = yahoo_urlencode(yab->hphone);
-		strncat(url, temp, sizeof(url) - strlen(url));
+		strncat(url, temp, size - strlen(url));
 		free(temp);
 	}
 	if(yab->wphone) {
-		strncat(url, "&wp=", sizeof(url) - strlen(url));
+		strncat(url, "&wp=", size - strlen(url));
 		temp = yahoo_urlencode(yab->wphone);
-		strncat(url, temp, sizeof(url) - strlen(url));
+		strncat(url, temp, size - strlen(url));
 		free(temp);
 	}
 	if(yab->mphone) {
-		strncat(url, "&mp=", sizeof(url) - strlen(url));
+		strncat(url, "&mp=", size - strlen(url));
 		temp = yahoo_urlencode(yab->mphone);
-		strncat(url, temp, sizeof(url) - strlen(url));
+		strncat(url, temp, size - strlen(url));
 		free(temp);
 	}
-	strncat(url, "&pp=0", sizeof(url) - strlen(url));
+	strncat(url, "&pp=0", size - strlen(url));
 
 	snprintf(buff, sizeof(buff), "Y=%s; T=%s",
 			yd->cookie_y, yd->cookie_t);

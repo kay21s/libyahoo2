@@ -225,7 +225,7 @@ int yahoo_http_post(const char *url, const struct yahoo_data *yd, long content_l
 	snprintf(buff, sizeof(buff), 
 			"POST %s HTTP/1.0\n"
 			"Content-length: %ld\n"
-			"User-Agent: Mozilla/4.5 [en] (libyahoo2/1.0)\n"
+			"User-Agent: Mozilla/4.5 [en] (" PACKAGE "/" VERSION ")\n"
 			"Host: %s:%d\n"
 			"Cookie: Y=%s; T=%s\n"
 			"\n",

@@ -285,7 +285,7 @@ static void * _yahoo_assign_server_settings(va_list ap)
 		} else if(!strcmp(key, "webcam_description")) {
 			svalue = va_arg(ap, char *);
 			free(yss->webcam_description);
-			yss->webcam_description = svalue;
+			yss->webcam_description = strdup(svalue);
 		} else if(!strcmp(key, "local_host")) {
 			svalue = va_arg(ap, char *);
 			free(yss->local_host);

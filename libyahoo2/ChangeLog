@@ -1,3 +1,6 @@
+* Mon Sep 21 2003 Philip
+- Forgot a strdup
+
 * Sat Sep 20 2003 Philip
 - Support protocol 0x0b
 

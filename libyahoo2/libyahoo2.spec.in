@@ -1,7 +1,7 @@
 Summary:	Library for the Yahoo! Messenger Protocol
 Name:		@PACKAGE@
 Version:	@VERSION@
-Release:	@RELEASE@
+Release:	1
 Group:		System Environment/Libraries
 License:	GPL
 Url:		http://libyahoo2.sourceforge.net/

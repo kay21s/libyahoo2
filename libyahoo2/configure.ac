@@ -1,11 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(libyahoo2, 0.7.2, libyahoo2-users@lists.sourceforge.net)
+AC_INIT(libyahoo2, 0.7.3, libyahoo2-users@lists.sourceforge.net)
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR(src/libyahoo2.c)
 AM_INIT_AUTOMAKE([1.6 dist-bzip2])
-
-RELEASE="2"
-
 
 AM_CONFIG_HEADER(config.h)
 
@@ -96,11 +93,6 @@ AC_SUBST_FILE(CHANGELOG)
 CHANGELOG=ChangeLog
 AC_SUBST(DATE)
 DATE=`date +"%Y%m%d"`
-
-if echo "$RELEASE" | grep '\.' >/dev/null 2>&1; then
-	RELEASE="$RELEASE$DATE"
-fi
-AC_SUBST(RELEASE)
 
 AC_CONFIG_FILES([
 	Makefile libyahoo2.pc libyahoo2.spec 

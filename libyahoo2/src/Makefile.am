@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libyahoo2.la
 
-EXTRA_DIST = sample_client.c sample_makefile
+EXTRA_DIST = sample_client.c
 
 noinst_HEADERS = md5.h yahoo_debug.h yahoo_util.h sha.h
 

@@ -154,6 +154,18 @@ void yahoo_webcam_invite(int id, const char *who);
 void yahoo_send_file(int id, const char *who, const char *msg, const char *name, unsigned long size,
 		yahoo_get_fd_callback callback, void *data);
 
+/* send a search request
+ */
+void yahoo_search(int id, enum yahoo_search_type t, const char *text, enum yahoo_search_gender g, enum yahoo_search_agerange ar,
+		int photo, int yahoo_only);
+
+/* continue last search
+ * should be called if only (start+found >= total)
+ *
+ * where the above three are passed to ext_yahoo_got_search_result
+ */
+void yahoo_search_again(int id, int start);
+
 /* returns a socket fd to a url for downloading a file. */
 void yahoo_get_url_handle(int id, const char *url, 
 		yahoo_get_url_handle_callback callback, void *data);

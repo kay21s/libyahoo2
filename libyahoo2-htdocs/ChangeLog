@@ -1,3 +1,9 @@
+* Tue Dec 9 2003 Philip Tellis
+- Typing notification fix from Gena01
+- Don't send VERIFY as first packet, since we don't know what do
+do if it fails anyway.
+TODO revert when we figure this out
+
 * Wed Oct 22 2003 Philip Tellis
 - Identify failed login because of incorrect username
 

@@ -1563,6 +1563,11 @@ void ext_yahoo_chat_yahooerror(int id)
  	LOG(("got chat logout"));
 }
 
+void ext_yahoo_got_search_result(int id, int found, int start, int total, YList *contacts)
+{
+	LOG(("got search result"));
+}
+
 static void register_callbacks()
 {
 #ifdef USE_STRUCT_CALLBACKS
@@ -1599,6 +1604,7 @@ static void register_callbacks()
 	yc.ext_yahoo_typing_notify = ext_yahoo_typing_notify;
 	yc.ext_yahoo_game_notify = ext_yahoo_game_notify;
 	yc.ext_yahoo_mail_notify = ext_yahoo_mail_notify;
+	yc.ext_yahoo_got_search_result = ext_yahoo_got_search_result;
 	yc.ext_yahoo_system_message = ext_yahoo_system_message;
 	yc.ext_yahoo_error = ext_yahoo_error;
 	yc.ext_yahoo_log = ext_yahoo_log;

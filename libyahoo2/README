@@ -342,7 +342,26 @@ message is from the yahoo servers.  Don't complain to me about it.  I
 know it sucks that we can't do translation of these strings.
 
 
-11. Other functions
+11. Search
+
+To search for contacts, use the two functions:
+
+	yahoo_search(id, type, text, gender, agerange, photo, yahoo_only);
+and
+	yahoo_search_again(id, int start);
+
+The first is used for a first time search.  Check yahoo2_types.h for
+valid values for each of the parameters.  text is a text string to
+search for.
+
+The search results are returned through ext_yahoo_got_search_result.
+
+Results are limited to 20 per query, so if you want to continue the
+search, call yahoo_search_again to get 20 more results.  You may 
+specify the start value, or use -1 to just get the next 20 results.
+
+
+12. Other functions
 
 You can call yahoo_get_cookie to get the cookies for your connection.  I
 think these can be used when starting a browser to get information from

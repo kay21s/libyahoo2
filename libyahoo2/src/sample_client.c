@@ -302,6 +302,7 @@ void ext_yahoo_got_ignore(int id, YList * igns)
 
 void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 {
+	int i=0;
 	if(stat == 2) {
 		LOG(("Error sending message to %s", who));
 		return;
@@ -310,6 +311,20 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 	if(!msg)
 		return;
 
+
+	while(msg[i]) {
+		if(msg[i]==(char)195) {
+			int j=i;
+			if(!msg[i+1]) {
+				msg[i]=0;
+				break;
+			}
+			msg[i+1] += 64;
+			while((msg[j] = msg[j+1]))
+				j++;
+		}
+		i++;
+	}
 
 	if(tm) {
 		char timestr[255];

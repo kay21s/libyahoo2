@@ -1604,23 +1604,17 @@ static struct yab * yahoo_getyab(struct yahoo_data *yd)
 
 	DEBUG_MSG(("rxlen is %d", yd->rxlen));
 
-	while(pos < yd->rxlen) {
-	       	if(yd->rxqueue[pos] == '<' && yd->rxqueue[pos+1] == 'r')
-			break;
+	while(pos < yd->rxlen-1 && memcmp(yd->rxqueue + pos, "<r", 2))
 		pos++;
-	}
 
-	if(pos >= yd->rxlen)
+	if(pos >= yd->rxlen-1)
 		return NULL;
 
 	end = pos+2;
-	while(end < yd->rxlen) {
-		if(yd->rxqueue[end] == '/' && yd->rxqueue[end+1] == '>')
-			break;
+	while(end < yd->rxlen-1 && memcmp(yd->rxqueue + end, "/>", 2))
 	       	end++;
-	}
 
-	if(end >= yd->rxlen)
+	if(end >= yd->rxlen-1)
 		return NULL;
 
 	yab = y_new0(struct yab, 1);

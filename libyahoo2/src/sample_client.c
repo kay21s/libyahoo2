@@ -175,7 +175,7 @@ static char * get_buddy_name(char * yid)
 	for (b = buddies; b; b = b->next) {
 		yahoo_account * ya = b->data;
 		if(!strcmp(yid, ya->yahoo_id))
-			return ya->name?ya->name:ya->yahoo_id;
+			return ya->name&&*ya->name?ya->name:ya->yahoo_id;
 	}
 
 	return yid;

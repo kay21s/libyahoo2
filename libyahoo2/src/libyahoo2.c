@@ -695,7 +695,7 @@ static int yahoo_send_packet(int fd, struct yahoo_packet *pkt, int extra_pad)
 	data = y_new0(unsigned char, len + 1);
 
 	memcpy(data + pos, "YMSG", 4); pos += 4;
-	pos += yahoo_put16(data + pos, 0x0a00);
+	pos += yahoo_put16(data + pos, 0x000b);
 	pos += yahoo_put16(data + pos, 0x0000);
 	pos += yahoo_put16(data + pos, pktlen + extra_pad);
 	pos += yahoo_put16(data + pos, pkt->service);
@@ -1426,6 +1426,25 @@ static void yahoo_process_list(struct yahoo_input_data *yid, struct yahoo_packet
 	}
 }
 
+static void yahoo_process_verify(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
+{
+	struct yahoo_data *yd = yid->yd;
+
+	if(pkt->status != 0x01) {
+		DEBUG_MSG(("expected status: 0x01, got: %d", pkt->status));
+		YAHOO_CALLBACK(ext_yahoo_login_response)(yd->client_id, YAHOO_LOGIN_LOCK, "");
+		return;
+	}
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YAHOO_STATUS_AVAILABLE, yd->session_id);
+
+	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_send_packet(yid->fd, pkt, 0);
+
+	yahoo_packet_free(pkt);
+
+}
+
 static void yahoo_process_auth(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	struct yahoo_data *yd = yid->yd;
@@ -1537,7 +1556,7 @@ static void yahoo_process_auth(struct yahoo_input_data *yid, struct yahoo_packet
 	md5_finish(&ctx, result);
 	to_y64(result96, result, 16);
 
-	pack = yahoo_packet_new(YAHOO_SERVICE_AUTHRESP, yd->initial_status, 0);
+	pack = yahoo_packet_new(YAHOO_SERVICE_AUTHRESP, yd->initial_status, yd->session_id);
 	yahoo_packet_hash(pack, 0, yd->user);
 	yahoo_packet_hash(pack, 6, (char *)result6);
 	yahoo_packet_hash(pack, 96, (char *)result96);
@@ -1945,6 +1964,9 @@ static void yahoo_packet_process(struct yahoo_input_data *yid, struct yahoo_pack
 		break;
 	case YAHOO_SERVICE_LIST:
 		yahoo_process_list(yid, pkt);
+		break;
+	case YAHOO_SERVICE_VERIFY:
+		yahoo_process_verify(yid, pkt);
 		break;
 	case YAHOO_SERVICE_AUTH:
 		yahoo_process_auth(yid, pkt);
@@ -2749,12 +2771,9 @@ static void yahoo_connected(int fd, int error, void *data)
 	if(fd < 0)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YAHOO_STATUS_AVAILABLE, 0);
-
-	yahoo_packet_hash(pkt, 1, yd->user);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_VERIFY, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	NOTICE(("Sending initial packet"));
 	yahoo_send_packet(fd, pkt, 0);
-
 	yahoo_packet_free(pkt);
 
 	yid = y_new0(struct yahoo_input_data, 1);

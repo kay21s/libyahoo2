@@ -133,7 +133,7 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_ADDIDENT, /* 0x10 */
 	YAHOO_SERVICE_ADDIGNORE,
 	YAHOO_SERVICE_PING,
-	YAHOO_SERVICE_GROUPRENAME,
+	YAHOO_SERVICE_GOTGROUPRENAME, /* > 1, 36(old), 37(new) */
 	YAHOO_SERVICE_SYSMESSAGE = 0x14,
 	YAHOO_SERVICE_PASSTHROUGH2 = 0x16,
 	YAHOO_SERVICE_CONFINVITE = 0x18,
@@ -161,6 +161,7 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_REMBUDDY,
 	YAHOO_SERVICE_IGNORECONTACT,	/* > 1, 7, 13 < 1, 66, 13, 0*/
 	YAHOO_SERVICE_REJECTCONTACT,
+	YAHOO_SERVICE_GROUPRENAME = 0x89, /* > 1, 65(new), 66(0), 67(old) */
 	YAHOO_SERVICE_CHATONLINE = 0x96,
 	YAHOO_SERVICE_CHATGOTO,
 	YAHOO_SERVICE_CHATJOIN,
@@ -1433,6 +1434,7 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_ADDIDENT:
 	case YAHOO_SERVICE_ADDIGNORE:
 	case YAHOO_SERVICE_PING:
+	case YAHOO_SERVICE_GOTGROUPRENAME:
 	case YAHOO_SERVICE_GROUPRENAME:
 	case YAHOO_SERVICE_PASSTHROUGH2:
 	case YAHOO_SERVICE_CHATLOGON:
@@ -1880,6 +1882,23 @@ void yahoo_change_buddy_group(int id, const char *who, const char *old_group, co
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, old_group);
+	yahoo_send_packet(yd, pkt, 0);
+	yahoo_packet_free(pkt);
+}
+
+void yahoo_group_rename(int id, const char *old_group, const char *new_group)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_packet *pkt = NULL;
+
+	if(!yd)
+		return;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_GROUPRENAME, YAHOO_STATUS_AVAILABLE, yd->id);
+	yahoo_packet_hash(pkt, 1, yd->user);
+	yahoo_packet_hash(pkt, 65, old_group);
+	yahoo_packet_hash(pkt, 67, new_group);
+
 	yahoo_send_packet(yd, pkt, 0);
 	yahoo_packet_free(pkt);
 }

@@ -94,6 +94,9 @@ void yahoo_ignore_buddy(id, char *who, int unignore);
 If unignore is TRUE, the buddy is unignored, if it is FALSE, the buddy is
 ignored.
 
+- You can also rename a group with:
+void yahoo_group_rename(id, char *old_group, char *new_group);
+
 
 
 
@@ -101,13 +104,24 @@ ignored.
 
 To send an IM, make a call to yahoo_send_im
 
-void yahoo_send_im(int id, char * from, char *who, char *what);
+void yahoo_send_im(int id, char * from, char *who, char *what, int utf8);
 
 id is the id that the connection is identified with, who is who you want
 to message, what is the message to be sent.
 
 The parameter from is the identity that you want to use to send the message.
 If this is NULL, your default identity will be used.
+
+utf8 is a boolean field that specifies whether the message you're sending
+has been encoded in utf8 or not.  libyahoo2 will not do the encoding
+for you - you have to do it yourself.
+
+You may use the utility functions y_str_to_utf8 and y_utf8_to_str in
+yahoo_util to do this encoding.  You must free the pointers returned by
+these functions.
+
+UTF8 encoding may also be used in messages received.  It is not sent or
+received for invitations/rejection messages.
 
 You can also send typing notifications with yahoo_send_typing.
 

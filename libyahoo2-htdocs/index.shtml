@@ -10,7 +10,7 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.6.2 - 10 December 2002
+libyahoo2 version 0.6.2 - 9 December 2002
 </p>
 
 <p>
@@ -83,8 +83,8 @@ nor for IMvironments.
 
 <h2>Requires</h2>
 
-<p>libyahoo2 can use glib version 1.2 or version 2 if you have them.</p>
-
+<p>libyahoo2 can use glib version 1.2 or version 2 if you have them and
+want them</p>.
 
 <h2>Acknowledgements</h2>
 <p>
@@ -94,20 +94,20 @@ fixes.
 </p>
 
 <p>
-libyahoo2 was originally based on the yahoo module from 
-<a href="http://gaim.sourceforge.net/">gaim</a>.  Much code still remains
-from gaim.  The following persons have contributed to gaim:
+libyahoo2 is derivative of the yahoo module from <a 
+href="http://gaim.sourceforge.net/">gaim</a>.  The following persons have 
+contributed to gaim:
 </p>
 <pre>
-copyright (C) 1998-1999, Mark Spencer &lt;markster AT marko.net&gt;
-	       1998-1999, Adam Fritzler &lt;afritz AT marko.net&gt;
-	       1998-2002, Rob Flynn &lt;rob AT marko.net&gt;
-	       2000-2002, Eric Warmenhoven &lt;eric AT warmenhoven.org&gt;
-	       2001-2002, Brian Macke &lt;macke AT strangelove.net&gt;
-		    2001, Anand Biligiri S &lt;abiligiri AT users.sf.net&gt;
-		    2001, Valdis Kletnieks
-		    2002, Sean Egan &lt;bj91704 AT binghamton.edu&gt;
-		    2002, Toby Gray &lt;toby.gray AT ntlworld.com&gt;
+Copyright &copy; 1998-1999, Mark Spencer &lt;markster AT marko.net&gt;
+	      1998-1999, Adam Fritzler &lt;afritz AT marko.net&gt;
+	      1998-2002, Rob Flynn &lt;rob AT marko.net&gt;
+	      2000-2002, Eric Warmenhoven &lt;eric AT warmenhoven.org&gt;
+	      2001-2002, Brian Macke &lt;macke AT strangelove.net&gt;
+		   2001, Anand Biligiri S &lt;abiligiri AT users.sf.net&gt;
+		   2001, Valdis Kletnieks
+		   2002, Sean Egan &lt;bj91704 AT binghamton.edu&gt;
+		   2002, Toby Gray &lt;toby.gray AT ntlworld.com&gt;
 </pre>
 
 <p>
@@ -117,14 +117,14 @@ Portions of Sylpheed copyright 2000-2002 Hiroyuki Yamamoto &lt;hiro-y AT kcn.ne.
 </p>
 
 <p>
-Special thanks to Rodney Dawes for making the library versioned and teaching me
-quite a bit about versioning and redhat spec files.
+Thanks also to Rodney Dawes for making the library versioned and introducing 
+me to library versioning and redhat spec files.
 </p>
 
 
 <h2>Copyright</h2>
 <p>
-libyahoo2 is Copyright (c) 2002-2003 Philip S Tellis (philip . tellis AT gmx . net).
+libyahoo2 is Copyright &copy; 2002-2003 Philip S Tellis (philip . tellis At gmx . net).
 Distribution is under the terms of the GNU General Public Licence.
 </p>
 

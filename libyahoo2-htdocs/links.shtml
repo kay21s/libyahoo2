@@ -22,8 +22,8 @@
 <div class="links">
 <h2>Documentation</h2>
 <p class="links">
-<a href="README" title="Library docs - if you can call it that">API</a><br>
-<a href="ymsg-9.txt" title="Protocol docs">YMSG-9 Protocol</a><br>
+<a href="README" title="Some kind of documentation">README</a><br>
+<a href="ymsg-9.txt" title="Partial protocol documentation">Protocol Docs</a><br>
 <a href="yab.txt" title="Address Book structure">Getting/Setting YAB</a><br>
 </p>
 </div>

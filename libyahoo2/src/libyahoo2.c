@@ -1956,7 +1956,7 @@ void yahoo_get_yab(int id)
 
 }
 
-void yahoo_add_yab(int id, struct yab * yab)
+void yahoo_set_yab(int id, struct yab * yab)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_data *nyd;

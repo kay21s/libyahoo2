@@ -53,7 +53,7 @@ ext_yahoo_login_response with a status code.  See yahoo2_types for an
 enumeration of these codes.
 
 
-2. Buddies
+2. Buddies and Addressbook
 
 When the library receives the buddy list from the server, it will call
 ext_yahoo_got_buddies with the buddy list as a parameter.  The library
@@ -68,7 +68,8 @@ These lists will be returned from the library's cache.  To force a reload
 from the server, make a call to yahoo_get_list.
 
 Buddy nicknames and other contact information is stored in your yahoo address
-book.  To retrieve this information, call yahoo_get_yab.
+book.  To retrieve this information, call yahoo_get_yab.  call yahoo_set_yab
+to create or modify an addressbook entry.
 
 - To refresh the status of all buddies, make a call to yahoo_refresh.
 

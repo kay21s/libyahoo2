@@ -900,7 +900,7 @@ static void process_commands(char *line)
 			yab = y_new0(struct yab, 1);
 			yab->id = to;
 			yab->fname = msg;
-			yahoo_add_yab(ylad->id, yab);
+			yahoo_set_yab(ylad->id, yab);
 			FREE(yab);
 		}
 	} else {

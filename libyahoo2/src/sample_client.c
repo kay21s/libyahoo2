@@ -1,6 +1,8 @@
 /*
  * sample yahoo client based on libyahoo2
  *
+ * libyahoo2 is available at http://libyahoo2.sourceforge.net/
+ *
  * $Revision$
  * $Date$
  * 
@@ -43,6 +45,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+/* Get these from http://libyahoo2.sourceforge.net/ */
 #include <yahoo2.h>
 #include <yahoo2_callbacks.h>
 #include "yahoo_util.h"
@@ -268,6 +271,7 @@ void yahoo_logout()
 	ylad->status = YAHOO_STATUS_OFFLINE;
 	ylad->id = 0;
 
+	poll_loop=0;
 	print_message(("logged_out"));
 }
 
@@ -515,7 +519,10 @@ int main(int argc, char * argv[])
 	printf("Yahoo Id: ");
 	scanf("%s", ylad->yahoo_id);
 	printf("Password: ");
+	system("stty -echo");
 	scanf("%s", ylad->password);
+	system("stty echo");
+	printf("\n");
 
 	printf("Initial Status: ");
 	scanf("%d", &status);

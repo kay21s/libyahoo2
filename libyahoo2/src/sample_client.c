@@ -363,6 +363,7 @@ void ext_yahoo_conf_userdecline(int id, char *who, char *room, char *msg)
 		if(!strcmp(w, who)) {
 			FREE(l->data);
 			cr->members = y_list_remove_link(cr->members, l);
+			y_list_free_1(l);
 			break;
 		}
 	}
@@ -398,6 +399,7 @@ void ext_yahoo_conf_userleave(int id, char *who, char *room)
 		if(!strcmp(w, who)) {
 			FREE(l->data);
 			cr->members = y_list_remove_link(cr->members, l);
+			y_list_free_1(l);
 			break;
 		}
 	}
@@ -1489,6 +1491,7 @@ int main(int argc, char * argv[])
 				YList *n = y_list_next(l);
 				LOG(("Removing id:%d fd:%d", c->id, c->fd));
 				connections = y_list_remove_link(connections, l);
+				y_list_free_1(l);
 				free(c);
 				l=n;
 			} else {
@@ -1522,10 +1525,13 @@ int main(int argc, char * argv[])
 	}
 	LOG(("Exited loop"));
 
-	for(; connections; connections = y_list_remove_link(connections, connections)) {
+	while(connections) {
+		YList *tmp = connections;
 		struct _conn * c = connections->data;
 		close(c->fd);
 		FREE(c);
+		connections = y_list_remove_link(connections, connections);
+		y_list_free_1(tmp);
 	}
 
 	yahoo_logout();

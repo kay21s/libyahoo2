@@ -1,4 +1,7 @@
 * Sat Sep 20 2003 Philip
+- Formatting fixes and yahoo_list memory management fixes
+
+* Sat Sep 20 2003 Philip
 - No more extern vars (almost)
 - yahoo_init now takes optional key/value pairs to set server settings
 see the README or yahoo2.h for full details

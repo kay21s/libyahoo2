@@ -10,7 +10,7 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.6.1 - 18 October 2002
+libyahoo2 version 0.6.2 - 10 December 2002
 </p>
 
 <p>
@@ -83,7 +83,7 @@ nor for IMvironments.
 
 <h2>Requires</h2>
 
-<p>glib version 1.2 is optional, it will be used if found.</p>
+<p>libyahoo2 can use glib version 1.2 or version 2 if you have them.</p>
 
 
 <h2>Acknowledgements</h2>
@@ -124,7 +124,7 @@ quite a bit about versioning and redhat spec files.
 
 <h2>Copyright</h2>
 <p>
-libyahoo2 is Copyright (c) 2002 Philip S Tellis (philip . tellis At gmx . net).
+libyahoo2 is Copyright (c) 2002-2003 Philip S Tellis (philip . tellis AT gmx . net).
 Distribution is under the terms of the GNU General Public Licence.
 </p>
 

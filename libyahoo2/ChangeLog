@@ -1,3 +1,6 @@
+* Thu Mar 29 2003 Wayne
+- Added basic support for pulling down the list of chatrooms
+
 * Mon Mar 24 2003 Mik
 - Seperate webcam struct to public and private data
 - Rename webcam struct to yahoo_webcam

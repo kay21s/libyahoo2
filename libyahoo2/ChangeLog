@@ -1,3 +1,11 @@
+* Thu Dec 25 2003 Philip Tellis
+- asynchronous writes as well (might break file send)
+- better support for webcam broadcast
+- webcam images sent in chunks rather than as a single image
+- check for EAGAIN on send, defer if it is returned
+- add handler returns a tag, which is passed to remove handler to remove it
+- api has changed
+
 * Wed Dec 10 2003 Philip Tellis
 - initialise some unintialised variables
 

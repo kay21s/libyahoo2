@@ -491,7 +491,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, char *msg);
  *	a timestamp to stay in sync
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_image)(int id, const char * who,
-		unsigned char *image, unsigned int image_size, unsigned int real_size,
+		const unsigned char *image, unsigned int image_size, unsigned int real_size,
 		unsigned int timestamp);
 
 
@@ -617,8 +617,10 @@ int YAHOO_CALLBACK_TYPE(ext_yahoo_log)(char *fmt, ...);
  * 	fd   - the fd on which to listen
  * 	cond - the condition on which to call the callback
  * 	data - callback data to pass to yahoo_*_ready
+ * 	
+ * Returns: a tag to be used when removing the handler
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_add_handler)(int id, int fd, yahoo_input_condition cond, void *data);
+int YAHOO_CALLBACK_TYPE(ext_yahoo_add_handler)(int id, int fd, yahoo_input_condition cond, void *data);
 
 
 
@@ -627,10 +629,9 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_add_handler)(int id, int fd, yahoo_input_cond
  * Name: ext_yahoo_remove_handler
  * 	Remove the listener for the fd.
  * Params:
- * 	id   - the id that identifies the server connection
- * 	fd   - the fd on which to listen
+ * 	tag  - the handler tag to remove
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_remove_handler)(int id, int fd);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_remove_handler)(int tag);
 
 
 

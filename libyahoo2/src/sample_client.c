@@ -961,35 +961,40 @@ int ext_yahoo_connect(char *host, int port)
  */
 YList *connections = NULL;
 struct _conn {
-	int id;
+	int tag;
 	int fd;
+	int id;
 	yahoo_input_condition cond;
 	void *data;
 	int remove;
 };
+static int connection_tags=0;
 
-void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond, void *data)
+int ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond, void *data)
 {
 	struct _conn *c = y_new0(struct _conn, 1);
+	c->tag = ++connection_tags;
 	c->id = id;
 	c->fd = fd;
 	c->cond = cond;
 	c->data = data;
 
-	LOG(("Add %d for %d", fd, id));
+	LOG(("Add %d for %d, tag %d", fd, id, c->tag));
 
 	connections = y_list_prepend(connections, c);
+
+	return c->tag;
 }
 
-void ext_yahoo_remove_handler(int id, int fd)
+void ext_yahoo_remove_handler(int tag)
 {
 	YList *l;
 	for(l = connections; l; l = y_list_next(l)) {
 		struct _conn *c = l->data;
-		if(c->fd == fd) {
+		if(c->tag == tag) {
 			/* don't actually remove it, just mark it for removal */
 			/* we'll remove when we start the next poll cycle */
-			LOG(("Marking id:%d fd:%d for removal", id, fd));
+			LOG(("Marking id:%d fd:%d tag:%d for removal", c->id, c->fd, c->tag));
 			c->remove = 1;
 			return;
 		}
@@ -1000,6 +1005,7 @@ struct connect_callback_data {
 	yahoo_connect_callback callback;
 	void * callback_data;
 	int id;
+	int tag;
 };
 
 static void connect_complete(void *data, int source, yahoo_input_condition condition)
@@ -1007,7 +1013,7 @@ static void connect_complete(void *data, int source, yahoo_input_condition condi
 	struct connect_callback_data *ccd = data;
 	int error, err_size = sizeof(error);
 
-	ext_yahoo_remove_handler(-1, source);
+	ext_yahoo_remove_handler(ccd->tag);
 	getsockopt(source, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&err_size);
 
 	if(error) {
@@ -1031,7 +1037,7 @@ void yahoo_callback(struct _conn *c, yahoo_input_condition cond)
 	} else {
 		if(cond & YAHOO_INPUT_READ)
 			ret = yahoo_read_ready(c->id, c->fd, c->data);
-		if(cond & YAHOO_INPUT_WRITE)
+		if(ret>0 && cond & YAHOO_INPUT_WRITE)
 			ret = yahoo_write_ready(c->id, c->fd, c->data);
 
 		if(ret == -1)
@@ -1081,8 +1087,8 @@ int ext_yahoo_connect_async(int id, char *host, int port,
 		ccd->callback_data = data;
 		ccd->id = id;
 
-		ext_yahoo_add_handler(-1, servfd, YAHOO_INPUT_WRITE, ccd);
-		return 1;
+		ccd->tag = ext_yahoo_add_handler(-1, servfd, YAHOO_INPUT_WRITE, ccd);
+		return ccd->tag;
 	} else {
 		close(servfd);
 		return -1;

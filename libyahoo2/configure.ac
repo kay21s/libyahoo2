@@ -26,9 +26,9 @@ YAHOO2_CURRENT=7	# 1 - < 0.6
 			# 4 - 0.7.0
 			# 5 - 0.7.1-2 - yahoo_init_with_attributes
 			# 6 - yahoo_get_log_level()
-			# 7 - contact search
+			# 7 - contact search, change in add/remove handler
 YAHOO2_REVISION=0
-YAHOO2_AGE=1
+YAHOO2_AGE=0
 YAHOO2_VERSION="$YAHOO2_CURRENT:$YAHOO2_REVISION:$YAHOO2_AGE"
 AC_SUBST(YAHOO2_VERSION)
 

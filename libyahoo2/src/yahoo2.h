@@ -130,6 +130,7 @@ void yahoo_chat_logoff(int id, const char *from);
 
 /* requests a webcam feed */
 /* who is the person who's webcam you would like to view */
+/* if who is null, then you're the broadcaster */
 void yahoo_webcam_get_feed(int id, const char *who);
 void yahoo_webcam_close_feed(int id, const char *who);
 

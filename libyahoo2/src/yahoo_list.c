@@ -1,8 +1,6 @@
-// list.c
-
 #include <stdlib.h>
 
-#include "list.h"
+#include "yahoo_list.h"
 
 YList * y_list_append(YList * list, void * data)
 {
@@ -106,7 +104,7 @@ void y_list_free(YList * list)
 YList * y_list_find_custom(YList * list, void * data, YListCompFunc comp)
 {
 	YList * l;
-	for (l = list; *l; l = l->next)
+	for (l = list; l; l = l->next)
 		if(comp(l->data, (const void *)data) == 0)
 			return l;
 

@@ -72,7 +72,7 @@ void del_from_list_by_fd(int fd)
 	}
 }
 
-struct yahoo_data * find_conn_by_id(unsigned int id)
+struct yahoo_data * find_conn_by_id(int id)
 {
 	YList * l;
 	for(l = conn; l; l = l->next)

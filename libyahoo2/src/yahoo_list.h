@@ -1,7 +1,5 @@
-// list.h
-
-#ifndef __LIST_H__
-#define __LIST_H__
+#ifndef __YAHOO_LIST_H__
+#define __YAHOO_LIST_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,4 +29,4 @@ YList * y_list_find_custom(YList * list, void * data, YListCompFunc comp);
 }
 #endif
 
-#endif // __LIST_H__
+#endif // __YAHOO_LIST_H__

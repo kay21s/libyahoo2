@@ -22,7 +22,7 @@
 #ifndef YAHOO2_TYPES_H
 #define YAHOO2_TYPES_H
 
-#include "list.h"
+#include "yahoo_list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,6 +91,11 @@ enum yahoo_log_level {
 #define YAHOO_STYLE_URLON "\033[lm"
 #define YAHOO_STYLE_URLOFF "\033[xlm"
 
+enum yahoo_connection_type {
+	YAHOO_CONNECTION_PAGER=0,
+	YAHOO_CONNECTION_HTTP=1
+};
+
 struct yahoo_data {
 	char  *user;
 	char  *password;
@@ -106,6 +111,7 @@ struct yahoo_data {
 	char  *login_id;
 
 	int   fd;
+	int   type;
 
 	int   current_status;
 	int   initial_status;

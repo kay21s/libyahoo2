@@ -1862,6 +1862,7 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 	nyd->user = strdup(yd->user);
 	nyd->cookie_y = strdup(yd->cookie_y);
 	nyd->cookie_t = strdup(yd->cookie_t);
+	nyd->type = YAHOO_CONNECTION_HTTP;
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_FILETRANSFER, YAHOO_STATUS_AVAILABLE, nyd->id);
 

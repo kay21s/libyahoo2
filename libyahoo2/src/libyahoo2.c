@@ -1074,10 +1074,7 @@ static void yahoo_process_conference(struct yahoo_input_data *yid, struct yahoo_
 		if(who)
 			YAHOO_CALLBACK(ext_yahoo_conf_userdecline)(yd->client_id, who, room, msg);
 		break;
-
-
 	case YAHOO_SERVICE_CONFLOGON:
-
 		if(who)
 			YAHOO_CALLBACK(ext_yahoo_conf_userjoin)(yd->client_id, who, room);
 		break;
@@ -1091,6 +1088,7 @@ static void yahoo_process_conference(struct yahoo_input_data *yid, struct yahoo_
 		break;
 	}
 }
+
 static void yahoo_process_chat(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	char *msg = NULL;

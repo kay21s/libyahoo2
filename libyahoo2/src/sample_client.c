@@ -45,6 +45,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
 /* Get these from http://libyahoo2.sourceforge.net/ */
 #include <yahoo2.h>
@@ -55,7 +56,6 @@ int fileno(FILE * stream);
 
 
 #define MAX_PREF_LEN 255
-#define MY_IP "219.65.37.161"
 
 static int do_mail_notify = 0;
 static int do_yahoo_debug = 0;
@@ -78,6 +78,8 @@ char filetransfer_host[MAX_PREF_LEN]="filetransfer.msg.yahoo.com";
 char filetransfer_port[MAX_PREF_LEN]="80";
 char webcam_host[MAX_PREF_LEN]="webcam.yahoo.com";
 char webcam_port[MAX_PREF_LEN]="5100";
+char local_host[MAX_PREF_LEN]="";
+int conn_type = 1;
 
 static void register_callbacks();
 
@@ -188,6 +190,80 @@ static void rearm(time_t *timer, int seconds)
 {
 	time(timer);
 	*timer += seconds;
+}
+
+FILE *popen(const char *command, const char *type);
+int pclose(FILE *stream);
+int gethostname(char *name, size_t len);
+
+static char * get_local_addresses()
+{
+	static char addresses[1024];
+	char buff[1024];
+	char gateway[16];
+	char  * c;
+	struct hostent * hn;
+	int i;
+	FILE * f;
+	f = popen("netstat -nr", "r");
+	if((int)f < 1)
+			goto IP_TEST_2;
+	while( fgets(buff, sizeof(buff), f)  != NULL ) {
+			c = strtok( buff, " " );
+			if( (strstr(c, "default") || strstr(c,"0.0.0.0") ) &&
+							!strstr(c, "127.0.0" ) )
+					break;
+	}
+	c = strtok( NULL, " " );
+	pclose(f);
+
+	strncpy(gateway,c, 16);
+
+
+
+	for(i = strlen(gateway); gateway[i] != '.'; i-- )
+		gateway[i] = 0;
+
+	gateway[i] = 0;
+
+	for(i = strlen(gateway); gateway[i] != '.'; i-- )
+		gateway[i] = 0;
+
+	f = popen("/sbin/ifconfig -a", "r");
+	if((int)f < 1)
+		goto IP_TEST_2;
+
+	while( fgets(buff, sizeof(buff), f) != NULL ) {
+		if( strstr(buff, "inet") && strstr(buff,gateway) )
+			break;
+	}
+	pclose(f);
+
+	c = strtok( buff, " " );
+	c = strtok( NULL, " " );
+
+	strncpy ( addresses, c, sizeof(addresses) );
+	c = strtok(addresses, ":" );
+	strncpy ( buff, c, sizeof(buff) );
+	if((c=strtok(NULL, ":")))
+		strncpy( buff, c, sizeof(buff) );
+
+	strncpy(addresses, buff, sizeof(addresses));
+
+	return addresses;
+		
+		
+IP_TEST_2:
+
+	gethostname(buff,sizeof(buff));
+
+	hn = gethostbyname(buff);
+	if(hn)
+		strncpy(addresses, inet_ntoa( *((struct in_addr*)hn->h_addr)), sizeof(addresses) );
+	else
+		addresses[0] = 0;
+
+	return addresses;
 }
 
 static double get_time()
@@ -362,7 +438,8 @@ void ext_yahoo_conf_message(int id, char *who, char *room, char *msg, int utf8)
 		FREE(umsg);
 }
 
-void print_chat_member(struct yahoo_chat_member *ycm) {
+static void print_chat_member(struct yahoo_chat_member *ycm) 
+{
 	printf("%s (%s) ", ycm->id, ycm->alias);
 	printf(" Age: %d Sex: ", ycm->age);
 	if (ycm->attribs & YAHOO_CHAT_MALE) {
@@ -379,7 +456,8 @@ void print_chat_member(struct yahoo_chat_member *ycm) {
 	printf("  Location: %s", ycm->location);
 }
 
-void ext_yahoo_chat_cat_xml(int id, char *xml) {
+void ext_yahoo_chat_cat_xml(int id, char *xml) 
+{
 	print_message(("%s", xml));
 }
 
@@ -453,6 +531,9 @@ void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 	
 	if(msg)
 		print_message(("%s (%s) is now %s", ya?ya->name:who, who, msg))
+	else if(stat == YAHOO_STATUS_IDLE)
+		print_message(("%s (%s) idle for %d:%02d:%02d", ya?ya->name:who, who, 
+					away/3600, (away/60)%60, away%60))
 	else
 		print_message(("%s (%s) is now %s", ya?ya->name:who, who, 
 					yahoo_status_code(stat)))
@@ -587,58 +668,6 @@ void ext_yahoo_mail_notify(int id, char *from, char *subj, int cnt)
 
 	if(buff[0])
 		print_message((buff));
-}
-
-void ext_yahoo_got_webcam_key(int id, char *key)
-{
-	print_message(("Got webcam key: %s", key));
-	FREE(ylad->webcam_key);
-	ylad->webcam_key = strdup(key);
-
-	switch (webcam_direction)
-	{
-		case YAHOO_WEBCAM_DOWNLOAD:
-			yahoo_webcam_get_server(id, ylad->webcam_user);
-			break;
-		case YAHOO_WEBCAM_UPLOAD:
-			yahoo_webcam_get_upload_server(id);
-			break;
-	}
-}
-
-void ext_yahoo_got_webcam_server(int id, char *ip)
-{
-	struct yahoo_webcam *wcm = NULL;
-
-	if (!ip || !ip[0])
-	{
-		print_message(("User does not have their webcam on"));
-		return;
-	}
-
-	print_message(("Got webcam server: %s", ip));
-	wcm = y_new0(struct yahoo_webcam, 1);
-	wcm->key = strdup(ylad->webcam_key);
-	wcm->server = strdup(ip);
-	wcm->my_ip = strdup(MY_IP);
-	wcm->conn_type = 0; /* Cable/DSL */
-
-	switch (webcam_direction)
-	{
-		case YAHOO_WEBCAM_DOWNLOAD:
-			wcm->direction = YAHOO_WEBCAM_DOWNLOAD;
-			wcm->user = strdup(ylad->webcam_user);
-			break;
-		case YAHOO_WEBCAM_UPLOAD:
-			wcm->direction = YAHOO_WEBCAM_UPLOAD;
-			wcm->description = strdup("Philips Webcam");
-			webcamStart = get_time();
-			rearm(&webcamTimer, 2);
-			break;
-	}
-
-	/* Connect to webcam server */
-	yahoo_webcam_connect(ylad->id, wcm);
 }
 
 void ext_yahoo_got_webcam_image(int id, unsigned char *image, unsigned int image_size, unsigned int real_size, unsigned int timestamp)
@@ -1342,11 +1371,11 @@ static void process_commands(char *line)
 			if (ylad->webcam_user) FREE(ylad->webcam_user);
 			ylad->webcam_user = strdup(copy);
 			webcam_direction = YAHOO_WEBCAM_DOWNLOAD;
-			yahoo_webcam_get_key(ylad->id, copy);
+			yahoo_webcam_get_feed(ylad->id, copy);
 		} else {
 			printf("Starting webcam\n");
 			webcam_direction = YAHOO_WEBCAM_UPLOAD;
-			yahoo_webcam_get_upload_key(ylad->id);
+			yahoo_webcam_get_feed(ylad->id, NULL);
 		}
 	} else if(!strncasecmp(cmd, "WINV", strlen("WINV"))) {
 		printf("Inviting %s to view webcam\n", copy);
@@ -1406,6 +1435,8 @@ int main(int argc, char * argv[])
 	ywcm = y_new0(yahoo_connection, 1);
 	ycam = y_new0(yahoo_connection, 1);
 	ycht = y_new0(yahoo_connection, 1);
+
+	strncpy(local_host, get_local_addresses(), sizeof(local_host));
 
 	printf("Yahoo Id: ");
 	scanf("%s", ylad->yahoo_id);
@@ -1533,8 +1564,6 @@ static void register_callbacks()
 	yc.ext_yahoo_chat_userjoin = ext_yahoo_chat_userjoin;
 	yc.ext_yahoo_chat_userleave = ext_yahoo_chat_userleave;
 	yc.ext_yahoo_chat_message = ext_yahoo_chat_message;
-	yc.ext_yahoo_got_webcam_key = ext_yahoo_got_webcam_key;
-	yc.ext_yahoo_got_webcam_server = ext_yahoo_got_webcam_server;
 	yc.ext_yahoo_got_webcam_image = ext_yahoo_got_webcam_image;
 	yc.ext_yahoo_webcam_invite = ext_yahoo_webcam_invite;
 	yc.ext_yahoo_webcam_invite_reply = ext_yahoo_webcam_invite_reply;

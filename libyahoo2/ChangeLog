@@ -1,3 +1,8 @@
+* Thu May 1 2003 Philip
+- get idle time from server
+- changes to webcam support to not require the user to worry about keys and 
+servers
+
 * Sun Apr 20 2003 Philip
 - fixes for multiple connects and bugs introduced when adding async connects
 

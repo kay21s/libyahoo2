@@ -99,28 +99,9 @@ void yahoo_chat_message(int id, const char *from, const char *room, const char *
 /* Log off chat */
 void yahoo_chat_logoff(int id, const char *from);
 
-/* requests a key which is needed to connect to the webcam server */
+/* requests a webcam feed */
 /* who is the person who's webcam you would like to view */
-void yahoo_webcam_get_key(int id, const char *who);
-
-/* requests a key which is needed to connect to a webcam server for uploading */
-void yahoo_webcam_get_upload_key(int id);
-
-/* requests a webcam server to connect to */
-/* who is the person who's webcam you would like to view */
-void yahoo_webcam_get_server(int id, char *who);
-
-/* requests a webcam server to connect to for uploading */
-void yahoo_webcam_get_upload_server(int id);
-
-/* connect to a webcam server */
-/* the webcam struct should be filled with at least the key and the server */
-/* when viewing a webcam the user should be filled */
-/* when uploading the webcam description should be filled */
-/* my_ip should be filled with your own ip, even if it's a private ip */
-/* direction should be set to YAHOO_WEBCAM_DOWNLOAD or YAHOO_WEBCAM_UPLOAD */
-/* conn_type should be one of the following 0=Dialup, 1=DSL/Cable, 2=T1/Lan */
-void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm);
+void yahoo_webcam_get_feed(int id, const char *who);
 
 /* sends an image when uploading */
 /* image points to a JPEG-2000 image, lenght is the length of the image */

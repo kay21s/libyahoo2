@@ -158,6 +158,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_got_cookies)(int id);
  * 	stat - status code (enum yahoo_status)
  * 	msg  - the message if stat == YAHOO_STATUS_CUSTOM
  * 	away - whether the contact is away or not (YAHOO_STATUS_CUSTOM)
+ * 	       for YAHOO_STATUS_IDLE, this is the number of seconds he is idle
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_status_changed)(int id, char *who, int stat, char *msg, int away);
 
@@ -409,26 +410,9 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, char *msg);
 
 
 
-/*
- * Name: ext_yahoo_got_webcam_key
- * 	Called when you get a webcam key
- * Params:
- * 	id  - the id that identifies the server connection
- *	key - the key that needs to be used to connect to the server
- */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_key)(int id, char *key);
 
 
 
-
-/*
- * Name: ext_yahoo_got_webcam_server
- * 	Called when you get a webcam server to connect to
- * Params:
- * 	id  - the id that identifies the server connection
- *	ip  - ip address of the webcam server
- */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_server)(int id, char *ip);
 
 
 

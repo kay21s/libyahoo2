@@ -285,7 +285,7 @@ struct callback_data {
 static void connect_complete(int fd, int error, void *data)
 {
 	struct callback_data *ccd = data;
-	if(fd > 0)
+	if(error == 0 && fd > 0)
 		write(fd, ccd->request, strlen(ccd->request));
 	FREE(ccd->request);
 	ccd->callback(ccd->id, fd, error, ccd->user_data);
@@ -365,7 +365,7 @@ static void yahoo_got_url_fd(int id, int fd, int error, void *data)
 
 	struct url_data *ud = data;
 
-	if(fd < 0) {
+	if(error || fd < 0) {
 		ud->callback(id, fd, error, filename, filesize, ud->user_data);
 		FREE(ud);
 		return;

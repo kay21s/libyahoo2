@@ -131,6 +131,8 @@ extern char filetransfer_host[];
 extern char filetransfer_port[];
 extern char webcam_host[];
 extern char webcam_port[];
+extern char local_host[];
+extern int conn_type;
 
 static char profile_url[] = "http://profiles.yahoo.com/";
 
@@ -1151,6 +1153,7 @@ static void yahoo_process_status(struct yahoo_input_data *yid, struct yahoo_pack
 	char *name = NULL;
 	int state = 0;
 	int away = 0;
+	int idle = 0;
 	char *msg = NULL;
 	
 	if(pkt->service == YAHOO_SERVICE_LOGOFF && pkt->status == -1) {
@@ -1188,6 +1191,9 @@ static void yahoo_process_status(struct yahoo_input_data *yid, struct yahoo_pack
 		case 47: /* is it an away message or not */
 			away = atoi(pair->value);
 			break;
+		case 137: /* seconds idle */
+			idle = atoi(pair->value);
+			break;
 		case 11: /* what is this? */
 			NOTICE(("key %d:%s", pair->key, pair->value));
 			break;
@@ -1203,7 +1209,7 @@ static void yahoo_process_status(struct yahoo_input_data *yid, struct yahoo_pack
 			} else if (state == YAHOO_STATUS_CUSTOM) {
 				YAHOO_CALLBACK(ext_yahoo_status_changed)(yd->client_id, name, state, msg, away);
 			} else {
-				YAHOO_CALLBACK(ext_yahoo_status_changed)(yd->client_id, name, state, NULL, 1);
+				YAHOO_CALLBACK(ext_yahoo_status_changed)(yd->client_id, name, state, NULL, idle);
 			}
 
 			break;
@@ -1689,10 +1695,80 @@ static void yahoo_process_voicechat(struct yahoo_input_data *yid, struct yahoo_p
 	 */
 }
 
+static void _yahoo_webcam_get_server_connected(int fd, int error, void *d)
+{
+	struct yahoo_input_data *yid = d;
+	char *who = yid->wcm->user;
+	char *data = NULL;
+	char *packet = NULL;
+	unsigned char magic_nr[] = {0, 1, 0};
+	unsigned char header_len = 8;
+	unsigned int len = 0;
+	unsigned int pos = 0;
+
+	if(error || fd <= 0) {
+		FREE(who);
+		FREE(yid);
+		return;
+	}
+
+	yid->fd = fd;
+	inputs = y_list_prepend(inputs, yid);
+	
+	/* send initial packet */
+	if (who)
+		data = strdup("<RVWCFG>");
+	else
+		data = strdup("<RUPCFG>");
+	yahoo_send_data(fd, data, strlen(data));
+	FREE(data);
+
+	/* send data */
+	if (who)
+	{
+		data = strdup("g=");
+		data = y_string_append(data, who);
+		data = y_string_append(data, "\r\n");
+	} else {
+		data = strdup("f=1\r\n");
+	}
+	len = strlen(data);
+	packet = y_new0(char, header_len + len);
+	packet[pos++] = header_len;
+	memcpy(packet + pos, magic_nr, sizeof(magic_nr));
+	pos += sizeof(magic_nr);
+	pos += yahoo_put32(packet + pos, len);
+	memcpy(packet + pos, data, len);
+	pos += len;
+	yahoo_send_data(yid->fd, packet, pos);
+	FREE(packet);
+	FREE(data);
+
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(yid->yd->client_id, fd, YAHOO_INPUT_READ, yid);
+}
+
+static void yahoo_webcam_get_server(struct yahoo_input_data *y, char *who, char *key)
+{
+	struct yahoo_input_data *yid = y_new0(struct yahoo_input_data, 1);
+
+	yid->type = YAHOO_CONNECTION_WEBCAM_MASTER;
+	yid->yd = y->yd;
+	yid->wcm = y_new0(struct yahoo_webcam, 1);
+	yid->wcm->user = who?strdup(who):NULL;
+	yid->wcm->direction = who?YAHOO_WEBCAM_DOWNLOAD:YAHOO_WEBCAM_UPLOAD;
+	yid->wcm->key = strdup(key);
+
+	YAHOO_CALLBACK(ext_yahoo_connect_async)(yid->yd->client_id, webcam_host, atoi(webcam_port), 
+			_yahoo_webcam_get_server_connected, yid);
+
+}
+
+static YList *webcam_queue=NULL;
 static void yahoo_process_webcam_key(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	char *me = NULL;
 	char *key = NULL;
+	char *who = NULL;
 
 	YList *l;
 	yahoo_dump_unhandled(pkt);
@@ -1702,17 +1778,15 @@ static void yahoo_process_webcam_key(struct yahoo_input_data *yid, struct yahoo_
 			me = pair->value;
 		if (pair->key == 61) 
 			key=pair->value;
-		/* TODO
-		 * who's key is this
-		 */
 	}
 
-	/* TODO
-	 * Instead of calling a callback, decide over here if it is
-	 * upload or download, and get the server
-	 */
-	if (me && key)
-		YAHOO_CALLBACK(ext_yahoo_got_webcam_key)(yid->yd->client_id, key);
+	l = webcam_queue;
+	if(!l)
+		return;
+	who = l->data;
+	webcam_queue = y_list_remove_link(webcam_queue, webcam_queue);
+	yahoo_webcam_get_server(yid, who, key);
+	FREE(who);
 }
 
 static void yahoo_packet_process(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
@@ -2243,6 +2317,132 @@ static void yahoo_process_yab_connection(struct yahoo_input_data *yid)
 		YAHOO_CALLBACK(ext_yahoo_got_buddies)(yd->client_id, yd->buddies);
 }
 
+static void _yahoo_webcam_connected(int fd, int error, void *d)
+{
+	struct yahoo_input_data *yid = d;
+	struct yahoo_webcam *wcm = yid->wcm;
+	struct yahoo_data *yd = yid->yd;
+	char conn_type[100];
+	char *data=NULL;
+	char *packet=NULL;
+	unsigned char magic_nr[] = {1, 0, 0, 0, 1};
+	unsigned header_len=0;
+	unsigned int len=0;
+	unsigned int pos=0;
+
+	if(error || fd <= 0) {
+		FREE(yid);
+		return;
+	}
+
+	yid->fd = fd;
+	inputs = y_list_prepend(inputs, yid);
+
+	LOG(("Connected"));
+       	/* send initial packet */
+	switch (wcm->direction)
+	{
+		case YAHOO_WEBCAM_DOWNLOAD:
+			data = strdup("<REQIMG>");
+			break;
+		case YAHOO_WEBCAM_UPLOAD:	
+			data = strdup("<SNDIMG>");
+			break;
+		default:
+			return;
+	}
+	yahoo_send_data(yid->fd, data, strlen(data));
+	FREE(data);
+
+	/* send data */
+	switch (wcm->direction)
+	{
+		case YAHOO_WEBCAM_DOWNLOAD:
+			header_len = 8;
+			data = strdup("a=2\r\nc=us\r\ne=21\r\nu=");
+			data = y_string_append(data, yd->user);
+			data = y_string_append(data, "\r\nt=");
+			data = y_string_append(data, wcm->key);
+			data = y_string_append(data, "\r\ni=");
+			data = y_string_append(data, wcm->my_ip);
+			data = y_string_append(data, "\r\ng=");
+			data = y_string_append(data, wcm->user);
+			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
+			snprintf(conn_type, sizeof(conn_type), "%d", wcm->conn_type);
+			data = y_string_append(data, conn_type);
+			data = y_string_append(data, "\r\n");
+			break;
+		case YAHOO_WEBCAM_UPLOAD:
+			header_len = 13;
+			data = strdup("a=2\r\nc=us\r\nu=");
+			data = y_string_append(data, yd->user);
+			data = y_string_append(data, "\r\nt=");
+			data = y_string_append(data, wcm->key);
+			data = y_string_append(data, "\r\ni=");
+			data = y_string_append(data, wcm->my_ip);
+			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
+			snprintf(conn_type, sizeof(conn_type), "%d", wcm->conn_type);
+			data = y_string_append(data, conn_type);
+			data = y_string_append(data, "\r\nb=");
+			data = y_string_append(data, wcm->description);
+			data = y_string_append(data, "\r\n");
+			break;
+	}
+
+	len = strlen(data);
+	packet = y_new0(char, header_len + len);
+	packet[pos++] = header_len;
+	packet[pos++] = 0;
+	switch (wcm->direction)
+	{
+		case YAHOO_WEBCAM_DOWNLOAD:
+			packet[pos++] = 1;
+			packet[pos++] = 0;
+			break;
+		case YAHOO_WEBCAM_UPLOAD:
+			packet[pos++] = 5;
+			packet[pos++] = 0;
+			break;
+	}
+
+	pos += yahoo_put32(packet + pos, len);
+	if (wcm->direction == YAHOO_WEBCAM_UPLOAD)
+	{
+		memcpy(packet + pos, magic_nr, sizeof(magic_nr));
+		pos += sizeof(magic_nr);
+	}
+	memcpy(packet + pos, data, len);
+	yahoo_send_data(yid->fd, packet, header_len + len);
+	FREE(packet);
+	FREE(data);
+
+	YAHOO_CALLBACK(ext_yahoo_add_handler)(yd->client_id, yid->fd, YAHOO_INPUT_READ, yid);
+}
+
+static void yahoo_webcam_connect(struct yahoo_input_data *y)
+{
+	struct yahoo_webcam *wcm = y->wcm;
+	struct yahoo_input_data *yid;
+
+	if (!wcm || !wcm->server || !wcm->key)
+		return;
+
+	yid = y_new0(struct yahoo_input_data, 1);
+	yid->type = YAHOO_CONNECTION_WEBCAM;
+	yid->yd = y->yd;
+
+	/* copy webcam data to new connection */
+	yid->wcm = y->wcm;
+	y->wcm = NULL;
+
+	yid->wcd = y_new0(struct yahoo_webcam_data, 1);
+
+	LOG(("Connecting to: %s:%s", wcm->server, webcam_port));
+	YAHOO_CALLBACK(ext_yahoo_connect_async)(y->yd->client_id, wcm->server, atoi(webcam_port),
+			_yahoo_webcam_connected, yid);
+
+}
+
 static void yahoo_process_webcam_master_connection(struct yahoo_input_data *yid)
 {
 	char* server;
@@ -2251,11 +2451,10 @@ static void yahoo_process_webcam_master_connection(struct yahoo_input_data *yid)
 
 	if (server)
 	{
-		/* TODO
-		 * Call an error if server is NULL, else
-		 * connect to the server with yahoo_webcam_connect
-		 */
-		YAHOO_CALLBACK(ext_yahoo_got_webcam_server)(yid->yd->client_id, server);
+		yid->wcm->server = strdup(server);
+		yid->wcm->conn_type = conn_type;
+		yid->wcm->my_ip = strdup(local_host);
+		yahoo_webcam_connect(yid);
 		FREE(server);
 	}
 }
@@ -3120,7 +3319,7 @@ void yahoo_chat_logoff(int id, const char *from)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_webcam_get_key(int id, const char *who)
+void yahoo_webcam_get_feed(int id, const char *who)
 {
 	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
 	struct yahoo_data *yd;
@@ -3128,6 +3327,15 @@ void yahoo_webcam_get_key(int id, const char *who)
 		
 	if(!yid)
 		return;
+
+	/* 
+	 * add the user to the queue.  this is a dirty hack, since
+	 * the yahoo server doesn't tell us who's key it's returning,
+	 * we have to just hope that it sends back keys in the same 
+	 * order that we request them.
+	 * The queue is popped in yahoo_process_webcam_key
+	 */
+	webcam_queue = y_list_append(webcam_queue, who?strdup(who):NULL);
 
 	yd = yid->yd;
 
@@ -3139,217 +3347,6 @@ void yahoo_webcam_get_key(int id, const char *who)
 	yahoo_send_packet(yid->fd, pkt, 0);
 
 	yahoo_packet_free(pkt);
-}
-
-void yahoo_webcam_get_upload_key(int id)
-{
-	yahoo_webcam_get_key(id, NULL);
-}
-
-static void _yahoo_webcam_get_server_connected(int fd, int error, void *d)
-{
-	struct yahoo_input_data *yid = d;
-	char *who = yid->wcm->user;
-	char *data = NULL;
-	char *packet = NULL;
-	unsigned char magic_nr[] = {0, 1, 0};
-	unsigned char header_len = 8;
-	unsigned int len = 0;
-	unsigned int pos = 0;
-
-	if(error || fd <= 0) {
-		FREE(who);
-		FREE(yid);
-		return;
-	}
-
-	yid->fd = fd;
-	inputs = y_list_prepend(inputs, yid);
-	
-	/* send initial packet */
-	if (who)
-		data = strdup("<RVWCFG>");
-	else
-		data = strdup("<RUPCFG>");
-	yahoo_send_data(fd, data, strlen(data));
-	FREE(data);
-
-	/* send data */
-	if (who)
-	{
-		data = strdup("g=");
-		data = y_string_append(data, who);
-		data = y_string_append(data, "\r\n");
-	} else {
-		data = strdup("f=1\r\n");
-	}
-	len = strlen(data);
-	packet = y_new0(char, header_len + len);
-	packet[pos++] = header_len;
-	memcpy(packet + pos, magic_nr, sizeof(magic_nr));
-	pos += sizeof(magic_nr);
-	pos += yahoo_put32(packet + pos, len);
-	memcpy(packet + pos, data, len);
-	pos += len;
-	yahoo_send_data(yid->fd, packet, pos);
-	FREE(packet);
-	FREE(data);
-
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(yid->yd->client_id, fd, YAHOO_INPUT_READ, yid);
-}
-
-void yahoo_webcam_get_server(int id, char *who)
-{
-	struct yahoo_data *yd = find_conn_by_id(id);
-	struct yahoo_input_data *yid = y_new0(struct yahoo_input_data, 1);
-
-	yid->type = YAHOO_CONNECTION_WEBCAM_MASTER;
-	yid->yd = yd;
-	yid->wcm = y_new0(struct yahoo_webcam, 1);
-	yid->wcm->user = who?strdup(who):NULL;
-
-	YAHOO_CALLBACK(ext_yahoo_connect_async)(id, webcam_host, atoi(webcam_port), 
-			_yahoo_webcam_get_server_connected, yid);
-
-}
-
-void yahoo_webcam_get_upload_server(int id)
-{
-	yahoo_webcam_get_server(id, NULL);
-}
-
-static void _yahoo_webcam_connected(int fd, int error, void *d)
-{
-	struct yahoo_input_data *yid = d;
-	struct yahoo_webcam *wcm = yid->wcm;
-	struct yahoo_data *yd = yid->yd;
-	char conn_type[100];
-	char *data=NULL;
-	char *packet=NULL;
-	unsigned char magic_nr[] = {1, 0, 0, 0, 1};
-	unsigned header_len=0;
-	unsigned int len=0;
-	unsigned int pos=0;
-
-	if(error || fd <= 0) {
-		FREE(yid);
-		return;
-	}
-
-	yid->fd = fd;
-	inputs = y_list_prepend(inputs, yid);
-
-	LOG(("Connected"));
-       	/* send initial packet */
-	switch (wcm->direction)
-	{
-		case YAHOO_WEBCAM_DOWNLOAD:
-			data = strdup("<REQIMG>");
-			break;
-		case YAHOO_WEBCAM_UPLOAD:	
-			data = strdup("<SNDIMG>");
-			break;
-		default:
-			return;
-	}
-	yahoo_send_data(yid->fd, data, strlen(data));
-	FREE(data);
-
-	/* send data */
-	switch (wcm->direction)
-	{
-		case YAHOO_WEBCAM_DOWNLOAD:
-			header_len = 8;
-			data = strdup("a=2\r\nc=us\r\ne=21\r\nu=");
-			data = y_string_append(data, yd->user);
-			data = y_string_append(data, "\r\nt=");
-			data = y_string_append(data, wcm->key);
-			data = y_string_append(data, "\r\ni=");
-			data = y_string_append(data, wcm->my_ip);
-			data = y_string_append(data, "\r\ng=");
-			data = y_string_append(data, wcm->user);
-			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
-			snprintf(conn_type, sizeof(conn_type), "%d", wcm->conn_type);
-			data = y_string_append(data, conn_type);
-			data = y_string_append(data, "\r\n");
-			break;
-		case YAHOO_WEBCAM_UPLOAD:
-			header_len = 13;
-			data = strdup("a=2\r\nc=us\r\nu=");
-			data = y_string_append(data, yd->user);
-			data = y_string_append(data, "\r\nt=");
-			data = y_string_append(data, wcm->key);
-			data = y_string_append(data, "\r\ni=");
-			data = y_string_append(data, wcm->my_ip);
-			data = y_string_append(data, "\r\no=w-2-5-1\r\np=");
-			snprintf(conn_type, sizeof(conn_type), "%d", wcm->conn_type);
-			data = y_string_append(data, conn_type);
-			data = y_string_append(data, "\r\nb=");
-			data = y_string_append(data, wcm->description);
-			data = y_string_append(data, "\r\n");
-			break;
-	}
-
-	len = strlen(data);
-	packet = y_new0(char, header_len + len);
-	packet[pos++] = header_len;
-	packet[pos++] = 0;
-	switch (wcm->direction)
-	{
-		case YAHOO_WEBCAM_DOWNLOAD:
-			packet[pos++] = 1;
-			packet[pos++] = 0;
-			break;
-		case YAHOO_WEBCAM_UPLOAD:
-			packet[pos++] = 5;
-			packet[pos++] = 0;
-			break;
-	}
-
-	pos += yahoo_put32(packet + pos, len);
-	if (wcm->direction == YAHOO_WEBCAM_UPLOAD)
-	{
-		memcpy(packet + pos, magic_nr, sizeof(magic_nr));
-		pos += sizeof(magic_nr);
-	}
-	memcpy(packet + pos, data, len);
-	yahoo_send_data(yid->fd, packet, header_len + len);
-	FREE(packet);
-	FREE(data);
-
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(yd->client_id, yid->fd, YAHOO_INPUT_READ, yid);
-}
-
-void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
-{
-	struct yahoo_input_data *yid;
-	struct yahoo_data *yd = find_conn_by_id(id);
-
-	if (!wcm || !wcm->server || !wcm->key)
-		return;
-
-	yid = y_new0(struct yahoo_input_data, 1);
-	yid->type = YAHOO_CONNECTION_WEBCAM;
-	yid->yd = yd;
-
-	/* copy webcam data to new connection */
-	yid->wcm = y_new0(struct yahoo_webcam, 1);
-	yid->wcm->direction = wcm->direction;
-	yid->wcm->server = strdup(wcm->server);
-	yid->wcm->key = strdup(wcm->key);
-	if (wcm->my_ip) 
-		yid->wcm->my_ip = strdup(wcm->my_ip);
-	if (wcm->user) 
-		yid->wcm->user = strdup(wcm->user);
-	if (wcm->description) 
-		yid->wcm->description = strdup(wcm->description);
-
-	yid->wcd = y_new0(struct yahoo_webcam_data, 1);
-
-	LOG(("Connecting to: %s:%s", wcm->server, webcam_port));
-	YAHOO_CALLBACK(ext_yahoo_connect_async)(id, wcm->server, atoi(webcam_port),
-			_yahoo_webcam_connected, yid);
-
 }
 
 void yahoo_webcam_send_image(int id, unsigned char *image, unsigned int length, unsigned int timestamp)

@@ -816,24 +816,24 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 
 		case 88: /* ignore list */
 			if(!yd->ignorelist)
-				yd->ignorelist = g_string_new(pair->value);
-			else {
-				g_string_append(yd->ignorelist, pair->value);
-			}
+				yd->ignorelist = g_string_new("Ignore:");
+			g_string_append(yd->ignorelist, pair->value);
 			break;
 
 		case 89: /* me */
 			break;
-		case 59: /* cookies */
-/*			if(yd->ignorelist && yd->ignorelist->str) {
+		case 59: /* cookies add C cookie */
+			if(yd->ignorelist && yd->ignorelist->str) {
 				yd->ignore = bud_str2list(yd->ignorelist);
 				g_string_free(yd->ignorelist, TRUE);
+				yd->ignorelist = NULL;
+				ext_yahoo_got_ignore(yd->client_id, yd->ignore);
 			}
-*/			if(yd->rawbuddylist && yd->rawbuddylist->str) {
+			if(yd->rawbuddylist && yd->rawbuddylist->str) {
 				yd->buddies = bud_str2list(yd->rawbuddylist);
-				ext_yahoo_got_buddies(yd->client_id, yd->buddies);
 				g_string_free(yd->rawbuddylist, TRUE);
 				yd->rawbuddylist = NULL;
+				ext_yahoo_got_buddies(yd->client_id, yd->buddies);
 			}
 
 			if(pair->value[0]=='Y') {
@@ -846,8 +846,17 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			} else if(pair->value[0]=='T') {
 				g_free(yd->cookie_t);
 				yd->cookie_t = getcookie(pair->value);
+
+			} else if(pair->value[0]=='C') {
+				g_free(yd->cookie_c);
+				yd->cookie_c = getcookie(pair->value);
 			} 
 
+			break;
+		case 90: /* 1 */
+		case 100: /* 0 */
+		case 101: /* NULL */
+		case 93: /* 86400 */
 			break;
 		}
 	}
@@ -1889,7 +1898,7 @@ enum yahoo_status yahoo_current_status(guint32 id)
 	return yd->current_status;
 }
 
-GList *get_buddylist(guint32 id)
+GList * yahoo_get_buddylist(guint32 id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1897,7 +1906,15 @@ GList *get_buddylist(guint32 id)
 	return yd->buddies;
 }
 
-GList *get_identities(guint32 id)
+GList * yahoo_get_ignorelist(guint32 id)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	if(!yd)
+		return NULL;
+	return yd->ignore;
+}
+
+GList * yahoo_get_identities(guint32 id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1905,7 +1922,7 @@ GList *get_identities(guint32 id)
 	return yd->identities;
 }
 
-char *get_cookie(guint32 id, char *which)
+char * yahoo_get_cookie(guint32 id, char *which)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1914,6 +1931,8 @@ char *get_cookie(guint32 id, char *which)
 		return yd->cookie_y;
 	if(!strncasecmp(which, "t", 1))
 		return yd->cookie_t;
+	if(!strncasecmp(which, "c", 1))
+		return yd->cookie_c;
 	if(!strncasecmp(which, "login", 5))
 		return yd->login_cookie;
 	return NULL;

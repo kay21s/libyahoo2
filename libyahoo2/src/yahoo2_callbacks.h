@@ -61,6 +61,19 @@ void ext_yahoo_got_buddies(guint32 id, GList * buds);
 
 
 /*
+ * Name: ext_yahoo_got_ignore
+ * 	Called when the ignore list is got from the server
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	igns - the ignore list
+ */
+void ext_yahoo_got_ignore(guint32 id, GList * igns);
+
+
+
+
+
+/*
  * Name: ext_yahoo_status_changed
  * 	Called when remote user's status changes.
  * Params:

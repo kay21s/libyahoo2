@@ -58,9 +58,10 @@ int  yahoo_read_ready(guint32 id, int fd);
 int  yahoo_write_ready(guint32 id, int fd);
 
 enum yahoo_status yahoo_current_status(guint32 id);
-GList * get_buddylist(guint32 id);
-GList *get_identities(guint32 id);
-char *get_cookie(guint32 id, char *which);
+GList * yahoo_get_buddylist(guint32 id);
+GList * yahoo_get_ignorelist(guint32 id);
+GList * yahoo_get_identities(guint32 id);
+char  * yahoo_get_cookie(guint32 id, char *which);
 
 int yahoo_get_url_handle(guint32 id, char *url, char *filename, unsigned long *filesize);
 

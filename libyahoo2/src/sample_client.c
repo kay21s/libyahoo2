@@ -154,6 +154,10 @@ void ext_yahoo_got_buddies(guint32 id, GList * buds)
 {
 }
 
+void ext_yahoo_got_ignore(guint32 id, GList * igns)
+{
+}
+
 void ext_yahoo_got_im(guint32 id, char *who, char *msg, long tm, int stat)
 {
 	if(stat == 2) {

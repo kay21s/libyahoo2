@@ -91,6 +91,7 @@ struct yahoo_data {
 
 	char *cookie_y;
 	char *cookie_t;
+	char *cookie_c;
 	char *login_cookie;
 
 	GList *buddies;

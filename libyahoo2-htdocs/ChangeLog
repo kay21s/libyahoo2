@@ -1,4 +1,7 @@
 * Tue Dec 9 2003 Philip Tellis
+- Yahoo Search - by Konstantin Klyagin - centericq
+
+* Tue Dec 9 2003 Philip Tellis
 - Typing notification fix from Gena01
 - Don't send VERIFY as first packet, since we don't know what do
 do if it fails anyway.

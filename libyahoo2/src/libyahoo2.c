@@ -659,9 +659,8 @@ static void yahoo_input_close(struct yahoo_input_data *yid)
 	if(count_inputs_with_id(yid->yd->client_id) == 0) {
 		LOG(("closing %d", yid->yd->client_id));
 		yahoo_close(yid->yd->client_id);
-		yahoo_free_webcam(yid->wcm);
-		FREE(yid->wcd);
 	}
+	yahoo_free_webcam(yid->wcm);
 	FREE(yid);
 }
 
@@ -2285,7 +2284,7 @@ int yahoo_read_ready(int id, int fd, void *data)
 	char buf[1024];
 	int len;
 
-	LOG(("read callback"));
+	LOG(("read callback: id=%d fd=%d", id, fd));
 
 	if(!yid)
 		return -2;
@@ -3158,7 +3157,7 @@ static void _yahoo_webcam_get_server_connected(int fd, int error, void *d)
 	unsigned int len = 0;
 	unsigned int pos = 0;
 
-	if(error) {
+	if(error || fd <= 0) {
 		FREE(who);
 		FREE(yid);
 		return;
@@ -3232,13 +3231,14 @@ static void _yahoo_webcam_connected(int fd, int error, void *d)
 	unsigned int len=0;
 	unsigned int pos=0;
 
-	if(error) {
+	if(error || fd <= 0) {
 		FREE(yid);
 		return;
 	}
 
 	inputs = y_list_prepend(inputs, yid);
 
+	LOG(("Connected"));
        	/* send initial packet */
 	switch (wcm->direction)
 	{
@@ -3345,6 +3345,7 @@ void yahoo_webcam_connect(int id, struct yahoo_webcam *wcm)
 
 	yid->wcd = y_new0(struct yahoo_webcam_data, 1);
 
+	LOG(("Connecting to: %s:%s", wcm->server, webcam_port));
 	YAHOO_CALLBACK(ext_yahoo_connect_async)(id, wcm->server, atoi(webcam_port),
 			_yahoo_webcam_connected, yid);
 

@@ -64,7 +64,11 @@ int  yahoo_set_log_level(enum yahoo_log_level level);
  *
  * You should set at least local_host if you intend to use webcams
  */
-int  yahoo_init(const char *username, const char *password, ...);
+int  yahoo_init_with_attributes(const char *username, const char *password, ...);
+
+/* yahoo_init does the same as yahoo_init_with_attributes, assuming defaults
+ * for all attributes */
+int  yahoo_init(const char *username, const char *password);
 
 
 

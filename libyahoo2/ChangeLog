@@ -1,3 +1,7 @@
+* Sun Sep 28 2003 Philip 0.7.2-2
+- made yahoo_init do what it did before, and renamed the new yahoo_init
+to yahoo_init_with_attributes.  This should help not break old code.
+
 * Sun Sep 28 2003 Philip
 - changed g_malloc0 to malloc - thanks to Pixador
 

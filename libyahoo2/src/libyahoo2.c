@@ -3132,7 +3132,7 @@ int yahoo_read_ready(int id, int fd, void *data)
 	return len;
 }
 
-int yahoo_init(const char *username, const char *password, ...)
+int yahoo_init_with_attributes(const char *username, const char *password, ...)
 {
 	va_list ap;
 	struct yahoo_data *yd;
@@ -3157,6 +3157,11 @@ int yahoo_init(const char *username, const char *password, ...)
 	va_end(ap);
 
 	return yd->client_id;
+}
+
+int yahoo_init(const char *username, const char *password)
+{
+	return yahoo_init_with_attributes(username, password, NULL);
 }
 
 struct connect_callback_data {

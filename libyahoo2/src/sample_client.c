@@ -807,7 +807,7 @@ void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 {
 	LOG(("ext_yahoo_login"));
 
-	ylad->id = yahoo_init(ylad->yahoo_id, ylad->password, 
+	ylad->id = yahoo_init_with_attributes(ylad->yahoo_id, ylad->password, 
 			"local_host", local_host,
 			NULL);
 	ylad->status = YAHOO_STATUS_OFFLINE;

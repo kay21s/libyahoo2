@@ -1,0 +1,27 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(src/libyahoo2.c)
+AM_INIT_AUTOMAKE([libyahoo2], [0.5.cvs])
+
+# Checks for programs.
+AC_PROG_CC
+AM_PROG_LIBTOOL
+AC_PROG_INSTALL
+
+# Checks for libraries.
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([errno.h stdlib.h string.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+AC_STRUCT_TM
+
+# Checks for library functions.
+AC_CHECK_FUNCS([memset strcasecmp strchr strcspn strdup strncasecmp strrchr strstr strtol])
+
+AM_PATH_GLIB(1.2.0)
+
+AC_OUTPUT([Makefile
+		src/Makefile])

@@ -183,12 +183,21 @@ char *yahoo_urldecode(const char *instr)
 	return (str);
 }
 
+static int yahoo_send_http_request(char *host, int port, char *request)
+{
+	int fd = ext_yahoo_connect(host, port);
+
+	if(fd > 0)
+		write(fd, request, strlen(request));
+
+	return fd;
+}
+
 int yahoo_http_post(char *url, struct yahoo_data *yd, long content_length)
 {
 	char host[255];
 	int port = 80;
 	char path[255];
-	int fd=0;
 	char buff[1024];
 	
 	if(!url_to_host_port_path(url, host, &port, path))
@@ -205,11 +214,7 @@ int yahoo_http_post(char *url, struct yahoo_data *yd, long content_length)
 			host, port,
 			yd->cookie_y, yd->cookie_t);
 
-	fd = ext_yahoo_connect(host, port);
-
-	write(fd, buff, strlen(buff));
-
-	return fd;
+	return yahoo_send_http_request(host, port, buff);
 }
 
 int yahoo_http_get(char *url, struct yahoo_data *yd)
@@ -217,7 +222,6 @@ int yahoo_http_get(char *url, struct yahoo_data *yd)
 	char host[255];
 	int port = 80;
 	char path[255];
-	int fd=0;
 	char buff[1024];
 	
 	if(!url_to_host_port_path(url, host, &port, path))
@@ -231,11 +235,7 @@ int yahoo_http_get(char *url, struct yahoo_data *yd)
 			"\r\n",
 			path, host, port, yd->cookie_y);
 
-	fd = ext_yahoo_connect(host, port);
-
-	write(fd, buff, strlen(buff));
-
-	return fd;
+	return yahoo_send_http_request(host, port, buff);
 }
 
 int yahoo_get_url_fd(char *url, struct yahoo_data *yd, 

@@ -28,11 +28,13 @@ extern "C" {
 
 #include "yahoo2_types.h"
 
-int yahoo_tcp_readline(char *ptr, int maxlen, int fd);
 char *yahoo_urlencode(const char *instr);
 char *yahoo_urldecode(const char *instr);
-int yahoo_http_post(const char *url, const struct yahoo_data *yd, long size);
-int yahoo_http_get(const char *url, const struct yahoo_data *yd);
+char *yahoo_xmldecode(const char *instr);
+
+int yahoo_tcp_readline(char *ptr, int maxlen, int fd);
+int yahoo_http_post(const char *url, const char *cookies, long size);
+int yahoo_http_get(const char *url, const char *cookies);
 int yahoo_get_url_fd(const char *url, const struct yahoo_data *yd,
 		char *filename, unsigned long *filesize);
 

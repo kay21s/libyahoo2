@@ -67,6 +67,9 @@ and use the return value of that call.
 These lists will be returned from the library's cache.  To force a reload
 from the server, make a call to yahoo_get_list.
 
+Buddy nicknames and other contact information is stored in your yahoo address
+book.  To retrieve this information, call yahoo_get_yab.
+
 - To refresh the status of all buddies, make a call to yahoo_refresh.
 
 - To add a buddy, call yahoo_add_buddy:

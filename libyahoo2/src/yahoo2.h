@@ -51,6 +51,8 @@ void yahoo_refresh(int id);
 void yahoo_set_identity_status(int id, const char * identity, int active);
 /* regets the entire buddy list from the server */
 void yahoo_get_list(int id);
+/* download buddy contact information from your yahoo addressbook */
+void yahoo_get_yab(int id);
 void yahoo_keepalive(int id);
 
 /* from is the identity you're sending from.  if NULL, the default is used */

@@ -82,6 +82,7 @@ typedef struct {
 
 typedef struct {
 	char yahoo_id[255];
+	char name[255];
 	int status;
 	int away;
 	char *msg;
@@ -298,9 +299,13 @@ void ext_yahoo_got_buddies(int id, YList * buds)
 		yahoo_account *ya = y_new0(yahoo_account, 1);
 		struct yahoo_buddy *bud = buds->data;
 		strncpy(ya->yahoo_id, bud->id, 255);
+		if(bud->real_name)
+			strncpy(ya->name, bud->real_name, 255);
 		strncpy(ya->group, bud->group, 255);
 		ya->status = YAHOO_STATUS_OFFLINE;
 		buddies = y_list_append(buddies, ya);
+
+		print_message(("%s is %s", bud->id, bud->real_name))
 	}
 }
 
@@ -468,6 +473,7 @@ void ext_yahoo_login_response(int id, int succ, char *url)
 	if(succ == YAHOO_LOGIN_OK) {
 		ylad->status = yahoo_current_status(id);
 		print_message(("logged in"));
+		yahoo_get_yab(id); 
 		return;
 		
 	} else if(succ == YAHOO_LOGIN_PASSWD) {

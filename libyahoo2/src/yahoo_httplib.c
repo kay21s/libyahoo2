@@ -203,6 +203,62 @@ char *yahoo_urldecode(const char *instr)
 	return (str);
 }
 
+char *yahoo_xmldecode(const char *instr)
+{
+	int ipos=0, bpos=0, epos=0;
+	char *str = NULL;
+	char entity[4]={0,0,0,0};
+	char *entitymap[5][2]={
+		{"amp;",  "&"}, 
+		{"quot;", "\""},
+		{"lt;",   "<"}, 
+		{"gt;",   "<"}, 
+		{"nbsp;", " "}
+	};
+	unsigned dec;
+	int len = strlen(instr);
+
+	if(!(str = y_new(char, len+1) ))
+		return "";
+
+	while(instr[ipos]) {
+		while(instr[ipos] && instr[ipos]!='&')
+			if(instr[ipos]=='+') {
+				str[bpos++]=' ';
+				ipos++;
+			} else
+				str[bpos++] = instr[ipos++];
+		if(!instr[ipos] || !instr[ipos+1])
+			break;
+		ipos++;
+
+		if(instr[ipos] == '#') {
+			ipos++;
+			while(instr[ipos] != ';')
+				entity[epos++]=instr[ipos++];
+			sscanf(entity, "%u", &dec);
+			str[bpos++] = (char)dec;
+			ipos++;
+		} else {
+			int i;
+			for (i=0; i<5; i++) 
+				if(!strncmp(instr+ipos, entitymap[i][0], 
+					       strlen(entitymap[i][0]))) {
+				       	str[bpos++] = entitymap[i][1][0];
+					ipos += strlen(entitymap[i][0]);
+					break;
+				}
+		}
+	}
+	str[bpos]='\0';
+
+	/* free extra alloc'ed mem. */
+	len = strlen(str);
+	str = y_renew(char, str, len+1);
+
+	return (str);
+}
+
 static int yahoo_send_http_request(char *host, int port, char *request)
 {
 	int fd = yahoo_connect(host, port);
@@ -213,7 +269,7 @@ static int yahoo_send_http_request(char *host, int port, char *request)
 	return fd;
 }
 
-int yahoo_http_post(const char *url, const struct yahoo_data *yd, long content_length)
+int yahoo_http_post(const char *url, const char *cookies, long content_length)
 {
 	char host[255];
 	int port = 80;
@@ -224,20 +280,20 @@ int yahoo_http_post(const char *url, const struct yahoo_data *yd, long content_l
 		return 0;
 
 	snprintf(buff, sizeof(buff), 
-			"POST %s HTTP/1.0\n"
-			"Content-length: %ld\n"
-			"User-Agent: Mozilla/4.5 [en] (" PACKAGE "/" VERSION ")\n"
-			"Host: %s:%d\n"
-			"Cookie: Y=%s; T=%s\n"
-			"\n",
+			"POST %s HTTP/1.0\r\n"
+			"Content-length: %ld\r\n"
+			"User-Agent: Mozilla/4.5 [en] (" PACKAGE "/" VERSION ")\r\n"
+			"Host: %s:%d\r\n"
+			"Cookie: %s\r\n"
+			"\r\n",
 			path, content_length, 
 			host, port,
-			yd->cookie_y, yd->cookie_t);
+			cookies);
 
 	return yahoo_send_http_request(host, port, buff);
 }
 
-int yahoo_http_get(const char *url, const struct yahoo_data *yd)
+int yahoo_http_get(const char *url, const char *cookies)
 {
 	char host[255];
 	int port = 80;
@@ -250,10 +306,10 @@ int yahoo_http_get(const char *url, const struct yahoo_data *yd)
 	snprintf(buff, sizeof(buff), 
 			"GET %s HTTP/1.0\r\n"
 			"Host: %s:%d\r\n"
-			"User-Agent: Mozilla/4.6 (libyahoo/1.0)\r\n"
-			"Cookie: Y=%s\r\n"
+			"User-Agent: Mozilla/4.5 [en] (" PACKAGE "/" VERSION ")\r\n"
+			"Cookie: %s\r\n"
 			"\r\n",
-			path, host, port, yd->cookie_y);
+			path, host, port, cookies);
 
 	return yahoo_send_http_request(host, port, buff);
 }
@@ -264,8 +320,10 @@ int yahoo_get_url_fd(const char *url, const struct yahoo_data *yd,
 	char *tmp=NULL;
 	int fd=0;
 	char buff[1024];
+
+	snprintf(buff, sizeof(buff), "Y=%s; T=%s", yd->cookie_y, yd->cookie_t);
 	
-	fd = yahoo_http_get(url, yd);
+	fd = yahoo_http_get(url, buff);
 
 	while(yahoo_tcp_readline(buff, 1024, fd) > 0) {
 		/* read up to blank line */

@@ -1,3 +1,7 @@
+* Thu Jan 24 2003 Philip
+- Download address book from server and fill in real_name field
+of yahoo_buddy
+
 * Tue Jan 21 2003 Philip
 - Added CHAT service codes from yach
 - Fixed the problem with Offline UTF-8 encoded messages

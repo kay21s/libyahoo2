@@ -100,7 +100,8 @@ enum yahoo_log_level {
 
 enum yahoo_connection_type {
 	YAHOO_CONNECTION_PAGER=0,
-	YAHOO_CONNECTION_HTTP=1
+	YAHOO_CONNECTION_FT,
+	YAHOO_CONNECTION_YAB
 };
 
 struct yahoo_data {
@@ -134,10 +135,22 @@ struct yahoo_data {
 	char *ignorelist;
 };
 
+struct yab {
+	char *id;
+	char *fname;
+	char *lname;
+	char *nname;
+	char *email;
+	char *hphone;
+	char *wphone;
+	char *mphone;
+};
+
 struct yahoo_buddy {
 	char *group;
 	char *id;
 	char *real_name;
+	struct yab *yab_entry;
 };
 
 #ifdef __cplusplus

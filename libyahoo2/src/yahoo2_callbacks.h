@@ -424,11 +424,12 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, char *msg);
  *	An update can either be receiving an image, a part of an image or
  *	just an update with a timestamp
  * Params:
- * 	id  - the id that identifies the server connection
- *	image - image data
+ * 	id         - the id that identifies the server connection
+ * 	who        - the user who's webcam we're viewing
+ *	image      - image data
  *	image_size - length of the image in bytes
- *	real_size - actual length of image data
- *	timestamp - milliseconds since the webcam started
+ *	real_size  - actual length of image data
+ *	timestamp  - milliseconds since the webcam started
  *
  *	If the real_size is smaller then the image_size then only part of
  *	the image has been read. This function will keep being called till
@@ -440,7 +441,9 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, char *msg);
  *	to transport then others. When image_size is 0 we can still receive
  *	a timestamp to stay in sync
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_image)(int id, unsigned char *image, unsigned int image_size, unsigned int real_size, unsigned int timestamp);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_image)(int id, const char * who,
+		unsigned char *image, unsigned int image_size, unsigned int real_size,
+		unsigned int timestamp);
 
 
 

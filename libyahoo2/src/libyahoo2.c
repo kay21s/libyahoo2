@@ -2032,6 +2032,9 @@ static struct yab * yahoo_getyab(struct yahoo_input_data *yid)
 
 	DEBUG_MSG(("rxlen is %d", yid->rxlen));
 
+	if(yid->rxlen <= strlen("<record"))
+		return NULL;
+
 	/* start with <record */
 	while(pos < yid->rxlen-strlen("<record")+1 
 			&& memcmp(yid->rxqueue + pos, "<record", strlen("<record")))
@@ -2194,7 +2197,7 @@ static int yahoo_get_webcam_data(struct yahoo_input_data *yid)
 			break;
 		case 0x02: /* image data */
 			YAHOO_CALLBACK(ext_yahoo_got_webcam_image)
-				(yd->client_id, yid->rxqueue + begin,
+				(yd->client_id, yid->wcm->user, yid->rxqueue + begin,
 				yid->wcd->data_size, pos - begin,
 				yid->wcd->timestamp);
 			break;

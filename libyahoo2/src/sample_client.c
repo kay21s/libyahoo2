@@ -90,9 +90,6 @@ typedef struct {
 	int fd;
 	int status;
 	char *msg;
-	
-	char *webcam_key;
-	char *webcam_user;
 } yahoo_local_account;
 
 typedef struct {
@@ -670,7 +667,9 @@ void ext_yahoo_mail_notify(int id, char *from, char *subj, int cnt)
 		print_message((buff));
 }
 
-void ext_yahoo_got_webcam_image(int id, unsigned char *image, unsigned int image_size, unsigned int real_size, unsigned int timestamp)
+void ext_yahoo_got_webcam_image(int id, const char *who,
+		unsigned char *image, unsigned int image_size, unsigned int real_size,
+		unsigned int timestamp)
 {
 	static unsigned char *cur_image = NULL;
 	static unsigned int cur_image_len = 0;
@@ -694,7 +693,7 @@ void ext_yahoo_got_webcam_image(int id, unsigned char *image, unsigned int image
 		/* if we recieved an image then write it to file */
 		if (image_size)
 		{
-			sprintf(fname, "images/%s_%.3d.jpc", ylad->webcam_user,				image_num++);
+			sprintf(fname, "images/%s_%.3d.jpc", who, image_num++);
 
 			if ((f_image = fopen(fname, "w")) != NULL) {
 				fwrite(cur_image, image_size, 1, f_image);
@@ -1368,8 +1367,6 @@ static void process_commands(char *line)
 		if (copy)
 		{
 			printf("Viewing webcam (%s)\n", copy);
-			if (ylad->webcam_user) FREE(ylad->webcam_user);
-			ylad->webcam_user = strdup(copy);
 			webcam_direction = YAHOO_WEBCAM_DOWNLOAD;
 			yahoo_webcam_get_feed(ylad->id, copy);
 		} else {

@@ -1,3 +1,9 @@
+* Thu Mar 6 2003 Philip
+- Remove requests for unnecessary data in addressbook code
+
+* Tue Mar 4 2003 Philip
+- Fix read past end of string in yahoo_getyab
+
 * Wed Feb 19 2003 Philip (version 0.6.3)
 - Make dist depend on libyahoo2.spec and libyahoo2.pc
 - Change version number to 0.6.3

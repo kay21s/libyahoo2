@@ -4,7 +4,7 @@
 <p class="links">
 <a href="http://libyahoo2.sourceforge.net/"
 	title="The libyahoo2 home page">Home</a><br>
-<a href="http://www.sourceforge.net/projects/libyahoo2/"
+<a href="http://sourceforge.net/projects/libyahoo2/"
 	title="This is the project page on sourceforge.  Submit bugs and patches here.">Project Page</a><br>
 <a href="http://sourceforge.net/project/showfiles.php?group_id=58181"
 	title="Download the latest release.">Download</a><br>
@@ -20,6 +20,15 @@
 </div>
 
 <div class="links">
+<h2>Documentation</h2>
+<p class="links">
+<a href="README" title="Library docs">API</a><br>
+<a href="ymsg-9.txt" title="Protocol docs">YMSG-9 Protocol</a><br>
+<a href="yab.txt" title="Address Book structure">Getting/Setting YAB</a><br>
+</p>
+</div>
+
+<div class="links">
 <h2>Licence</h2>
 <p class="links">
 <a href="Copying" title="The GNU General Public Licence">GNU GPL</a><br>
@@ -29,6 +38,7 @@
 <div class="links">
 <h2>Related Links</h2>
 <p class="links">
+<a href="http://www.nongnu.org/ayttm/" title="Are You Talking To Me?">Ayttm</a><br>
 <a href="http://www.everybuddy.com/" title="The Everybuddy Homepage">Everybuddy</a><br>
 <a href="http://blackhole.wincoll.ac.uk:81/msn/" title="Meredydd's libmsn2 page">libmsn2</a><br>
 </p>

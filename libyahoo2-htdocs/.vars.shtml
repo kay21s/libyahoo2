@@ -1,0 +1,13 @@
+<!--#if expr="$HTTP_USER_AGENT = /MSIE/" -->
+    <!--#set var="BROWSER" value="IE" -->
+    <!--#set var="IE" value="1" -->
+<!--#elif expr="$HTTP_USER_AGENT = /Gecko/" --> 
+    <!--#set var="BROWSER" value="NS6" -->
+    <!--#set var="NS6" value="1" -->
+<!--#elif expr="$HTTP_USER_AGENT = /Mozilla/" --> 
+    <!--#set var="BROWSER" value="NS4" -->
+    <!--#set var="NS4" value="1" -->
+<!--#else -->
+    <!--#set var="BROWSER" value="IE" -->
+    <!--#set var="IE" value="1" -->
+<!--#endif -->

@@ -180,6 +180,8 @@ libyahoo2 is known to compile on:
  - Debian 2.2 (linux 2.4) i386, Alpha, PPC RS/6000 and Sparc Ultra60
  - Redhat 6.0, 7.1 and 7.3 (linux 2.2 and 2.4)
  - MacOS X 10.1 PPC - G4
+ - FreeBSD 4.6-Stable
+ - Sun Solaris (8)
 
 Thanks to Sourceforge's compile farms for letting me test it there
 

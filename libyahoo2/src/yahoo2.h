@@ -26,6 +26,7 @@
 # include <winsock2.h>
 # define write(a,b,c) send(a,b,c,0)
 # define read(a,b,c)  recv(a,b,c,0)
+# define HAVE_GLIB 1
 #endif
 
 #if HAVE_GLIB

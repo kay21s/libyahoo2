@@ -21,9 +21,9 @@
  */
 
 /*
- * This is basically a replacement for the GList.  It only provides functions
- * that we use in libyahoo2.  Thanks to Meredyyd from everybuddy dev for
- * doing most of it.
+ * This is a replacement for the GList.  It only provides functions that 
+ * we use in libyahoo2.  Thanks to Meredyyd from everybuddy dev for doing 
+ * most of it.
  */
 
 #ifndef __YAHOO_LIST_H__

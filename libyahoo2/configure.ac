@@ -1,12 +1,12 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.50)
+AC_INIT(libyahoo2, 0.7.0, libyahoo2-users@lists.sourceforge.net)
+AC_PREREQ(2.53)
+AC_CONFIG_SRCDIR(src/libyahoo2.c)
+AM_INIT_AUTOMAKE([1.6 dist-bzip2])
 
-AC_INIT(libyahoo2, 0.7.0)
-RELEASE="1"
+RELEASE="2"
 
-AC_CONFIG_SRCDIR(config.h.in)
 
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="$CFLAGS -Wall -ansi -pedantic"

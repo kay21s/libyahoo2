@@ -10,7 +10,7 @@ AC_PROG_INSTALL
 
 AC_ARG_WITH([struct-callbacks], [AC_HELP_STRING([--with-struct-callbacks],
 [use a callback structure instead of callback functions])])
-if test "$with_callback_struct" = "yes"; then
+if test "$with_struct_callbacks" = "yes"; then
 	AC_DEFINE(USE_STRUCT_CALLBACKS, 1, 
 	[Define if you want to use a callback structure instead of callback functions])
 fi

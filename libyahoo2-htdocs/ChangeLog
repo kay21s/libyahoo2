@@ -1,3 +1,22 @@
+* Sun Apr 20 2003 Philip
+- fixes for multiple connects and bugs introduced when adding async connects
+
+* Sat Apr 19 2003 Philip
+- Add asynchronous connects
+- Each `id' represents a single login session and everything to do with it
+- add_handler and yahoo_(read|write)_ready take a void * data argument
+- possibly introduce many bugs :D
+
+* Thu Apr 10 2003 Wayne
+- Added callback for the list of chatrooms
+
+* Thu Mar 29 2003 Wayne
+- Added basic support for pulling down the list of chatrooms
+
+* Mon Mar 24 2003 Mik
+- Seperate webcam struct to public and private data
+- Rename webcam struct to yahoo_webcam
+
 * Fri Mar 21 2003 Philip
 - Don't dereference yd after it has been freed
 
@@ -10,7 +29,7 @@
 - Added perliminary webcam upload support
 - Added descriptions for the webcam functions
 
-* Tue Mar 18 2003 Wayne Parrot
+* Tue Mar 18 2003 Wayne Parrott
 - Added preliminary yahoo chat support
 
 * Sun Mar 16 2003 Philip

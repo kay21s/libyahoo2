@@ -38,10 +38,17 @@
 <div class="links">
 <h2>Users</h2>
 <p class="links">
-<a href="http://www.nongnu.org/ayttm/" title="Are You Talking To Me?">Ayttm</a><br>
+<a href="http://ayttm.sourceforge.net/" title="Are You Talking To Me?">Ayttm</a><br>
 <a href="http://www.everybuddy.com/" title="The Everybuddy Homepage">Everybuddy</a><br>
 <a href="http://fire.sourceforge.net/" title="Fire is an open-source instant messaging client for MacOS X which handles simultaneous connections to Yahoo!, AIM, MSN, Jabber, ICQ and IRC">Fire</a><br>
 <a href="http://kyim.sf.net/" title="KDE port of yahoo instant messenger">KYIM</a><br>
+</p>
+</div>
+
+<div class="links">
+<h2>Related Projects</h2>
+<p class="links">
+<a href="http://jymsg9.sourceforge.net/" title="Java library for yahoo messenger">JYmsg9</a><br>
 </p>
 </div>
 

@@ -134,7 +134,7 @@ void yahoo_webcam_get_feed(int id, const char *who);
 void yahoo_webcam_close_feed(int id, const char *who);
 
 /* sends an image when uploading */
-/* image points to a JPEG-2000 image, lenght is the length of the image */
+/* image points to a JPEG-2000 image, length is the length of the image */
 /* in bytes. The timestamp is the time in milliseconds since we started the */
 /* webcam. */
 void yahoo_webcam_send_image(int id, unsigned char *image, unsigned int length, unsigned int timestamp);

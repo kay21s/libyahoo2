@@ -237,6 +237,10 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_userjoin)(int id, char *who, char *room)
 void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_userleave)(int id, char *who, char *room);
 
 
+
+
+
+
 /*
  * Name: ext_yahoo_chat_cat_xml
  * 	Called when joining the chatroom.
@@ -249,6 +253,12 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_userleave)(int id, char *who, char *room
  *	          yahoo_chat_member's) Must be freed by the client
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_cat_xml)(int id, char *xml);
+
+
+
+
+
+
 
 /*
  * Name: ext_yahoo_chat_join
@@ -263,6 +273,11 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_cat_xml)(int id, char *xml);
  *	fd	- the socket where the connection is coming from (for tracking)
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_join)(int id, char *room, char *topic, YList *members, int fd);
+
+
+
+
+
 
 /*
  * Name: ext_yahoo_chat_userjoin

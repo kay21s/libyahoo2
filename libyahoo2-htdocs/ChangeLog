@@ -1,3 +1,6 @@
+* Wed Dec 10 2003 Philip Tellis
+- initialise some unintialised variables
+
 * Tue Dec 9 2003 Philip Tellis
 - Yahoo Search - by Konstantin Klyagin - centericq
 

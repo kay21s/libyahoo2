@@ -149,8 +149,9 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_status_changed)(int id, char *who, int stat, 
  * 				1
  * 				2 == error sending message
  * 				5
+ * 	utf8 - whether the message is encoded as utf8 or not
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_im)(int id, char *who, char *msg, long tm, int stat);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_im)(int id, char *who, char *msg, long tm, int stat, int utf8);
 
 
 
@@ -218,8 +219,9 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_userleave)(int id, char *who, char *room
  * 	who  - the user who messaged
  * 	room - the room
  * 	msg  - the message
+ * 	utf8 - whether the message is utf8 encoded or not
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_message)(int id, char *who, char *room, char *msg);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_message)(int id, char *who, char *room, char *msg, int utf8);
 
 
 

@@ -5,7 +5,7 @@ AC_INIT(libyahoo2, 0.6.2)
 
 AC_CONFIG_SRCDIR(config.h.in)
 
-RELEASE="1"
+RELEASE="2"
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
@@ -21,7 +21,8 @@ dnl # +1 :  0 :  0   == removed/changed an interface. Breaks old apps.
 dnl #  ? : +1 :  ?   == internal changes that doesn't break anything.
 dnl #
 dnl # CURRENT : REVISION : AGE
-YAHOO2_CURRENT=2	# vesion 1 was pre 0.6
+YAHOO2_CURRENT=3	# version 1 was pre 0.6
+			# version 2 was pre utf8 (0.6.2)
 YAHOO2_REVISION=0
 YAHOO2_AGE=0
 YAHOO2_VERSION="$YAHOO2_CURRENT:$YAHOO2_REVISION:$YAHOO2_AGE"

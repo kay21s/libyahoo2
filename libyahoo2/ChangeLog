@@ -1,3 +1,7 @@
+* Sat Jan 18 2003 Philip
+- utf-8 encoding/decoding functions are in yahoo_util
+- detect whether it is utf-8 or not from utf-8 flag in message
+
 * Wed Jan 15 2003 Philip
 - added utf-8 decode to conference messages too.  I need to move this into
 a separate function

@@ -22,13 +22,6 @@
 #ifndef YAHOO2_H
 #define YAHOO2_H
 
-#ifdef __MINGW32__
-# include <winsock2.h>
-# define write(a,b,c) send(a,b,c,0)
-# define read(a,b,c)  recv(a,b,c,0)
-# define HAVE_GLIB 1
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,7 +54,8 @@ void yahoo_get_list(int id);
 void yahoo_keepalive(int id);
 
 /* from is the identity you're sending from.  if NULL, the default is used */
-void yahoo_send_im(int id, const char *from, const char *who, const char *msg);
+/* utf8 is whether msg is a utf8 string or not. */
+void yahoo_send_im(int id, const char *from, const char *who, const char *msg, int utf8);
 /* if type is true, send typing notice, else send stopped typing notice */
 void yahoo_send_typing(int id, const char *from, const char *who, int typ);
 
@@ -79,7 +73,7 @@ void yahoo_change_buddy_group(int id, const char *who, const char *old_group, co
 void yahoo_conference_invite(int id, const char * from, YList *who, const char *room, const char *msg);
 void yahoo_conference_addinvite(int id, const char * from, const char *who, const char *room, const YList * members, const char *msg);
 void yahoo_conference_decline(int id, const char * from, YList *who, const char *room, const char *msg);
-void yahoo_conference_message(int id, const char * from, YList *who, const char *room, const char *msg);
+void yahoo_conference_message(int id, const char * from, YList *who, const char *room, const char *msg, int utf8);
 void yahoo_conference_logon(int id, const char * from, YList *who, const char *room);
 void yahoo_conference_logoff(int id, const char * from, YList *who, const char *room);
 

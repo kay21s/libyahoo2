@@ -253,29 +253,17 @@ void ext_yahoo_conf_userleave(int id, char *who, char *room)
 
 	print_message(("%s left the conference %s", who, room));
 }
-void ext_yahoo_conf_message(int id, char *who, char *room, char *msg)
+void ext_yahoo_conf_message(int id, char *who, char *room, char *msg, int utf8)
 {
-	unsigned char * umsg = (unsigned char *)msg;
+	char * umsg = msg;
 
-	while(umsg[i]) {
-		if(umsg[i] < (unsigned char)0x80) {	/* 7 bit ASCII */
-			umsg[j] = umsg[i];
-			i++; 
-		} else if(umsg[i] < (unsigned char)0xC4) {/* ISOLatin1 */
-			umsg[j] = (umsg[i]<<6) | (umsg[i+1] & 0x3F);
-			i+=2;
-		} else if(umsg[i] < (unsigned char)0xE0) {
-			umsg[j] = '.';
-			i+=3;
-		} else if(umsg[i] < (unsigned char)0xF0) {
-			umsg[j] = '.';
-			i+=4;
-		}
-		j++;
-	}
-	umsg[j]='\0';
+	if(utf8)
+		umsg = y_utf8_to_str(msg);
 
-	print_message(("%s (in %s): %s", who, room, msg));
+	print_message(("%s (in %s): %s", who, room, umsg));
+
+	if(utf8)
+		FREE(umsg);
 }
 void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 {
@@ -320,10 +308,9 @@ void ext_yahoo_got_ignore(int id, YList * igns)
 {
 }
 
-void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
+void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat, int utf8)
 {
-	int i=0,j=0;
-	unsigned char *umsg = (unsigned char *)msg;
+	char *umsg = msg;
 
 	if(stat == 2) {
 		LOG(("Error sending message to %s", who));
@@ -333,23 +320,8 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 	if(!msg)
 		return;
 
-	while(umsg[i]) {
-		if(umsg[i] < (unsigned char)0x80) {	/* 7 bit ASCII */
-			umsg[j] = umsg[i];
-			i++; 
-		} else if(umsg[i] < (unsigned char)0xC4) {/* ISOLatin1 */
-			umsg[j] = (umsg[i]<<6) | (umsg[i+1] & 0x3F);
-			i+=2;
-		} else if(umsg[i] < (unsigned char)0xE0) {
-			umsg[j] = '.';
-			i+=3;
-		} else if(umsg[i] < (unsigned char)0xF0) {
-			umsg[j] = '.';
-			i+=4;
-		}
-		j++;
-	}
-	umsg[j]='\0';
+	if(utf8)
+		umsg = y_utf8_to_str(msg);
 	
 	if(tm) {
 		char timestr[255];
@@ -358,12 +330,15 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 		timestr[strlen(timestr) - 1] = '\0';
 
 		print_message(("[Offline message at %s from %s]: %s", 
-				timestr, who, msg))
+				timestr, who, umsg))
 	} else {
-		if(!strcmp(msg, "<ding>")) 
+		if(!strcmp(umsg, "<ding>")) 
 			printf("\a");
-		print_message(("%s: %s", who, msg))
+		print_message(("%s: %s", who, umsg))
 	}
+
+	if(utf8)
+		FREE(umsg);
 }
 
 void ext_yahoo_rejected(int id, char *who, char *msg)
@@ -674,9 +649,9 @@ static void process_commands(char *line)
 		msg = copy;
 		if(to && msg) {
 			if(!strcmp(msg, "\a"))
-				yahoo_send_im(ylad->id, NULL, to, "<ding>");
+				yahoo_send_im(ylad->id, NULL, to, "<ding>", 0);
 			else
-				yahoo_send_im(ylad->id, NULL, to, msg);
+				yahoo_send_im(ylad->id, NULL, to, msg, 0);
 		}
 	} else if(!strncasecmp(cmd, "CMS", strlen("CMS"))) {
 		/* send a message */
@@ -694,7 +669,7 @@ static void process_commands(char *line)
 			goto end_parse;
 		}
 		if(msg)
-			yahoo_conference_message(ylad->id, NULL, cr->members, to, msg);
+			yahoo_conference_message(ylad->id, NULL, cr->members, to, msg, 0);
 	} else if(!strncasecmp(cmd, "CLS", strlen("CLS"))) {
 		YList * l;
 		if(copy) {

@@ -4,7 +4,7 @@ AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR(src/libyahoo2.c)
 AM_INIT_AUTOMAKE([1.6 dist-bzip2])
 
-RELEASE="2"
+RELEASE="1"
 
 
 AM_CONFIG_HEADER(config.h)

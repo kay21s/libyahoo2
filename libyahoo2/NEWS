@@ -1,3 +1,8 @@
+* 12-Sep-2003
+
+Releasing 0.7.1 which has a newer protocol version number.  This should hold
+for a while.
+
 * 19-May-2003
 
 Released 0.7.  It has webcam support, yahoo chat support and a new connection

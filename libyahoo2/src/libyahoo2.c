@@ -1648,7 +1648,7 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 	const unsigned char *magic_ptr;
 
 	unsigned int  magic[64];
-	unsigned int  magic_work;
+	unsigned int  magic_work=0;
 	unsigned int  value = 0;
 
 	int x;
@@ -2980,11 +2980,11 @@ static void yahoo_process_yab_connection(struct yahoo_input_data *yid, int over)
 
 static void yahoo_process_search_connection(struct yahoo_input_data *yid, int over)
 {
-	struct yahoo_found_contact *yct;
+	struct yahoo_found_contact *yct=NULL;
 	char *p = (char *)yid->rxqueue, *np, *cp;
 	int k, n;
-	int start, found, total;
-	YList *contacts;
+	int start=0, found=0, total=0;
+	YList *contacts=NULL;
 
 	if(!over)
 		return;

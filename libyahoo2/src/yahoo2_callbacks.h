@@ -530,6 +530,8 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_closed)(int id, char *who, int reason)
  * 	start	 - offset from where the current result set starts
  * 	total	 - total number of results available (start + found <= total)
  * 	contacts - the list of results as a YList of yahoo_found_contact
+ * 		   these will be freed after this function returns, so
+ * 		   if you need to use the information, make a copy
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_got_search_result)(int id, int found, int start, int total, YList *contacts);
 

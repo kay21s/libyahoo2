@@ -52,7 +52,7 @@ int  yahoo_set_log_level(enum yahoo_log_level level);
  * are copied, so you can use const/auto/static/pointers/whatever
  * you want.  Parameters are:
  * 	NAME			TYPE		DEFAULT
- *	pager_host		char *		scs.yahoo.com
+ *	pager_host		char *		scs.msg.yahoo.com
  *	pager_port		int		5050
  *	filetransfer_host	char *		filetransfer.msg.yahoo.com
  *	filetransfer_port	int		80

@@ -1,3 +1,7 @@
+* Sat Sep 27 2003 Philip
+- Added more fallback ports
+- Fix crash in process_auth
+
 * Wed Sep 24 2003 Philip
 - Messenger host name changed to scs.msg.yahoo.com
 

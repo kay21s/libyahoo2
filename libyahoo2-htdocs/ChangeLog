@@ -1,3 +1,6 @@
+* Thu Feb  5 2004 Philip Tellis
+- Fix crash in yahoo search because we were using a different yahoo_input
+
 * Thu Jan 29 2004 Philip Tellis
 - yahoo_fn works with 64 bit machines too, thanks to Ben Reser for the fix
 

@@ -1,3 +1,6 @@
+* Wed Oct 22 2003 Philip Tellis
+- Identify failed login because of incorrect username
+
 * Wed Oct 8 2003 Philip Tellis
 - Fix bug with double processing of format string in error logging
 - log_level no longer global, use yahoo_get_log_level() instead (was

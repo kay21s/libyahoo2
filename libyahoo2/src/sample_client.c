@@ -836,16 +836,22 @@ void ext_yahoo_login_response(int id, int succ, char *url)
 		print_message(("logged in"));
 		return;
 		
+	} else if(succ == YAHOO_LOGIN_UNAME) {
+
+		snprintf(buff, sizeof(buff), "Could not log into Yahoo service - username not recognised.  Please verify that your username is correctly typed.");
 	} else if(succ == YAHOO_LOGIN_PASSWD) {
 
-		snprintf(buff, sizeof(buff), "Could not log into Yahoo service.  Please verify that your username and password are correctly typed.");
+		snprintf(buff, sizeof(buff), "Could not log into Yahoo service - password incorrect.  Please verify that your password is correctly typed.");
 
 	} else if(succ == YAHOO_LOGIN_LOCK) {
 		
 		snprintf(buff, sizeof(buff), "Could not log into Yahoo service.  Your account has been locked.\nVisit %s to reactivate it.", url);
 
 	} else if(succ == YAHOO_LOGIN_DUPL) {
+
 		snprintf(buff, sizeof(buff), "You have been logged out of the yahoo service, possibly due to a duplicate login.");
+	} else {
+		snprintf(buff, sizeof(buff), "Could not log in, unknown reason: %d.", succ);
 	}
 
 	ylad->status = YAHOO_STATUS_OFFLINE;

@@ -1,3 +1,6 @@
+* Wed Jan 21 2003 Philip Tellis 0.7.4
+- up version number
+
 * Fri Jan 16 2003 Alan Humpherys
 - remove_handler also takes client_id
 

@@ -19,3 +19,6 @@ libyahoo2.pc
 libyahoo2.spec
 htdocs
 debug
+depcomp
+stamp-h1
+libyahoo2-*.tar.*

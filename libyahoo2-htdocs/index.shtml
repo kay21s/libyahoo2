@@ -86,7 +86,7 @@ nor for IMvironments.
 <h2>Requires</h2>
 
 <p>libyahoo2 can use glib version 1.2 or version 2 if you have them and
-want them</p>.
+want them.</p>
 
 <h2>Acknowledgements</h2>
 <p>

@@ -34,6 +34,7 @@ int  yahoo_get_fd(int id);
 /* says how much logging to do */
 /* see yahoo2_types.h for the different values */
 int  yahoo_set_log_level(enum yahoo_log_level level);
+enum yahoo_log_level  yahoo_get_log_level( void );
 
 /* these functions should be self explanatory */
 /* who always means the buddy you're acting on */

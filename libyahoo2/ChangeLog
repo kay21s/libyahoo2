@@ -1,3 +1,8 @@
+* Wed Oct 8 2003 Philip Tellis
+- Fix bug with double processing of format string in error logging
+- log_level no longer global, use yahoo_get_log_level() instead (was
+only used internally)
+
 * Tue Sep 30 2003 Doug Davis
 - chat room logout and error code
 

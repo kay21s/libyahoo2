@@ -108,7 +108,7 @@ int yahoo_log_message(char * fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(out, sizeof(out), fmt, ap);
 	va_end(ap);
-	return YAHOO_CALLBACK(ext_yahoo_log)(out);
+	return YAHOO_CALLBACK(ext_yahoo_log)("%s", out);
 }
 
 int yahoo_connect(char * host, int port)
@@ -116,7 +116,12 @@ int yahoo_connect(char * host, int port)
 	return YAHOO_CALLBACK(ext_yahoo_connect)(host, port);
 }
 
-enum yahoo_log_level log_level = YAHOO_LOG_NONE;
+static enum yahoo_log_level log_level = YAHOO_LOG_NONE;
+
+enum yahoo_log_level yahoo_get_log_level()
+{
+	return log_level;
+}
 
 int yahoo_set_log_level(enum yahoo_log_level level)
 {
@@ -627,7 +632,7 @@ static void yahoo_dump_unhandled(struct yahoo_packet *pkt)
 
 static void yahoo_packet_dump(unsigned char *data, int len)
 {
-	if(log_level >= YAHOO_LOG_DEBUG) {
+	if(yahoo_get_log_level() >= YAHOO_LOG_DEBUG) {
 		int i;
 		for (i = 0; i < len; i++) {
 			if ((i % 8 == 0) && i)

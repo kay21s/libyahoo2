@@ -1,3 +1,6 @@
+* Tue Mar 23 2004 A. Craig West
+- fix y_strsplit when string is empty, and for 0 element case to match gstrsplit
+
 * Thu Feb 26 2004 Philip Tellis
 - fix memory leak in auth thanks to Wilmer van der Gaast
 

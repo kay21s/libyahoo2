@@ -1247,7 +1247,10 @@ static void yahoo_process_message(struct yahoo_input_data *yid, struct yahoo_pac
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 		if (pair->key == 1 || pair->key == 4)
-			message->from = pair->value;
+		{
+			if(!message->from)
+				message->from = pair->value;
+		}
 		else if (pair->key == 5)
 			message->to = pair->value;
 		else if (pair->key == 15)
@@ -3224,9 +3227,12 @@ static void yahoo_connected(int fd, int error, void *data)
 	if(fd < 0)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_VERIFY, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YAHOO_STATUS_AVAILABLE, yd->session_id);
 	NOTICE(("Sending initial packet"));
+
+	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_send_packet(fd, pkt, 0);
+
 	yahoo_packet_free(pkt);
 
 	yid = y_new0(struct yahoo_input_data, 1);

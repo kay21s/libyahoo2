@@ -26,12 +26,8 @@
 
 struct yahoo_fn
 {
-	int type; /* type of transform */
-	union {
-		unsigned char *table;
-		int arg1;
-	      } arg1_u;
-	int arg2; /* arguments */
+	int type; 
+	long arg1, arg2;
 };
 
 int yahoo_xfrm( int table, int depth, int seed );

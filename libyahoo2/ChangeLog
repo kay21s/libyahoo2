@@ -1,3 +1,6 @@
+* Wed May  4 2004 A. Craig West
+- 64 bit fix for real this time, thanks to Matt Rogers for the fix
+
 * Tue Mar 23 2004 A. Craig West
 - fix y_strsplit when string is empty, and for 0 element case to match gstrsplit
 

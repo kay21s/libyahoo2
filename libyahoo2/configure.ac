@@ -4,6 +4,8 @@ AC_PREREQ(2.50)
 AC_INIT(libyahoo2, 0.6.2cvs)
 AC_CONFIG_SRCDIR(config.h.in)
 
+RELEASE="1"
+
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
 
@@ -52,17 +54,33 @@ if test "$with_struct_callbacks" = "yes"; then
 fi
 
 YAHOOPKGREQ=""
-AM_PATH_GLIB_2_0(2.0.0, [
-	AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib support])
-	YAHOOPKGREQ="glib-2.0"
+AC_ARG_WITH([glib], [AC_HELP_STRING([--without-glib], [don't use glib even if found])])
+if test "$with_glib" != "no"; then
+	AM_PATH_GLIB_2_0(2.0.0, [
+		AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib support])
+		YAHOOPKGREQ="glib-2.0"
 	], [AM_PATH_GLIB(1.2.8, [
 		AC_DEFINE(HAVE_GLIB, 1, [Define if you have glib support])
 		YAHOOPKGREQ="glib >= 1.2.8"
 		]
 	)]
-)
+	)
+fi
 AC_SUBST(YAHOOPKGREQ)
+AC_SUBST_FILE(CHANGELOG)
+CHANGELOG=ChangeLog
+AC_SUBST(DATE)
+DATE=`date +"%Y%m%d"`
 
-AC_CONFIG_FILES([Makefile libyahoo2.pc src/Makefile doc/Makefile])
+if echo "$VERSION" | grep cvs >/dev/null 2>&1; then
+	RELEASE="$DATE"
+fi
+AC_SUBST(RELEASE)
+
+AC_CONFIG_FILES([
+	Makefile libyahoo2.pc libyahoo2.spec 
+	src/Makefile 
+	doc/Makefile
+])
 
 AC_OUTPUT

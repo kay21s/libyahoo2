@@ -1,0 +1,43 @@
+%define name       @PACKAGE@
+%define version    @VERSION@
+%define release    @RELEASE@
+%define prefix     /usr
+
+Summary:	Library for the Yahoo! Messenger Protocol
+Name:		%{name}
+Version:	%{version}
+Release:	%{release}
+Group:		System Environment/Libraries
+License:	GPL
+Vendor:		%_vendor
+Url:		http://libyahoo2.sourceforge.net/
+Source:		%{name}-%{version}-%{release}.tar.gz
+Packager:	%_me
+BuildRoot:	/var/tmp/%{name}-%{version}-%{release}-root
+Requires:	@YAHOOPKGREQ@
+
+%description
+
+%prep
+%setup
+
+%build
+./configure --prefix=%{prefix} --with-struct-callbacks
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make DESTDIR=$RPM_BUILD_ROOT install
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root)
+%doc doc/ymsg-9.txt NEWS COPYING AUTHORS README ChangeLog
+%attr(755,root,root) %{prefix}/lib/*
+%{prefix}/include/@PACKAGE@/*
+
+
+%changelog
+@CHANGELOG@

@@ -1,16 +1,11 @@
-version 0.6.2cvs
-
-- no longer strip colour/style codes from messages
-- compiles with -ansi and -pedantic
-- added protocol documentation
-- libyahoo2 now automatically scans ports 21, 23, 25 and 80 if it cannot 
-connect on the default port.
-- added colour entry for any colour to yahoo2_types.h (Nelson Ferreira)
-- Check for glib-2 as well as glib-1
+* Mon Nov 18 2002 Philip Tellis
 - Multiple offline messages are now received correctly
 - Memory leaks cleaned up
+- Check for glib-2 as well as glib-1
+- dropped port 21 from port scan
+- Added a spec file for RPM
 
-Rodney Dawes:
+* Sat Nov 16 2002 Rodney Dawes
 - Make libyahoo2 versioned
 - Add a pkgconfig file
 - Install headers in $(pkgincludedir)
@@ -18,17 +13,29 @@ Rodney Dawes:
 - Require autoconf >= 2.50
 - Cleanups in configure.ac
 
+* Wed Nov 13 2002 Philip Tellis
+- libyahoo2 now automatically scans ports 21, 23, 25 and 80 if it cannot 
+connect on the default port.
 
-18-10-2002: version 0.6.1
+* Wed Nov 06 2002 Philip Tellis
+- added protocol documentation
 
+* Tue Nov 05 2002 Philip Tellis
+- compiles with -ansi and -pedantic
+
+* Sat Oct 10 2002 Philip Tellis
+- no longer strip colour/style codes from messages
+- added colour entry for any colour to yahoo2_types.h (Nelson Ferreira)
+
+
+* Fri Oct 18 2002 Philip Tellis (version 0.6.1)
 - fixed segfault on some weird notification packets
 - fixes for conference add invite
 - identity support for conferences
 
 - sample console client can handle conferencing
 
-9-10-2002: version 0.6
-
+* Wed Oct 9 2002 Philip Tellis (version 0.6)
 - Removed glib dependencies.  Will use glib only if available
 - Configure time option --with-struct-callbacks to use a callback struct
 instead of callback functions (see yahoo2_callbacks.h and the README)
@@ -40,13 +47,11 @@ instead of callback functions (see yahoo2_callbacks.h and the README)
 
 - sample console client no longer requires gtk!
 
-22-7-2002: version 0.5
-
+* Mon Jul 22 2002 Philip Tellis (version 0.5)
 - Added basic documentation to README
 - Several minor code fixes and cleanups
 
-20-7-2002: version 0.5.cvs
-
+* Sat Jul 20 2002 Philip Tellis (version 0.5.cvs)
 This is an initial public release as a separate library
 I'll put a feature list in later.
 0.5 is just a random version number, I figure it's got half the features

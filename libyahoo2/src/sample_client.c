@@ -318,11 +318,6 @@ void ext_yahoo_error(guint32 id, char *err, int fatal)
 		yahoo_logout();
 }
 
-void ext_yahoo_send_im(char * to, char * message)
-{
-	yahoo_send_im(ylad->id, to, message, strlen(message));
-}
-
 void yahoo_set_current_state(gint yahoo_state)
 {
 	if (ylad->status == YAHOO_STATUS_OFFLINE && yahoo_state != YAHOO_STATUS_OFFLINE) {
@@ -492,7 +487,7 @@ static void process_commands(char *line)
 		}
 		msg = copy;
 		if(to && msg)
-			yahoo_send_im(ylad->id, to, msg, strlen(msg));
+			yahoo_send_im(ylad->id, to, msg);
 		g_free(start);
 		return;
 	} else if(!strcasecmp(cmd, "STA")) {

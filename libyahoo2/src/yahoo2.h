@@ -34,10 +34,10 @@ void yahoo_refresh(guint32 id);
 void yahoo_get_list(guint32 id);
 void yahoo_keepalive(guint32 id);
 
-void yahoo_send_im(guint32 id, char *who, char *what, int len);
+void yahoo_send_im(guint32 id, char *who, char *what);
 void yahoo_send_typing(guint32 id, char *who, int typ);
 
-void yahoo_set_away(guint32 id, enum yahoo_status state, char *msg, int away);
+void yahoo_set_away(guint32 id, enum yahoo_status state, char *msg, gboolean away);
 
 void yahoo_add_buddy(guint32 id, char *who, char *group);
 void yahoo_remove_buddy(guint32 id, char *who, char *group);

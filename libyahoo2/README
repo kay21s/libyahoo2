@@ -1,27 +1,174 @@
 README for libyahoo2
 ====================
 
-This file isn't done yet.  I'll get down to it soon.  There's also no docs
-available, so for now, the following will have to suffice.
-
 * Using the library
+
+Ok, here's a short, quick intro on how to use the library.
+Full documentation will come later.
+
+First include the two headers.
 
 #include <yahoo2.h>
 #include <yahoo2_callbacks.h>
 
 
-Functions in yahoo2.h are what you must call
-Functions in yahoo2_callbacks.h are what you must implement
+yahoo2.h contains functions that you can call.  The data structures used 
+are defined in yahoo2_types.h, which is included by yahoo2.h
 
-yahoo_httplib.h has some utility functions, at most you may need to call
-yahoo_urldecode to decode urls during HTTP based file transfer.
+yahoo2_callbacks.h contains prototypes for functions that you *must*
+implement.  *All* these functions must be implemented by your code.
+
+What each function is supposed to do and return is documented in 
+yahoo2_callbacks.h
 
 
-All datatypes and constants are defined in yahoo2_types.h, except for
-yahoo_input_condition which is defined in yahoo2_callbacks.h
 
-See the sample program sample_client.c for tips on how to write your own
-client.
+Ok, assuming you've implemented all those functions to do what they're
+supposed to do, this is the process flow:
+
+1. Login
+
+You must first login by making a call to yahoo_login, and pass the
+username, password and initial login status as parameters.
+
+guint32 yahoo_login(char * username, char * password, int initial);
+
+The initial status is one of enum yahoo_status.
+
+yahoo_login returns an id which will be used to identify the connection
+in all callbacks and all calls to the library.
+
+NOTE: yahoo_login will call ext_yahoo_add_handler with the id as the first
+parameter.  This is called before the id is returned by yahoo_login.
+This behaviour may change at a later date.
+
+
+When the login procedure is complete, the library will call 
+ext_yahoo_login_response with a status code.  See yahoo2_types for an
+enumeration of these codes.
+
+
+2. Buddies
+
+When the library receives the buddy list from the server, it will call
+ext_yahoo_got_buddies with the buddy list as a parameter.  The library
+will call ext_yahoo_got_ignore when it receives the ignore list.
+
+- To get the buddy list at any other time, make a call to yahoo_get_buddylist,
+and use the return value of that call.
+
+- Similarly, for the ignorelist, call yahoo_get_ignorelist.
+
+These lists will be returned from the library's cache.  To force a reload
+from the server, make a call to yahoo_get_list.
+
+- To refresh the status of all buddies, make a call to yahoo_refresh.
+
+- To add a buddy, call yahoo_add_buddy:
+void yahoo_add_buddy(id, char *who, char *group);
+
+- To remove a buddy, call yahoo_remove_buddy:
+void yahoo_remove_buddy(id, char *who, char *group);
+
+Yes, remove buddy also requires the group.
+
+- If a buddy adds you, and you do nothing, that buddy is accpeted (that's the 
+way the protocol works).  If you want to reject the buddy, make a call to
+yahoo_reject_buddy:
+
+void yahoo_reject_buddy(id, char * who, char *msg);
+
+where msg is the rejection message.
+
+- To change a buddy's group, call yahoo_change_buddy_group:
+void yahoo_change_buddy_group(id, char * who, char *old_group, char *new_group);
+
+- To ignore/unignore a buddy, call yahoo_ignore_buddy:
+void yahoo_ignore_buddy(id, char *who, gboolean unignore);
+
+If unignore is TRUE, the buddy is unignored, if it is FALSE, the buddy is
+ignored.
+
+
+
+
+3. Sending an IM
+
+To send an IM, make a call to yahoo_send_im
+
+void yahoo_send_im(guint32 id, char *who, char *what);
+
+id is the id that the connection is identified with, who is who you want
+to message, what is the message to be sent.
+
+
+4. Changing your status
+
+To change your status on the server, call yahoo_set_away.
+
+void yahoo_set_away(id, enum yahoo_status status, char *msg, gboolean away);
+
+id is the identifying id, status is your new status.
+msg is a custom status message in case status == YAHOO_STATUS_CUSTOM
+and away is a flag that says whether the custom message is an away message
+or just a regular signature.
+
+
+5. Conferencing
+
+To start a conference, call yahoo_conference_invite with a list of initial
+members, the room name, and a welcome message.
+
+To add more people to the conference after it has started, call
+yahoo_conference_addinvite.
+
+If someone adds you to the conference, you can either accept by calling
+yahoo_conference_logon, or decline by calling yahoo_conference_decline
+
+You can log off from the conference by calling yahoo_conference_logoff.
+
+Send a message by calling yahoo_conference_message.
+
+NOTE: Except for yahoo_conference_addinvite, all conference functions take
+the list of members as an argument.
+
+
+6. File Transfer
+
+To send a file, call yahoo_send_file(id, who, msg, name, size).
+
+This will set up the initial file send connection and return a unix file
+descriptor that you must write to.  You then write the file's contents to
+this fd.
+
+Receiving a file is similar.  You will receive a call to ext_yahoo_got_file
+with the file's url as one of the parameters.  When you are ready to start
+downloading the file, make a call to yahoo_get_url_handle:
+
+	fd = yahoo_get_url_handle(id, url, &fname, &fsize);
+
+fname and fsize are used to store the file's name and size
+
+
+
+7. Callbacks
+
+The library may request you to register io handlers using ext_yahoo_add_handler.
+Whenever an input condition occurs, you must call one of the callback functions.
+For a read condition, call yahoo_read_ready, for a write condition, call
+yahoo_write_ready.
+
+
+
+8. Other functions
+
+You can call yahoo_get_identities and yahoo_get_cookie to get some other
+information about your connection.  Currently identities are null.
+
+You can also call yahoo_urldecode and yahoo_urlencode utility functions
+to url decode/encode a given string.  This will be useful for getting the
+filename from a url in the file receive code.
+
 
 
 * Copyright

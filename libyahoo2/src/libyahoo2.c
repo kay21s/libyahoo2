@@ -1455,7 +1455,7 @@ static void yahoo_close(struct yahoo_data *yd)
 	yahoo_free_data(yd);
 }
 
-void yahoo_send_im(guint32 id, char *who, char *what, int len)
+void yahoo_send_im(guint32 id, char *who, char *what)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1494,7 +1494,7 @@ void yahoo_send_typing(guint32 id, char *who, int typ)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_set_away(guint32 id, enum yahoo_status state, char *msg, int away)
+void yahoo_set_away(guint32 id, enum yahoo_status state, char *msg, gboolean away)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;

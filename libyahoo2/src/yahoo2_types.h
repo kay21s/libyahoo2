@@ -22,6 +22,12 @@
 #ifndef YAHOO2_TYPES_H
 #define YAHOO2_TYPES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <glib.h>
+
 enum yahoo_status {
 	YAHOO_STATUS_AVAILABLE = 0,
 	YAHOO_STATUS_BRB,
@@ -119,5 +125,9 @@ struct yahoo_buddy {
 	char *id;
 	char *real_name;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -64,7 +64,7 @@ int yahoo_tcp_readline(char *ptr, int maxlen, int fd)
 	return (n);
 }
 
-static gboolean url_to_host_port_path(char *url,
+static gboolean url_to_host_port_path(const char *url,
 		char *host, int *port, char *path)
 {
 	char *urlcopy=NULL;
@@ -193,7 +193,7 @@ static int yahoo_send_http_request(char *host, int port, char *request)
 	return fd;
 }
 
-int yahoo_http_post(char *url, struct yahoo_data *yd, long content_length)
+int yahoo_http_post(const char *url, const struct yahoo_data *yd, long content_length)
 {
 	char host[255];
 	int port = 80;
@@ -217,7 +217,7 @@ int yahoo_http_post(char *url, struct yahoo_data *yd, long content_length)
 	return yahoo_send_http_request(host, port, buff);
 }
 
-int yahoo_http_get(char *url, struct yahoo_data *yd)
+int yahoo_http_get(const char *url, const struct yahoo_data *yd)
 {
 	char host[255];
 	int port = 80;
@@ -238,7 +238,7 @@ int yahoo_http_get(char *url, struct yahoo_data *yd)
 	return yahoo_send_http_request(host, port, buff);
 }
 
-int yahoo_get_url_fd(char *url, struct yahoo_data *yd, 
+int yahoo_get_url_fd(const char *url, const struct yahoo_data *yd,
 		char *filename, unsigned long *filesize)
 {
 	char *tmp=NULL;

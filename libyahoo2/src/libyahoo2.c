@@ -198,7 +198,7 @@ static struct yahoo_packet *yahoo_packet_new(enum yahoo_service service,
 	return pkt;
 }
 
-static void yahoo_packet_hash(struct yahoo_packet *pkt, int key, char *value)
+static void yahoo_packet_hash(struct yahoo_packet *pkt, int key, const char *value)
 {
 	struct yahoo_pair *pair = g_new0(struct yahoo_pair, 1);
 	pair->key = key;
@@ -1393,7 +1393,7 @@ redo:
 	return len;
 }
 
-guint32 yahoo_login(char *username, char *password, int initial)
+guint32 yahoo_login(const char *username, const char *password, int initial)
 {
 	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
@@ -1452,7 +1452,7 @@ static void yahoo_close(struct yahoo_data *yd)
 	yahoo_free_data(yd);
 }
 
-void yahoo_send_im(guint32 id, char *who, char *what)
+void yahoo_send_im(guint32 id, const char *who, const char *what)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1471,7 +1471,7 @@ void yahoo_send_im(guint32 id, char *who, char *what)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_send_typing(guint32 id, char *who, gboolean typ)
+void yahoo_send_typing(guint32 id, const char *who, gboolean typ)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1491,7 +1491,7 @@ void yahoo_send_typing(guint32 id, char *who, gboolean typ)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_set_away(guint32 id, enum yahoo_status state, char *msg, gboolean away)
+void yahoo_set_away(guint32 id, enum yahoo_status state, const char *msg, gboolean away)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1589,7 +1589,7 @@ void yahoo_keepalive(guint32 id)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_add_buddy(guint32 id, char *who, char *group)
+void yahoo_add_buddy(guint32 id, const char *who, const char *group)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1608,7 +1608,7 @@ void yahoo_add_buddy(guint32 id, char *who, char *group)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_remove_buddy(guint32 id, char *who, char *group)
+void yahoo_remove_buddy(guint32 id, const char *who, const char *group)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1625,7 +1625,7 @@ void yahoo_remove_buddy(guint32 id, char *who, char *group)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_reject_buddy(guint32 id, char *who, char *msg)
+void yahoo_reject_buddy(guint32 id, const char *who, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1644,7 +1644,7 @@ void yahoo_reject_buddy(guint32 id, char *who, char *msg)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_ignore_buddy(guint32 id, char *who, gboolean unignore)
+void yahoo_ignore_buddy(guint32 id, const char *who, gboolean unignore)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1663,7 +1663,7 @@ void yahoo_ignore_buddy(guint32 id, char *who, gboolean unignore)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_change_buddy_group(guint32 id, char *who, char *old_group, char *new_group)
+void yahoo_change_buddy_group(guint32 id, const char *who, const char *old_group, const char *new_group)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1694,7 +1694,7 @@ void yahoo_change_buddy_group(guint32 id, char *who, char *old_group, char *new_
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_addinvite(guint32 id, char *who, char *room, char *msg)
+void yahoo_conference_addinvite(guint32 id, const char *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1715,7 +1715,7 @@ void yahoo_conference_addinvite(guint32 id, char *who, char *room, char *msg)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_invite(guint32 id, GList *who, char *room, char *msg)
+void yahoo_conference_invite(guint32 id, GList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1739,7 +1739,7 @@ void yahoo_conference_invite(guint32 id, GList *who, char *room, char *msg)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_logon(guint32 id, GList *who, char *room)
+void yahoo_conference_logon(guint32 id, GList *who, const char *room)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1760,7 +1760,7 @@ void yahoo_conference_logon(guint32 id, GList *who, char *room)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_decline(guint32 id, GList *who, char *room, char *msg)
+void yahoo_conference_decline(guint32 id, GList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1782,7 +1782,7 @@ void yahoo_conference_decline(guint32 id, GList *who, char *room, char *msg)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_logoff(guint32 id, GList *who, char *room)
+void yahoo_conference_logoff(guint32 id, GList *who, const char *room)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1803,7 +1803,7 @@ void yahoo_conference_logoff(guint32 id, GList *who, char *room)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_message(guint32 id, GList *who, char *room, char *msg)
+void yahoo_conference_message(guint32 id, GList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1825,7 +1825,7 @@ void yahoo_conference_message(guint32 id, GList *who, char *room, char *msg)
 	yahoo_packet_free(pkt);
 }
 
-int yahoo_send_file(guint32 id, char *who, char *msg, char *name, long size)
+int yahoo_send_file(guint32 id, const char *who, const char *msg, const char *name, long size)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_data *nyd;
@@ -1895,7 +1895,7 @@ enum yahoo_status yahoo_current_status(guint32 id)
 	return yd->current_status;
 }
 
-GList * yahoo_get_buddylist(guint32 id)
+const GList * yahoo_get_buddylist(guint32 id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1903,7 +1903,7 @@ GList * yahoo_get_buddylist(guint32 id)
 	return yd->buddies;
 }
 
-GList * yahoo_get_ignorelist(guint32 id)
+const GList * yahoo_get_ignorelist(guint32 id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1911,7 +1911,7 @@ GList * yahoo_get_ignorelist(guint32 id)
 	return yd->ignore;
 }
 
-GList * yahoo_get_identities(guint32 id)
+const GList * yahoo_get_identities(guint32 id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1919,7 +1919,7 @@ GList * yahoo_get_identities(guint32 id)
 	return yd->identities;
 }
 
-char * yahoo_get_cookie(guint32 id, char *which)
+const char * yahoo_get_cookie(guint32 id, const char *which)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1935,7 +1935,7 @@ char * yahoo_get_cookie(guint32 id, char *which)
 	return NULL;
 }
 
-int yahoo_get_url_handle(guint32 id, char *url, char *filename, unsigned long *filesize)
+int yahoo_get_url_handle(guint32 id, const char *url, char *filename, unsigned long *filesize)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)

@@ -21,6 +21,13 @@
 
 #ifndef YAHOO2_CALLBACKS_H
 #define YAHOO2_CALLBACKS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <glib.h>
+
 #include "yahoo2_types.h"
 
 /*
@@ -346,5 +353,9 @@ void ext_yahoo_remove_handler(guint32 id, int fd);
  * 	a unix file descriptor to the socket
  */
 int ext_yahoo_connect(char *host, int port);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -4,7 +4,7 @@ noinst_PROGRAMS = yahoo
 EXTRA_DIST = md5.h yahoo_connections.h yahoo_debug.h \
 	sample_client.c sample_makefile yahoo_util.h
 
-AM_CFLAGS = @CFLAGS@ $(GLIB_CFLAGS) -g
+AM_CFLAGS = $(GLIB_CFLAGS) -g
 LIBS = @LIBS@ $(GLIB_LIBS)
 
 libyahoo2_la_SOURCES = libyahoo2.c crypt.c md5.c yahoo_connections.c \

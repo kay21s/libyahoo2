@@ -169,3 +169,34 @@ long.  The status codes (in decimal except for offline and typing) are:
 
 You may choose either AVAILABLE or INVISIBLE as your initial login status.  
 TYPING is used only when sending a TYPING notification packet.
+
+
+4. Session states
+
+A Yahoo session has two states, Authentication and Messaging.
+
+4.1. Authentication
+
+The session starts in the authentication state.  The client sends the username
+to the server.  The server responds with a challenge string.  The client
+responds to this challenge with two response strings.  If authentication is 
+successful, the connection goes into the messaging state, else, an error
+response is sent back.
+
+4.2. Messaging state
+
+After successful authentication, the session goes into the messaging state.
+The server sends the buddy list, ignore list, identity list and a list of
+cookies to the client.  These might all be sent in a single packet.  It then
+sends the list of online buddies along with their status codes.  All this is
+sent without the client requesting anything.
+
+At this time, any offline messages are also delivered to the client.
+
+In the messaging state, a client may send/receive messages, join conferences,
+send/receive files, change state, etc.
+
+Messaging state is terminated when the user goes offline by sending a LOGOFF
+packet.
+
+

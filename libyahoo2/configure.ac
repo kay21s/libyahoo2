@@ -24,9 +24,9 @@ YAHOO2_CURRENT=8	# 1 - < 0.6
 			# 3 - pre webcam/chat support (0.6.3)
 			# 4 - 0.7.0
 			# 5 - 0.7.1-2 - yahoo_init_with_attributes
-			# 6 - yahoo_get_log_level()
-			# 7 - contact search, change in add/remove handler
-			# 8 - remove_handler takes client id
+			# 6 - yahoo_get_log_level() (0.7.2)
+			# 7 - contact search, add/remove handler (0.7.3)
+			# 8 - remove_handler takes client id (0.7.4)
 YAHOO2_REVISION=0
 YAHOO2_AGE=0
 YAHOO2_VERSION="$YAHOO2_CURRENT:$YAHOO2_REVISION:$YAHOO2_AGE"

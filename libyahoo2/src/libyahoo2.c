@@ -3823,7 +3823,7 @@ void yahoo_chat_keepalive (int id)
 	yahoo_packet_free (pkt);
 }
 
-void yahoo_add_buddy(int id, const char *who, const char *group)
+void yahoo_add_buddy(int id, const char *who, const char *group, const char *msg)
 {
 	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
 	struct yahoo_data *yd;
@@ -3840,6 +3840,9 @@ void yahoo_add_buddy(int id, const char *who, const char *group)
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, group);
+	if(msg)
+		yahoo_packet_hash(pkt, 14, msg);
+
 	yahoo_send_packet(yid, pkt, 0);
 	yahoo_packet_free(pkt);
 }

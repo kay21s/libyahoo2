@@ -75,6 +75,15 @@ DATA    - The data section is pkt_len bytes long and consists of a series
           The actual keys sent, and their meanings depend on the service
           in use.
 
+          e.g. The packet data to send an instant message looks like this:
+
+          0x30 0xc080 yahoo_id 0xc080 0x31 0xc080 active_id 0xc080 0x35 
+          0xc080 recipient_id 0xc080 0x3134 0xc080 message_text 0xc080
+
+          The 0xc080 byte sequence is a separator.  The values 0x30, 0x31, 
+          0x35 and 0x3134 are the keys.  Convert them to their ASCII 
+          equivalents and you get 0, 1, 5, 14  (0x3134 == 0x31 0x34)
+
 
 2. Services
 
@@ -200,3 +209,104 @@ Messaging state is terminated when the user goes offline by sending a LOGOFF
 packet.
 
 
+5. Requests
+
+5.1. Authentication
+
+The first packet sent from the client is the authentication request 
+packet.  This consists of the user's yahoo id, or any identity 
+corresponding to that yahoo id.  The AUTH packet has one key/value pair.
+
+	service: YAHOO_SERVICE_AUTH
+	status:  YAHOO_STATUS_AVAILABLE
+
+	1: yahoo_id
+
+The server responds with a Challenge string.  The client then hashes the 
+username and password with this challenge string, and sends it back as an 
+AUTH_RESP packet.
+
+	service: YAHOO_SERVICE_AUTHRESP
+	status:  initial login status
+
+	0: yahoo_id
+	6: response_string_1
+	96: response_string_2
+	1: active_id
+
+
+5.2. Sending a message
+
+	service: YAHOO_SERVICE_MESSAGE
+	status:  0
+
+	0: yahoo_id
+	1: active_id
+	5: recipient_id
+	14: message to send
+
+5.3. Send typing start/stop notification
+
+	service: YAHOO_SERVICE_NOTIFY
+	status:  YAHOO_STATUS_TYPING
+
+	4: active_id
+	5: recipient_id
+	13: 1 or 0 depending on whether this is a typing start or stop 
+            packet
+	14: <space>
+	49: TYPING	/* The literal string */
+
+5.4. Set status
+
+	service: YAHOO_SERVICE_ISBACK or YAHOO_SERVICE_ISAWAY
+	status:  the status to set to
+
+	10: status_code
+	if custom_status:
+		19: custom away message
+		47: 0 or 1 depending on whether it is away or not
+	
+
+5.5. Logoff
+
+	service: YAHOO_SERVICE_LOGOFF
+	status:  YAHOO_STATUS_AVAILABLE
+
+	no key value pairs
+
+5.6. Keep alive - sent every 20 minutes
+
+	service: YAHOO_SERVICE_PING
+	status:  YAHOO_STATUS_AVAILABLE
+
+	no key value pairs
+
+5.7. Add buddy
+
+	service: YAHOO_SERVICE_ADDBUDDY
+	status:  YAHOO_STATUS_AVAILABLE
+
+	1: yahoo_id
+	7: buddy_to_add
+	65: group to add to
+
+5.8. Remove buddy
+
+	service: YAHOO_SERVICE_REMBUDDY
+	status:  YAHOO_STATUS_AVAILABLE
+
+	1: yahoo_id
+	7: buddy_to_remove
+	65: group to remove from
+	
+
+5.9. Reject buddy add
+
+	service: YAHOO_SERVICE_REJECTCONTACT
+	status:  YAHOO_STATUS_AVAILABLE
+
+	1: yahoo_id
+	7: buddy_to_reject
+	14: reject message
+	

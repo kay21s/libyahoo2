@@ -353,7 +353,7 @@ void ext_yahoo_login_response(int id, int succ, char *url)
 
 void ext_yahoo_error(int id, char *err, int fatal)
 {
-	fprintf(stderr, "Yahoo Error: %s", err);
+	fprintf(stdout, "Yahoo Error: %s", err);
 	if(fatal)
 		yahoo_logout();
 }
@@ -491,7 +491,14 @@ static void process_commands(char *line)
 	} else if(!strcasecmp(cmd, "STA")) {
 		if(isdigit(copy[0])) {
 			state = (enum yahoo_status)atoi(copy);
-			msg = NULL;
+			copy = strchr(copy, ' ');
+			if(state == 99) {
+				if(copy)
+					msg = copy;
+				else
+					msg = "delta x * delta p too large";
+			} else
+				msg = NULL;
 		} else {
 			state = YAHOO_STATUS_CUSTOM;
 			msg = copy;
@@ -512,6 +519,12 @@ static void process_commands(char *line)
 		for(; ids; ids = ids->next)
 			printf("%s, ", (char *)ids->data);
 		printf("\n");
+	} else if(!strcasecmp(cmd, "AID")) {
+		// activate identity
+		yahoo_set_identity_status(ylad->id, copy, 1);
+	} else if(!strcasecmp(cmd, "DID")) {
+		// deactivate identity
+		yahoo_set_identity_status(ylad->id, copy, 0);
 	} else if(!strcasecmp(cmd, "LST")) {
 		YList * b = buddies;
 		for(; b; b=b->next) {

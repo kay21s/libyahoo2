@@ -4,6 +4,8 @@ version 0.6cvs
 - Configure time option --with-struct-callbacks to use a callback struct
 instead of callback functions (see yahoo2_callbacks.h and the README)
 - Code cleanups by Steve McAndrewSmith
+- Get identities from server
+- Activate/Deactivate identities
 
 - sample console client no longer requires gtk!
 

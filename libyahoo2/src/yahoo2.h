@@ -59,6 +59,8 @@ int  yahoo_login(const char *username, const char *password, int initial);
 void yahoo_logoff(int id);
 /* reloads status of all buddies */
 void yahoo_refresh(int id);
+/* activates/deactivates an identity */
+void yahoo_set_identity_status(int id, const char * identity, int active);
 /* regets the entire buddy list from the server */
 void yahoo_get_list(int id);
 void yahoo_keepalive(int id);

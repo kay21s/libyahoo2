@@ -117,8 +117,8 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_ISBACK,
 	YAHOO_SERVICE_IDLE, /* 5 (placemarker) */
 	YAHOO_SERVICE_MESSAGE,
-	YAHOO_SERVICE_IDACT,	/* 3 -> identity */
-	YAHOO_SERVICE_IDDEACT,	/* 3 -> identity */
+	YAHOO_SERVICE_IDACT,
+	YAHOO_SERVICE_IDDEACT,
 	YAHOO_SERVICE_MAILSTAT,
 	YAHOO_SERVICE_USERSTAT, /* 0xa */
 	YAHOO_SERVICE_NEWMAIL,
@@ -812,13 +812,13 @@ static void yahoo_process_status(struct yahoo_data *yd, struct yahoo_packet *pkt
 		case 10: /* state */
 			state = strtol(pair->value, NULL, 10);
 			break;
-		case 19: /* custom message */
+		case 19: /* custom status message */
 			msg = pair->value;
 			break;
-		case 47:
+		case 47: /* is it an away message or not */
 			away = atoi(pair->value);
 			break;
-		case 11: /* i didn't know what this was in the old protocol either */
+		case 11: /* what is this? */
 			NOTICE(("key %d:%s", pair->key, pair->value));
 			break;
 		case 17: /* in chat? */
@@ -1273,6 +1273,8 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 	case YAHOO_SERVICE_ISBACK:
 	case YAHOO_SERVICE_GAMELOGON:
 	case YAHOO_SERVICE_GAMELOGOFF:
+	case YAHOO_SERVICE_IDACT:
+	case YAHOO_SERVICE_IDDEACT:
 		yahoo_process_status(yd, pkt);
 		break;
 	case YAHOO_SERVICE_NOTIFY:
@@ -1320,8 +1322,6 @@ static void yahoo_packet_process(struct yahoo_data *yd, struct yahoo_packet *pkt
 		yahoo_process_ignore(yd, pkt);
 		break;
 	case YAHOO_SERVICE_IDLE:
-	case YAHOO_SERVICE_IDACT:
-	case YAHOO_SERVICE_IDDEACT:
 	case YAHOO_SERVICE_MAILSTAT:
 	case YAHOO_SERVICE_CHATINVITE:
 	case YAHOO_SERVICE_CALENDAR:
@@ -1619,6 +1619,23 @@ void yahoo_get_list(int id)
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_LIST, YAHOO_STATUS_AVAILABLE, yd->id);
 	yahoo_packet_hash(pkt, 1, yd->user);
+	if (pkt) {
+		yahoo_send_packet(yd, pkt, 0);
+		yahoo_packet_free(pkt);
+	}
+}
+
+void yahoo_set_identity_status(int id, const char * identity, int active)
+{
+	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_packet *pkt = NULL;
+
+	if(!yd)
+		return;
+
+	pkt = yahoo_packet_new(active?YAHOO_SERVICE_IDACT:YAHOO_SERVICE_IDDEACT,
+			YAHOO_STATUS_AVAILABLE, yd->id);
+	yahoo_packet_hash(pkt, 3, identity);
 	if (pkt) {
 		yahoo_send_packet(yd, pkt, 0);
 		yahoo_packet_free(pkt);

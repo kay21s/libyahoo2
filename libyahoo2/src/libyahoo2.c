@@ -588,12 +588,22 @@ static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt
 			stat = atoi(pair->value);
 		if (pair->key == 14)
 			game = pair->value;
+		if (pair->key == 16) {
+			NOTICE((pair->value));
+			return;
+		}
+
 	}
+
+	if (!msg)
+		return;
 	
 	if (!strncasecmp(msg, "TYPING", strlen("TYPING"))) 
 		YAHOO_CALLBACK(ext_yahoo_typing_notify)(yd->client_id, from, stat);
 	else if (!strncasecmp(msg, "GAME", strlen("GAME"))) 
 		YAHOO_CALLBACK(ext_yahoo_game_notify)(yd->client_id, from, stat);
+	else
+		LOG(("Got unknown notification: %s", msg));
 }
 
 static void yahoo_process_filetransfer(struct yahoo_data *yd, struct yahoo_packet *pkt)

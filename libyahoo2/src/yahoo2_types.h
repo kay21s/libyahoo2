@@ -43,7 +43,7 @@ enum yahoo_status {
 	YAHOO_STATUS_CUSTOM = 99,
 	YAHOO_STATUS_IDLE = 999,
 	YAHOO_STATUS_OFFLINE = 0x5a55aa56, /* don't ask */
-	YAHOO_STATUS_TYPING = 0x16
+	YAHOO_STATUS_NOTIFY = 0x16
 };
 #define YAHOO_STATUS_GAME	0x2 		/* Games don't fit into the regular status model */
 
@@ -101,7 +101,29 @@ enum yahoo_log_level {
 enum yahoo_connection_type {
 	YAHOO_CONNECTION_PAGER=0,
 	YAHOO_CONNECTION_FT,
-	YAHOO_CONNECTION_YAB
+	YAHOO_CONNECTION_YAB,
+	YAHOO_CONNECTION_WEBCAM_MASTER,
+	YAHOO_CONNECTION_WEBCAM
+};
+
+enum yahoo_webcam_direction_type {
+        YAHOO_WEBCAM_DOWNLOAD=0,
+        YAHOO_WEBCAM_UPLOAD
+};
+
+struct webcam {
+	int direction;
+
+	char *user;
+	char *server;
+	char *key;
+	char *description;
+	char *my_ip;
+
+	unsigned int image_size;
+	unsigned int to_read;
+	unsigned int timestamp;
+	unsigned char packet_type;
 };
 
 struct yahoo_data {
@@ -133,6 +155,8 @@ struct yahoo_data {
 	int   rxlen;
 	char *rawbuddylist;
 	char *ignorelist;
+
+	struct webcam *wcm;
 };
 
 struct yab {

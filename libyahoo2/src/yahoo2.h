@@ -83,6 +83,14 @@ void yahoo_conference_message(int id, const char * from, YList *who, const char 
 void yahoo_conference_logon(int id, const char * from, YList *who, const char *room);
 void yahoo_conference_logoff(int id, const char * from, YList *who, const char *room);
 
+void yahoo_webcam_get_key(int id, const char *who);
+void yahoo_webcam_get_upload_key(int id);
+void yahoo_webcam_get_server(int id, char *who);
+void yahoo_webcam_get_upload_server(int id);
+void yahoo_webcam_connect(int id, struct webcam *wcm);
+void yahoo_webcam_send_image(int id, unsigned char *image, unsigned int length, unsigned int timestamp);
+void yahoo_webcam_invite(int id, const char *who);
+
 /* returns a socket file descriptor to the upload stream. */
 /* you should write your data to this stream when it returns */
 int  yahoo_send_file(int id, const char *who, const char *msg, const char *name, long size);

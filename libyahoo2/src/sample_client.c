@@ -49,17 +49,24 @@
 /* Get these from http://libyahoo2.sourceforge.net/ */
 #include <yahoo2.h>
 #include <yahoo2_callbacks.h>
+#include <yahoo_connections.h>
 #include "yahoo_util.h"
 
 int fileno(FILE * stream);
 
 
 #define MAX_PREF_LEN 255
+#define MY_IP "192.168.1.1"
 
 static int do_mail_notify = 0;
 static int do_yahoo_debug = 0;
 static int ignore_system = 0;
 static int do_typing_notify = 1;
+static int webcam_direction = YAHOO_WEBCAM_DOWNLOAD;
+static time_t curTime = 0;
+static time_t pingTimer = 0;
+static time_t webcamTimer = 0;
+static double webcamStart = 0;
 
 static int poll_loop=1;
 
@@ -68,6 +75,8 @@ char pager_host[MAX_PREF_LEN]="scs.yahoo.com";
 char pager_port[MAX_PREF_LEN]="23";
 char filetransfer_host[MAX_PREF_LEN]="filetransfer.msg.yahoo.com";
 char filetransfer_port[MAX_PREF_LEN]="80";
+char webcam_host[MAX_PREF_LEN]="webcam.yahoo.com";
+char webcam_port[MAX_PREF_LEN]="5100";
 
 static void register_callbacks();
 
@@ -78,6 +87,9 @@ typedef struct {
 	int fd;
 	int status;
 	char *msg;
+	
+	char *webcam_key;
+	char *webcam_user;
 } yahoo_local_account;
 
 typedef struct {
@@ -99,6 +111,11 @@ typedef struct {
 	char *who;
 } yahoo_authorize_data;
 
+typedef struct {
+	int id;
+	int fd;
+} yahoo_connection;
+
 yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_AVAILABLE, "Available"},
 	{YAHOO_STATUS_BRB, "BRB"},
@@ -114,7 +131,7 @@ yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_IDLE, "Idle"},
 	{YAHOO_STATUS_OFFLINE, "Offline"},
 	{YAHOO_STATUS_CUSTOM, "[Custom]"},
-	{YAHOO_STATUS_TYPING, "Typing"},
+	{YAHOO_STATUS_NOTIFY, "Notify"},
 	{0, NULL}
 };
 
@@ -152,11 +169,51 @@ int ext_yahoo_log(char *fmt,...)
 #define print_message(x) { printf x; printf("\n"); }
 
 static yahoo_local_account * ylad = NULL;
+static yahoo_connection * ylab = NULL;
+static yahoo_connection * ywcm = NULL;
+static yahoo_connection * ycam = NULL;
 static YList * buddies = NULL;
 
-int yahoo_ping_timeout_callback()
+static int expired(time_t timer)
 {
+	if (timer && curTime >= timer)
+		return 1;
+
+	return 0;
+}
+
+static void rearm(time_t *timer, int seconds)
+{
+	time(timer);
+	*timer += seconds;
+}
+
+static double get_time()
+{
+	struct timeval ct;
+	gettimeofday(&ct, 0);
+
+	/* return time in milliseconds */
+	return (ct.tv_sec * 1E3 + ct.tv_usec / 1E3);
+}
+
+static int yahoo_ping_timeout_callback()
+{
+	print_message(("Sending a keep alive message"));
 	yahoo_keepalive(ylad->id);
+	rearm(&pingTimer, 600);
+	return 1;
+}
+
+static int yahoo_webcam_timeout_callback(int id)
+{
+	unsigned char *image = NULL;
+	unsigned int length = 0;
+	unsigned int timestamp = get_time() - webcamStart;
+
+	print_message(("Sending a webcam image"));
+	yahoo_webcam_send_image(id, image, length, timestamp);
+	rearm(&webcamTimer, 2);
 	return 1;
 }
 
@@ -325,7 +382,7 @@ void ext_yahoo_got_buddies(int id, YList * buds)
 		ya->status = YAHOO_STATUS_OFFLINE;
 		buddies = y_list_append(buddies, ya);
 
-/*		print_message(("%s is %s", bud->id, bud->real_name)) */
+		print_message(("%s is %s", bud->id, bud->real_name));
 	}
 }
 
@@ -429,6 +486,110 @@ void ext_yahoo_mail_notify(int id, char *from, char *subj, int cnt)
 		print_message((buff));
 }
 
+void ext_yahoo_got_webcam_key(int id, char *key)
+{
+	print_message(("Got webcam key: %s", key));
+	if (ylad->webcam_key) FREE(ylad->webcam_key);
+	ylad->webcam_key = strdup(key);
+
+	switch (webcam_direction)
+	{
+		case YAHOO_WEBCAM_DOWNLOAD:
+			yahoo_webcam_get_server(id, ylad->webcam_user);
+			break;
+		case YAHOO_WEBCAM_UPLOAD:
+			yahoo_webcam_get_upload_server(id);
+			break;
+	}
+}
+
+void ext_yahoo_got_webcam_server(int id, char *ip)
+{
+	struct webcam *wcm = NULL;
+
+	if (!ip || !ip[0])
+	{
+		print_message(("User does not have their webcam on"));
+		return;
+	}
+
+	print_message(("Got webcam server: %s", ip));
+	wcm = y_new0(struct webcam, 1);
+	wcm->key = strdup(ylad->webcam_key);
+	wcm->server = strdup(ip);
+	wcm->my_ip = strdup(MY_IP);
+
+	switch (webcam_direction)
+	{
+		case YAHOO_WEBCAM_DOWNLOAD:
+			wcm->direction = YAHOO_WEBCAM_DOWNLOAD;
+			wcm->user = strdup(ylad->webcam_user);
+			break;
+		case YAHOO_WEBCAM_UPLOAD:
+			wcm->direction = YAHOO_WEBCAM_UPLOAD;
+			wcm->description = strdup("Philips Webcam");
+			webcamStart = get_time();
+			rearm(&webcamTimer, 2);
+			break;
+	}
+
+	/* Connect to webcam server */
+	yahoo_webcam_connect(ylad->id, wcm);
+}
+
+void ext_yahoo_got_webcam_image(int id, unsigned char *image, unsigned int image_size, unsigned int real_size, unsigned int timestamp)
+{
+	static unsigned char *cur_image = NULL;
+	static unsigned int cur_image_len = 0;
+	static unsigned int image_num = 0;
+	FILE* f_image;
+	char fname[1024];
+
+	/* copy image part to cur_image */
+	if (real_size)
+	{
+		if (!cur_image) cur_image = y_new0(unsigned char, image_size);
+		memcpy(cur_image + cur_image_len, image, real_size);
+		cur_image_len += real_size;
+	}
+
+	if (image_size == cur_image_len)
+	{
+		print_message(("Received a image update at %d (%d bytes)",
+			 timestamp, image_size));
+
+		/* if we recieved an image then write it to file */
+		if (image_size)
+		{
+			sprintf(fname, "images/%s_%.3d.jpc", ylad->webcam_user,				image_num++);
+
+			if ((f_image = fopen(fname, "w")) != NULL) {
+				fwrite(cur_image, image_size, 1, f_image);
+				fclose(f_image);
+			} else {
+				printf("Error writing to %s\n", fname);
+			}
+			FREE(cur_image);
+			cur_image_len = 0;
+			if (image_num > 999) image_num = 0;
+		}
+	}
+}
+
+void ext_yahoo_webcam_invite(int id, char *from)
+{
+	print_message(("Got a webcam invitation from %s", from));
+}
+
+void ext_yahoo_webcam_invite_reply(int id, char *from, int accept)
+{
+	if(accept) {
+		print_message(("%s accepted webcam invitation...", from));
+	} else {
+		print_message(("%s declined webcam invitation...", from));
+	}
+}
+
 void ext_yahoo_system_message(int id, char *msg)
 {
 	if(ignore_system)
@@ -437,14 +598,13 @@ void ext_yahoo_system_message(int id, char *msg)
 	print_message(("Yahoo System Message: %s", msg));
 }
 
-int call_timeout=0;
 void yahoo_logout()
 {
 	if (ylad->id <= 0) {
 		return;
 	}
 
-	call_timeout=0;
+	pingTimer=0;
 
 	while(conferences) {
 		YList * n = conferences->next;
@@ -485,7 +645,7 @@ void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 		return;
 	}
 
-	call_timeout=1;
+	rearm(&pingTimer, 600);
 }
 
 void ext_yahoo_login_response(int id, int succ, char *url)
@@ -495,7 +655,7 @@ void ext_yahoo_login_response(int id, int succ, char *url)
 	if(succ == YAHOO_LOGIN_OK) {
 		ylad->status = yahoo_current_status(id);
 		print_message(("logged in"));
-		yahoo_get_yab(id); 
+		yahoo_get_yab(id);
 		return;
 		
 	} else if(succ == YAHOO_LOGIN_PASSWD) {
@@ -593,7 +753,7 @@ int ext_yahoo_connect(char *host, int port)
 		memcpy(&serv_addr.sin_addr.s_addr, *p, server->h_length);
 		serv_addr.sin_port = htons(port);
 
-		LOG(("trying %s", *p));
+		LOG(("trying %s", inet_ntoa(serv_addr.sin_addr)));
 		if(connect(servfd, (struct sockaddr *) &serv_addr, 
 					sizeof(serv_addr)) == -1) {
 			if(errno!=ECONNREFUSED && errno!=ETIMEDOUT && 
@@ -615,12 +775,16 @@ int ext_yahoo_connect(char *host, int port)
 /*************************************
  * Callback handling code starts here
  */
-void yahoo_callback(int source)
+void yahoo_callback(int id)
 {
 	int ret=1;
 	char buff[1024]={0};
+	struct yahoo_data *yd = find_conn_by_id(id);
 
-	ret = yahoo_read_ready(ylad->id, source);
+	if (!yd)
+		return;
+
+	ret = yahoo_read_ready(id, yd->fd);
 
 	if(ret == -1)
 		snprintf(buff, sizeof(buff), 
@@ -635,14 +799,54 @@ void yahoo_callback(int source)
 
 void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond)
 {
-	ylad->fd=fd;
-	ylad->id=id;
+	struct yahoo_data *yd = find_conn_by_id(id);
+	switch (yd->type)
+	{
+		case YAHOO_CONNECTION_PAGER:
+			ylad->fd=fd;
+			ylad->id=id;
+			break;
+		case YAHOO_CONNECTION_YAB:
+			ylab->fd=fd;
+			ylab->id=id;
+			break;
+		case YAHOO_CONNECTION_WEBCAM_MASTER:
+			ywcm->fd=fd;
+			ywcm->id=id;
+			break;
+		case YAHOO_CONNECTION_WEBCAM:
+			ycam->fd=fd;
+			ycam->id=id;
+			break;
+	}
 }
 
 void ext_yahoo_remove_handler(int id, int fd)
 {
-	ylad->fd=0;
-	ylad->id=0;
+	struct yahoo_data *yd = find_conn_by_id(id);
+	if (!yd)
+		return;
+
+	switch (yd->type)
+	{
+		case YAHOO_CONNECTION_PAGER:
+			ylad->fd=0;
+			ylad->id=0;
+			break;
+		case YAHOO_CONNECTION_YAB:
+			ylab->fd=0;
+			ylab->id=0;
+			break;
+		case YAHOO_CONNECTION_WEBCAM_MASTER:
+			ywcm->fd=0;
+			ywcm->id=0;
+			break;
+		case YAHOO_CONNECTION_WEBCAM:
+			ycam->fd=0;
+			ycam->id=0;
+			break;
+	}
+	del_from_list(yd);
 }
 /*
  * Callback handling code ends here
@@ -903,6 +1107,22 @@ static void process_commands(char *line)
 			yahoo_set_yab(ylad->id, yab);
 			FREE(yab);
 		}
+	} else if(!strncasecmp(cmd, "WCAM", strlen("WCAM"))) {
+		if (copy)
+		{
+			printf("Viewing webcam (%s)\n", copy);
+			if (ylad->webcam_user) FREE(ylad->webcam_user);
+			ylad->webcam_user = strdup(copy);
+			webcam_direction = YAHOO_WEBCAM_DOWNLOAD;
+			yahoo_webcam_get_key(ylad->id, copy);
+		} else {
+			printf("Starting webcam\n");
+			webcam_direction = YAHOO_WEBCAM_UPLOAD;
+			yahoo_webcam_get_upload_key(ylad->id);
+		}
+	} else if(!strncasecmp(cmd, "WINV", strlen("WINV"))) {
+		printf("Inviting %s to view webcam\n", copy);
+		yahoo_webcam_invite(ylad->id, copy);
 	} else {
 		fprintf(stderr, "Unknown command: %s\n", cmd);
 	}
@@ -939,10 +1159,12 @@ static void local_input_callback(int source)
 	if(line[0])
 		process_commands(line);
 }
+
 int main(int argc, char * argv[])
 {
 	int status;
 	int log_level;
+	int lfd=0;
 
 	fd_set inp;
 	struct timeval tv;
@@ -951,6 +1173,9 @@ int main(int argc, char * argv[])
 	int fd_stdin = fileno(stdin);
 
 	ylad = y_new0(yahoo_local_account, 1);
+	ylab = y_new0(yahoo_connection, 1);
+	ywcm = y_new0(yahoo_connection, 1);
+	ycam = y_new0(yahoo_connection, 1);
 
 	printf("Yahoo Id: ");
 	scanf("%s", ylad->yahoo_id);
@@ -987,17 +1212,35 @@ int main(int argc, char * argv[])
 	while(poll_loop) {
 		FD_ZERO(&inp);
 		FD_SET(fd_stdin, &inp);
-		FD_SET(ylad->fd, &inp);
-		tv.tv_sec=600000;
+		if (ylad->fd) FD_SET(ylad->fd, &inp);
+		if (ylab->fd) FD_SET(ylab->fd, &inp);
+		if (ywcm->fd) FD_SET(ywcm->fd, &inp);
+		if (ycam->fd) FD_SET(ycam->fd, &inp);
+		tv.tv_sec=1;
 		tv.tv_usec=0;
-		select(ylad->fd + 1, &inp, NULL, NULL, &tv);
+		lfd=0;
+		if(lfd < ylad->fd) lfd=ylad->fd;
+		if(lfd < ylab->fd) lfd=ylab->fd;
+		if(lfd < ywcm->fd) lfd=ywcm->fd;
+		if(lfd < ycam->fd) lfd=ycam->fd;
+		select(lfd + 1, &inp, NULL, NULL, &tv);
+		time(&curTime);
 
-		if(call_timeout)		yahoo_ping_timeout_callback();
+		if(expired(pingTimer))		yahoo_ping_timeout_callback();
+		if(expired(webcamTimer))	yahoo_webcam_timeout_callback(ycam->id);
 		if(FD_ISSET(fd_stdin, &inp))	local_input_callback(0);
-		if(FD_ISSET(ylad->fd, &inp))	yahoo_callback(ylad->fd);
+		if(ylad->fd && FD_ISSET(ylad->fd, &inp)) yahoo_callback(ylad->id);
+		if(ylab->fd && FD_ISSET(ylab->fd, &inp)) yahoo_callback(ylab->id);
+		if(ywcm->fd && FD_ISSET(ywcm->fd, &inp)) yahoo_callback(ywcm->id);
+		if(ycam->fd && FD_ISSET(ycam->fd, &inp)) yahoo_callback(ycam->id);
 	}
 
 	yahoo_logout();
+
+	FREE(ylad);
+	FREE(ylab);
+	FREE(ywcm);
+	FREE(ycam);
 
 	return 0;
 }

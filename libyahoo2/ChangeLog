@@ -1,3 +1,6 @@
+* Thu Mar 13 2003 Mik
+- Add preliminary webcam support
+
 * Thu Mar 6 2003 Philip
 - Remove requests for unnecessary data in addressbook code
 

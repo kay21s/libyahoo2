@@ -311,6 +311,83 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_mail_notify)(int id, char *from, char *subj, 
 
 
 /*
+ * Name: ext_yahoo_got_webcam_key
+ * 	Called when you get a webcam key
+ * Params:
+ * 	id  - the id that identifies the server connection
+ *	key - the key that needs to be used to connect to the server
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_key)(int id, char *key);
+
+
+
+
+/*
+ * Name: ext_yahoo_got_webcam_server
+ * 	Called when you get a webcam server to connect to
+ * Params:
+ * 	id  - the id that identifies the server connection
+ *	ip  - ip address of the webcam server
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_server)(int id, char *ip);
+
+
+
+
+
+/*
+ * Name: ext_yahoo_got_webcam_image
+ * 	Called when you get a webcam update
+ *	An update can either be receiving an image, a part of an image or
+ *	just an update with a timestamp
+ * Params:
+ * 	id  - the id that identifies the server connection
+ *	image - image data
+ *	image_size - length of the image in bytes
+ *	real_size - actual length of image data
+ *	timestamp - milliseconds since the webcam started
+ *
+ *	If the real_size is smaller then the image_size then only part of
+ *	the image has been read. This function will keep being called till
+ *	the total amount of bytes in image_size has been read. The image
+ *	received is in JPEG-2000 Code Stream Syntax (ISO/IEC 15444-1).
+ *	The size of the image will be either 160x120 or 320x240.
+ *	Each webcam image contains a timestamp. This timestamp should be
+ *	used to keep the image in sync since some images can take longer
+ *	to transport then others. When image_size is 0 we can still receive
+ *	a timestamp to stay in sync
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_webcam_image)(int id, unsigned char *image, unsigned int image_size, unsigned int real_size, unsigned int timestamp);
+
+
+
+
+/*
+ * Name: ext_yahoo_webcam_invite
+ * 	Called when you get a webcam invitation
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	from - who the invitation is from
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_invite)(int id, char *from);
+
+
+
+
+/*
+ * Name: ext_yahoo_webcam_invite_reply
+ * 	Called when you get a response to a webcam invitation
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	from - who the invitation response is from
+ *      accept - 0 (decline), 1 (accept)
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_webcam_invite_reply)(int id, char *from, int accept);
+
+
+
+
+/*
  * Name: ext_yahoo_system_message
  * 	System message
  * Params:

@@ -10,12 +10,19 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.7.1 - 12 Sep 2003
+libyahoo2 version 0.7.2 - 28 Sep 2003
 </p>
 
 <p>
 libyahoo2 is a C library interface to the new Yahoo! Messenger protocol. It
 supports almost all current features of the protocol.
+</p>
+
+<p>
+<strong>IMPORTANT</strong><br>
+The signature for <code>yahoo_init</code> has changed, and your old code will
+segafault unless you update it.  See the <a href="README">README</a> or yahoo2.h
+for full details.
 </p>
 
 <h2>Feature list</h2>

@@ -177,12 +177,11 @@ filename from a url in the file receive code.
 * Platforms
 
 libyahoo2 is known to compile on:
- - Debian 2.2 (linux 2.4) i386
- - Debian 2.2 (linux 2.4) Alpha
- - Redhat 6.0 (linux 2.2)
- - Redhat 7.1 (linux 2.4)
- - Redhat 7.3 (linux 2.4)
+ - Debian 2.2 (linux 2.4) i386, Alpha, PPC RS/6000 and Sparc Ultra60
+ - Redhat 6.0, 7.1 and 7.3 (linux 2.2 and 2.4)
+ - MacOS X 10.1 PPC - G4
 
+Thanks to Sourceforge's compile farms for letting me test it there
 
 * Copyright
 

@@ -654,7 +654,7 @@ void ext_yahoo_mail_notify(int id, char *from, char *subj, int cnt)
 }
 
 void ext_yahoo_got_webcam_image(int id, const char *who,
-		unsigned char *image, unsigned int image_size, unsigned int real_size,
+		const unsigned char *image, unsigned int image_size, unsigned int real_size,
 		unsigned int timestamp)
 {
 	static unsigned char *cur_image = NULL;

@@ -95,7 +95,7 @@ int yahoo_log_message(char * fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(out, sizeof(out), fmt, ap);
 	va_end(ap);
-	return YAHOO_CALLBACK(ext_yahoo_log)(fmt, ap);
+	return YAHOO_CALLBACK(ext_yahoo_log)(fmt, out);
 }
 
 int yahoo_connect(char * host, int port)

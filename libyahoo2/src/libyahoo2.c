@@ -882,6 +882,7 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 						strdup(identities[i]));
 			y_strfreev(identities);
 			}
+			YAHOO_CALLBACK(ext_yahoo_got_identities)(yd->client_id, yd->identities);
 			break;
 		case 59: /* cookies add C cookie */
 			if(yd->ignorelist) {

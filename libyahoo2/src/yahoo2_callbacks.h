@@ -111,6 +111,18 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_got_ignore)(int id, YList * igns);
 
 
 /*
+ * Name: ext_yahoo_got_identities
+ * 	Called when the contact list is got from the server
+ * Params:
+ * 	id   - the id that identifies the server connection
+ * 	ids  - the identity list
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_identities)(int id, YList * ids);
+
+
+
+
+/*
  * Name: ext_yahoo_status_changed
  * 	Called when remote user's status changes.
  * Params:

@@ -170,11 +170,29 @@ You must also call yahoo_keepalive at regular intervals (10 minutes?) to keep
 the connection alive.
 
 
-8. Other functions
+8. Identities
 
-You can call yahoo_get_identities and yahoo_get_cookie to get some other
-information about your connection.  See the comments in yahoo2.h for more
-information.
+libyahoo2 will now get your identities from the server (if you don't know
+what that is, then you aren't using it).  Use yahoo_get_identities to get
+your list of identities.  libyahoo2 will also call ext_got_identities when
+it first gets the list of identities.
+
+To activate/deactivate an identity, call yahoo_set_identity_status:
+	yahoo_set_identity_status(id, char * identity, int active);
+
+If active is non-zero, activate the identity, else deactivate it.
+
+If you try to activate/deactivate an identity that isn't yours, you'll
+get a call back to ext_yahoo_error with a custom error message.  This
+message is from the yahoo servers.  Don't complain to me about it.  I
+know it sucks that we can't do translation of these strings.
+
+
+9. Other functions
+
+You can call yahoo_get_cookie to get the cookies for your connection.  I
+think these can be used when starting a browser to get information from
+the yahoo servers.  See the comments in yahoo2.h for more information.
 
 You can also call yahoo_urldecode and yahoo_urlencode utility functions
 to url decode/encode a given string.  This will be useful for getting the

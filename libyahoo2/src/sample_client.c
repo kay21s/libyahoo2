@@ -654,6 +654,10 @@ void ext_yahoo_got_file(int id, char *who, char *url, long expires, char *msg, c
 {
 }
 
+void ext_yahoo_got_identities(int id, YList * ids)
+{
+}
+
 static void register_callbacks()
 {
 #ifdef USE_STRUCT_CALLBACKS
@@ -662,6 +666,7 @@ static void register_callbacks()
 	yc.ext_yahoo_login_response = ext_yahoo_login_response;
 	yc.ext_yahoo_got_buddies = ext_yahoo_got_buddies;
 	yc.ext_yahoo_got_ignore = ext_yahoo_got_ignore;
+	yc.ext_yahoo_got_identities = ext_yahoo_got_identities;
 	yc.ext_yahoo_status_changed = ext_yahoo_status_changed;
 	yc.ext_yahoo_got_im = ext_yahoo_got_im;
 	yc.ext_yahoo_got_conf_invite = ext_yahoo_got_conf_invite;

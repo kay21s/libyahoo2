@@ -49,7 +49,6 @@
 /* Get these from http://libyahoo2.sourceforge.net/ */
 #include <yahoo2.h>
 #include <yahoo2_callbacks.h>
-#include <yahoo_connections.h>
 #include "yahoo_util.h"
 
 int fileno(FILE * stream);

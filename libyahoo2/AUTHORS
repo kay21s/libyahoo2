@@ -1,0 +1,22 @@
+libyahoo2: library for Yahoo! Messenger new protocol
+
+Philip S Tellis		<philip . tellis AT gmx . net>		Creator
+
+
+ This code is derivitive of Gaim <http://gaim.sourceforge.net>
+ copyright (C) 1998-1999, Mark Spencer <markster@marko.net>
+	       1998-1999, Adam Fritzler <afritz@marko.net>
+	       1998-2002, Rob Flynn <rob@marko.net>
+	       2000-2002, Eric Warmenhoven <eric@warmenhoven.org>
+	       2001-2002, Brian Macke <macke@strangelove.net>
+		    2001, Anand Biligiri S <abiligiri@users.sf.net>
+		    2001, Valdis Kletnieks
+		    2002, Sean Egan <bj91704@binghamton.edu>
+		    2002, Toby Gray <toby.gray@ntlworld.com>
+
+ This library also uses code from other libraries, namely:
+     Portions from libfaim copyright 1998, 1999 Adam Fritzler
+     <afritz@auk.cx>
+     Portions of Sylpheed copyright 2000-2002 Hiroyuki Yamamoto
+     <hiro-y@kcn.ne.jp>
+ 

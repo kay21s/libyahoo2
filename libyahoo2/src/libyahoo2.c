@@ -920,44 +920,41 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	md5_finish(&ctx, result);
 	to_y64(crypt_hash, result, 16);
 
-	switch (sv) {
+	switch (sv%5) {
+	case 0:
+		checksum = seed[seed[7] % 16];
+		g_snprintf(hash_string_p, strlen(sn) + 50,
+			"%c%s%s%s", checksum, password_hash, yd->user, seed);
+		g_snprintf(hash_string_c, strlen(sn) + 50,
+			"%c%s%s%s", checksum, crypt_hash, yd->user, seed);
+		break;
 	case 1:
-	case 6:
 		checksum = seed[seed[9] % 16];
 		g_snprintf(hash_string_p, strlen(sn) + 50,
-				"%c%s%s%s", checksum, yd->user, seed, password_hash);
+			"%c%s%s%s", checksum, yd->user, seed, password_hash);
 		g_snprintf(hash_string_c, strlen(sn) + 50,
-				"%c%s%s%s", checksum, yd->user, seed, crypt_hash);
+			"%c%s%s%s", checksum, yd->user, seed, crypt_hash);
 		break;
 	case 2:
-	case 7:
 		checksum = seed[seed[15] % 16];
 		g_snprintf(hash_string_p, strlen(sn) + 50,
-				"%c%s%s%s", checksum, seed, password_hash, yd->user);
+			"%c%s%s%s", checksum, seed, password_hash, yd->user);
 		g_snprintf(hash_string_c, strlen(sn) + 50,
-				"%c%s%s%s", checksum, seed, crypt_hash, yd->user);
+			"%c%s%s%s", checksum, seed, crypt_hash, yd->user);
 		break;
 	case 3:
 		checksum = seed[seed[1] % 16];
 		g_snprintf(hash_string_p, strlen(sn) + 50,
-				"%c%s%s%s", checksum, yd->user, password_hash, seed);
+			"%c%s%s%s", checksum, yd->user, password_hash, seed);
 		g_snprintf(hash_string_c, strlen(sn) + 50,
-				"%c%s%s%s", checksum, yd->user, crypt_hash, seed);
+			"%c%s%s%s", checksum, yd->user, crypt_hash, seed);
 		break;
 	case 4:
 		checksum = seed[seed[3] % 16];
 		g_snprintf(hash_string_p, strlen(sn) + 50,
-				"%c%s%s%s", checksum, password_hash, seed, yd->user);
+			"%c%s%s%s", checksum, password_hash, seed, yd->user);
 		g_snprintf(hash_string_c, strlen(sn) + 50,
-				"%c%s%s%s", checksum, crypt_hash, seed, yd->user);
-		break;
-	case 0:
-	case 5:
-		checksum = seed[seed[7] % 16];
-		g_snprintf(hash_string_p, strlen(sn) + 50,
-				"%c%s%s%s", checksum, password_hash, yd->user, seed);
-		g_snprintf(hash_string_c, strlen(sn) + 50,
-				"%c%s%s%s", checksum, crypt_hash, yd->user, seed);
+			"%c%s%s%s", checksum, crypt_hash, seed, yd->user);
 		break;
 	}
 		

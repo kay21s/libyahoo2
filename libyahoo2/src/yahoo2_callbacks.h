@@ -236,6 +236,16 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_userleave)(int id, char *who, char *room
 void YAHOO_CALLBACK_TYPE(ext_yahoo_conf_message)(int id, char *who, char *room, char *msg, int utf8);
 
 
+/*
+ * Name: ext_yahoo_chat_cat_xml
+ * 	Called when joining the chatroom.
+ * Params:
+ * 	id      - the id that identifies the server connection
+ * 	room    - the room joined, used in all other chat calls, freed by library after call
+ * 	topic   - the topic of the room, freed by library after call
+ *      members - the initial members of the chatroom (null terminated YList of yahoo_chat_member's) Must be freed by the client
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_cat_xml)(int id, char *xml);
 
 /*
  * Name: ext_yahoo_chat_join

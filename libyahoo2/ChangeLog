@@ -1,3 +1,6 @@
+* Thu Apr 10 2003 Wayne
+- Added callback for the list of chatrooms
+
 * Thu Mar 29 2003 Wayne
 - Added basic support for pulling down the list of chatrooms
 

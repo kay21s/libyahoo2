@@ -2070,7 +2070,9 @@ static void yahoo_process_ft_connection(struct yahoo_data *yd)
 
 static void yahoo_process_chatcat_connection(struct yahoo_data *yd)
 {
-	printf("Got:\n%s",yd->rxqueue);
+	if (strstr((char*)yd->rxqueue+(yd->rxlen-20), "</content>")) {
+		YAHOO_CALLBACK(ext_yahoo_chat_cat_xml)(yd->client_id, (char*)yd->rxqueue);
+	}
 }
 
 static void yahoo_process_yab_connection(struct yahoo_data *yd)

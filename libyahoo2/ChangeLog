@@ -1,3 +1,11 @@
+18-10-2002: version 0.6.1
+
+- fixed segfault on some weird notification packets
+- fixes for conference add invite
+- identity support for conferences
+
+- sample console client can handle conferencing
+
 9-10-2002: version 0.6
 
 - Removed glib dependencies.  Will use glib only if available

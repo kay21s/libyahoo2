@@ -1,3 +1,9 @@
+* 18-Oct-2002
+
+This is a service release, mainly to fix the segfault on certain error
+notification packets.
+
+
 * 9-Oct-2002
 
 0.6 has been released.  Also just found out that libyahoo2 is also used in

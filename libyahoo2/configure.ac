@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/libyahoo2.c)
-AM_INIT_AUTOMAKE([libyahoo2], [0.6])
+AM_INIT_AUTOMAKE([libyahoo2], [0.6.1])
 AM_CONFIG_HEADER(config.h)
 
 # Checks for programs.

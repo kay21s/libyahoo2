@@ -385,4 +385,3 @@ void yahoo_register_callbacks(struct yahoo_callbacks * tyc);
 }
 #endif
 
-#endif

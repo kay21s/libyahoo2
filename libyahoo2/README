@@ -140,6 +140,9 @@ You can log off from the conference by calling yahoo_conference_logoff.
 
 Send a message by calling yahoo_conference_message.
 
+The parameter from is the identity that you want to use to send the message.
+If this is NULL, your default identity will be used.
+
 NOTE: Except for yahoo_conference_addinvite, all conference functions take
 the list of members as an argument.
 

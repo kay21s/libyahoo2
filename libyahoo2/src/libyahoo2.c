@@ -1,9 +1,9 @@
 /*
  * libyahoo2: libyahoo2.c
  *
- * Some code copyright (C) 2002, Philip S Tellis <philip . tellis AT gmx . net>
+ * Some code copyright (C) 2002-2004, Philip S Tellis <philip.tellis AT gmx.net>
  *
- * Yahoo Search copyright (C) 2003, Konstantin Klyagin <konst@konst.org.ua>
+ * Yahoo Search copyright (C) 2003, Konstantin Klyagin <konst AT konst.org.ua>
  *
  * Much of this code was taken and adapted from the yahoo module for
  * gaim released under the GNU GPL.  This code is also released under the 
@@ -1679,7 +1679,6 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 
 	unsigned int  magic[64];
 	unsigned int  magic_work=0;
-	unsigned int  value = 0;
 
 	char comparison_src[20];
 
@@ -1687,7 +1686,6 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 	int cnt = 0;
 	int magic_cnt = 0;
 	int magic_len;
-	int times = 0;
 	int depth =0, table =0;
 
 	memset(&pass_hash_xor1, 0, 64);

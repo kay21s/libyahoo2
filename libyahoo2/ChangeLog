@@ -7,6 +7,7 @@ instead of callback functions (see yahoo2_callbacks.h and the README)
 - Get identities from server
 - Activate/Deactivate identities
 - Use identities when sending messages
+- Fixed buffer overflow in key/value pair reading
 
 - sample console client no longer requires gtk!
 

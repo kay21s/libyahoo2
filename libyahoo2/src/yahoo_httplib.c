@@ -234,6 +234,7 @@ char *yahoo_xmldecode(const char *instr)
 
 		if(instr[ipos] == '#') {
 			ipos++;
+			epos=0;
 			while(instr[ipos] != ';')
 				entity[epos++]=instr[ipos++];
 			sscanf(entity, "%u", &dec);

@@ -3236,6 +3236,7 @@ static void _yahoo_webcam_connected(int fd, int error, void *d)
 		return;
 	}
 
+	yid->fd = fd;
 	inputs = y_list_prepend(inputs, yid);
 
 	LOG(("Connected"));

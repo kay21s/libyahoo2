@@ -938,7 +938,7 @@ void ext_yahoo_remove_handler(int id, int fd)
 	YList *l;
 	for(l = connections; l; l = y_list_next(l)) {
 		struct _conn *c = l->data;
-		if(c->id == id && c->fd == fd) {
+		if(c->fd == fd) {
 			/* don't actually remove it, just mark it for removal */
 			/* we'll remove when we start the next poll cycle */
 			LOG(("Marking id:%d fd:%d for removal", id, fd));
@@ -966,6 +966,8 @@ static void connect_complete(void *data, int source, yahoo_input_condition condi
 		close(source);
 		source = -1;
 	}
+
+	LOG(("Connected fd: %d, error: %d", source, error));
 
 	ccd->callback(source, error, ccd->callback_data);
 	FREE(ccd);
@@ -1021,6 +1023,7 @@ int ext_yahoo_connect_async(int id, char *host, int port,
 
 	error = connect(servfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
 
+	LOG(("Trying to connect: fd:%d error:%d", servfd, error));
 	if(!error) {
 		callback(servfd, 0, data);
 		return 0;

@@ -1,3 +1,6 @@
+* Sun Apr 20 2003 Philip
+- fixes for multiple connects and bugs introduced when adding async connects
+
 * Sat Apr 19 2003 Philip
 - Add asynchronous connects
 - Each `id' represents a single login session and everything to do with it

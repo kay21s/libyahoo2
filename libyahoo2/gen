@@ -1,3 +1,5 @@
+#!/bin/bash
+libtoolize --copy --force --ltdl
 aclocal
 automake --add-missing
 autoconf

@@ -22,16 +22,15 @@
  *
  */
 
-#include <glib.h>
-#include <gtk/gtk.h>
-
 #include <netdb.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -43,6 +42,7 @@
 
 #include <yahoo2.h>
 #include <yahoo2_callbacks.h>
+#include "yahoo_util.h"
 
 #define MAX_PREF_LEN 255
 
@@ -51,21 +51,21 @@ static int do_yahoo_debug = 0;
 static int ignore_system = 0;
 static int do_typing_notify = 1;
 
+static int poll_fd=0;
+static int poll_id=0;
+static int poll_loop=1;
+
 /* Exported to libyahoo2 */
 char pager_host[MAX_PREF_LEN]="scs.yahoo.com";
 char pager_port[MAX_PREF_LEN]="5050";
 char filetransfer_host[MAX_PREF_LEN]="filetransfer.msg.yahoo.com";
 char filetransfer_port[MAX_PREF_LEN]="80";
 
-#define FREE(x)	if(x) { g_free(x); x=NULL; }
-
 typedef struct {
 	char yahoo_id[255];
 	char password[255];
 	int id;
 	int fd;
-	gint input;
-	gint ping_timeout_tag;
 	int status;
 	char *status_message;
 } yahoo_local_account;
@@ -134,10 +134,9 @@ int ext_yahoo_log(char *fmt,...)
 
 static yahoo_local_account * ylad = NULL;
 
-gint yahoo_ping_timeout_callback(gpointer data)
+int yahoo_ping_timeout_callback()
 {
-	yahoo_local_account *ylad = data;
-	yahoo_keepalive(ylad->id);
+	yahoo_keepalive(poll_id);
 	return 1;
 }
 
@@ -191,7 +190,6 @@ void ext_yahoo_rejected(int id, char *who, char *msg)
 void ext_yahoo_contact_added(int id, char *myid, char *who, char *msg)
 {
 	char buff[1024];
-	char choice;
 
 	snprintf(buff, sizeof(buff), "%s, the yahoo user %s has added you to their contact list", myid, who);
 	if(msg) {
@@ -251,16 +249,14 @@ void ext_yahoo_system_message(int id, char *msg)
 	print_message(("Yahoo System Message: %s", msg));
 }
 
+int call_timeout=0;
 void yahoo_logout()
 {
 	if (ylad->id <= 0) {
 		return;
 	}
 
-	if(ylad->ping_timeout_tag) {
-		gtk_timeout_remove(ylad->ping_timeout_tag);
-		ylad->ping_timeout_tag=0;
-	}
+	call_timeout=0;
 	
 	yahoo_logoff(ylad->id);
 
@@ -282,8 +278,7 @@ void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 		return;
 	}
 
-	ylad->ping_timeout_tag = gtk_timeout_add(600 * 1000, 
-			(void *) yahoo_ping_timeout_callback, ylad);
+	call_timeout=1;
 }
 
 void ext_yahoo_login_response(int id, int succ, char *url)
@@ -319,7 +314,7 @@ void ext_yahoo_error(int id, char *err, int fatal)
 		yahoo_logout();
 }
 
-void yahoo_set_current_state(gint yahoo_state)
+void yahoo_set_current_state(int yahoo_state)
 {
 	if (ylad->status == YAHOO_STATUS_OFFLINE && yahoo_state != YAHOO_STATUS_OFFLINE) {
 		ext_yahoo_login(ylad, yahoo_state);
@@ -387,76 +382,34 @@ int ext_yahoo_connect(char *host, int port)
 /*************************************
  * Callback handling code starts here
  */
-typedef struct {
-	int id;
-	gpointer data;
-	int tag;
-} yahoo_callback_data;
-
-void yahoo_callback(gpointer data, gint source, GdkInputCondition condition)
+void yahoo_callback(int source)
 {
-	yahoo_callback_data *d = data;
 	int ret=1;
 	char buff[1024]={0};
 
-	if(condition & GDK_INPUT_READ) {
-		LOG(("Read"));
-		ret = yahoo_read_ready(d->id, source);
+	ret = yahoo_read_ready(poll_id, source);
 
-		if(ret == -1)
-			snprintf(buff, sizeof(buff), 
-				"Yahoo read error (%d): %s", errno, 
-				strerror(errno));
-		else if(ret == 0)
-			snprintf(buff, sizeof(buff), 
-				"Yahoo read error: Server closed socket");
-	}
-
-	if(condition & GDK_INPUT_WRITE) {
-		LOG(("Write"));
-		ret = yahoo_write_ready(d->id, source);
-
-		if(ret == -1)
-			snprintf(buff, sizeof(buff), 
-				"Yahoo write error (%d): %s", errno, 
-				strerror(errno));
-		else if(ret == 0)
-			snprintf(buff, sizeof(buff), 
-				"Yahoo write error: Server closed socket");
-	}
-
-	if(condition & GDK_INPUT_EXCEPTION)
-		LOG(("Exception"));
-	if(!(condition & (GDK_INPUT_READ | GDK_INPUT_WRITE | GDK_INPUT_EXCEPTION)))
-		LOG(("Unknown: %d", condition));
+	if(ret == -1)
+		snprintf(buff, sizeof(buff), 
+			"Yahoo read error (%d): %s", errno, strerror(errno));
+	else if(ret == 0)
+		snprintf(buff, sizeof(buff), 
+			"Yahoo read error: Server closed socket");
 
 	if(buff[0])
 		print_message((buff));
 }
 
-YList * handlers = NULL;
-
 void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond)
 {
-	yahoo_callback_data *d = g_new0(yahoo_callback_data, 1);
-	d->id = id;
-	d->tag = gdk_input_add(fd, cond, yahoo_callback, d);
-
-	handlers = y_list_append(handlers, d);
+	poll_fd=fd;
+	poll_id=id;
 }
 
 void ext_yahoo_remove_handler(int id, int fd)
 {
-	YList * l;
-	for(l = handlers; l; l = l->next)
-	{
-		yahoo_callback_data *d = l->data;
-		if(d->id == id) {
-			gdk_input_remove(d->tag);
-			handlers = y_list_remove_link(handlers, l);
-			break;
-		}
-	}
+	poll_fd=0;
+	poll_id=0;
 }
 /*
  * Callback handling code ends here
@@ -489,7 +442,7 @@ static void process_commands(char *line)
 		msg = copy;
 		if(to && msg)
 			yahoo_send_im(ylad->id, to, msg);
-		g_free(start);
+		FREE(start);
 		return;
 	} else if(!strcasecmp(cmd, "STA")) {
 		if(isdigit(copy[0])) {
@@ -505,17 +458,17 @@ static void process_commands(char *line)
 		return;
 	} else if(!strcasecmp(cmd, "OFF")) {
 		// go offline
-		g_free(start);
-		gtk_main_quit();
+		FREE(start);
+		poll_loop=0;
 		return;
 	} else {
 		fprintf(stderr, "Unknown command: %s\n", cmd);
-		g_free(start);
+		FREE(start);
 		return;
 	}
 }
 
-static void local_input_callback(gpointer data, gint source, GdkInputCondition cond)
+static void local_input_callback(int source)
 {
 	char line[1024] = {0};
 	int i;
@@ -547,9 +500,11 @@ int main(int argc, char * argv[])
 {
 	int status;
 	int log_level;
-	int l;
 
-	ylad = g_new0(yahoo_local_account, 1);
+	fd_set inp;
+	struct timeval tv;
+
+	ylad = y_new0(yahoo_local_account, 1);
 
 	printf("Yahoo Id: ");
 	scanf("%s", ylad->yahoo_id);
@@ -564,13 +519,20 @@ int main(int argc, char * argv[])
 
 	yahoo_set_log_level(log_level);
 
-	gdk_init(&argc, &argv);
-
 	ext_yahoo_login(ylad, status);
 
-	l = gdk_input_add(0, GDK_INPUT_READ, local_input_callback, NULL);
-	gtk_main();
-	gdk_input_remove(l);
+	while(poll_loop) {
+		FD_ZERO(&inp);
+		FD_SET(0, &inp);
+		FD_SET(poll_fd, &inp);
+		tv.tv_sec=600000;
+		tv.tv_usec=0;
+		select(poll_fd + 1, &inp, NULL, NULL, &tv);
+
+		if(call_timeout)		yahoo_ping_timeout_callback();
+		if(FD_ISSET(0, &inp)) 		local_input_callback(0);
+		if(FD_ISSET(poll_fd, &inp))	yahoo_callback(poll_fd);
+	}
 
 	yahoo_logout();
 

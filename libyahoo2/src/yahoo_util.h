@@ -22,6 +22,10 @@
 #ifndef __YAHOO_UTIL_H__
 #define __YAHOO_UTIL_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #if HAVE_GLIB
 # include <glib.h>
 
@@ -34,7 +38,9 @@
 # define y_memdup	g_memdup
 # define y_strsplit	g_strsplit
 # define y_strfreev	g_strfreev
-# define strdup		g_strdup
+# ifndef strdup
+#  define strdup	g_strdup
+# endif
 
 #else
 

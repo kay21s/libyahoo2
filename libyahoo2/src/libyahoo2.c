@@ -529,6 +529,17 @@ static int yahoo_send_data(struct yahoo_data *yd, char *data, int len)
 	return ret;
 }
 
+static void yahoo_close(struct yahoo_data *yd) 
+{
+	del_from_list(yd);
+
+	if (yd->fd >= 0)
+		close(yd->fd);
+	FREE(yd->rxqueue);
+	yd->rxlen = 0;
+	yahoo_free_data(yd);
+}
+
 static int is_same_bud(const void * a, const void * b) {
 	const struct yahoo_buddy *subject = a;
 	const struct yahoo_buddy *object = b;
@@ -1922,11 +1933,12 @@ int yahoo_read_ready(int id, int fd)
 
 		yd->current_status = -1;
 		YAHOO_CALLBACK(ext_yahoo_remove_handler)(id, fd);
+		if(yd->type == YAHOO_CONNECTION_YAB)
+			yd->buddies = NULL;
+		yahoo_close(yd);
 
 		if(yd->client_id == last_id)
 			last_id--;
-
-		close(fd);
 
 		/* no need to return an error, because we've already fixed it */
 		if(len == 0)
@@ -1996,17 +2008,6 @@ int yahoo_get_fd(int id)
 		return 0;
 	else
 		return yd->fd;
-}
-
-static void yahoo_close(struct yahoo_data *yd) 
-{
-	del_from_list(yd);
-
-	if (yd->fd >= 0)
-		close(yd->fd);
-	FREE(yd->rxqueue);
-	yd->rxlen = 0;
-	yahoo_free_data(yd);
 }
 
 void yahoo_send_im(int id, const char *from, const char *who, const char *what, int utf8)

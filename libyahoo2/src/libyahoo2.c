@@ -1873,7 +1873,7 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 	
 	write(nyd->fd, buff, 4);
 
-	ext_yahoo_add_handler(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
+/*	ext_yahoo_add_handler(nyd->client_id, nyd->fd, YAHOO_INPUT_READ); */
 
 	return nyd->fd;
 

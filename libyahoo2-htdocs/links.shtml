@@ -10,6 +10,7 @@
 	title="Download the latest release.">Download</a><br>
 <a href="http://lists.sourceforge.net/lists/listinfo/libyahoo2-users/"
 	title="Ok, so I have a mailing list too.  Why not?">Mailing List</a><br>
+<a href="NEWS" title="Periodic summaries of what's happening">NEWS</a><br>
 <a href="ChangeLog" title="Complete log of changes">ChangeLog</a><br>
 <a href="cvs.shtml" title="How to get the code by CVS">CVS Info</a><br>
 <a href="http://lists.sourceforge.net/lists/listinfo/libyahoo2-cvs/"

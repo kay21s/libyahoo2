@@ -1,0 +1,52 @@
+* 11-Feb-2003
+
+Added address book support.  Rodney Dawes helped make the library
+versioned.  I've also added the htdocs to CVS to make updates easier.
+0.6.2 should come out Real Soon Now.
+
+The mailing list has been alive for a while.  There's been some good
+discussions.
+
+Also added documentation for the YMSG-9 protocol and the Addressbook
+structure.
+
+libyahoo2 is used in Ayttm - a fork of everybuddy.
+
+There have been requests for a Java version/wrapper.  Any volunteers?
+
+
+* 18-Oct-2002
+
+This is a service release, mainly to fix the segfault on certain error
+notification packets.
+
+
+* 9-Oct-2002
+
+0.6 has been released.  Also just found out that libyahoo2 is also used in
+GNUYahoo
+
+
+* 28-Sep-2002
+
+Well, I added documentation some time ago.  It's in the README file.  I
+suppose people have found it.
+
+The good news now is that libyahoo2 is being used in many clients, the
+bad news is that there's very little discussion on the mailing list.
+
+From what has been reported to me, and what I've heard, it seems that
+libyahoo2 is being used in Everybuddy, Fire, Proteus, Kopete, centericq.
+
+
+Hope to come out with 0.6 Real Soon Now.
+
+
+* 20-Jul-2002
+
+Umm, ok, it's been in everybuddy for a few months, and now I'm releasing
+it as a separate project.
+
+libyahoo2 has its own life now.
+
+Philip

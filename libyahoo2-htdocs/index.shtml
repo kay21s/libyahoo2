@@ -116,6 +116,11 @@ Portions from libfaim copyright 1998, 1999 Adam Fritzler   &lt;afritz AT auk.cx&
 Portions of Sylpheed copyright 2000-2002 Hiroyuki Yamamoto &lt;hiro-y AT kcn.ne.jp&gt;
 </p>
 
+<p>
+Special thanks to Rodney Dawes for making the library versioned and teaching me
+quite a bit about versioning and redhat spec files.
+</p>
+
 
 <h2>Copyright</h2>
 <p>

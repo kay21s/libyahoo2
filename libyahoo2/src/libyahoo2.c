@@ -365,6 +365,7 @@ static void yahoo_free_data(struct yahoo_data *yd)
 	yahoo_free_buddies(yd->buddies);
 	yahoo_free_buddies(yd->ignore);
 	yahoo_free_identities(yd->identities);
+
 	FREE(yd);
 }
 

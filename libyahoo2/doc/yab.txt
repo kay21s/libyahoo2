@@ -45,3 +45,30 @@ timea to 0.
 
 Apart from the address book, you can get everything else by typing in the
 above url in your browser.
+
+
+To set an addressbook entry, make a HTTP get request to:
+
+http://insider.msg.yahoo.com/ycontent/?addab2=0&fname=<fname>&lname=<lname>&yid=<yahoo_id>&nname=<nname>....
+
+The following fields are accepted:
+
+fname - First Name
+lname - Last Name
+nname - Nick Name
+email - Email
+hphone - Home Phone
+wphone - Work Phone
+mphone - Mobile Phone
+pp - Preferred Phone (0, 1, 2)
+more to come...
+
+Of these, at least fname, lname or company name must be set (any one of them).
+yid must also obviously be set.
+
+nname may not contain spaces, commas, or single/double quotes
+
+
+The response to this request is the YAB entry in the above XML format.
+
+

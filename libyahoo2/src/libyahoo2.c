@@ -473,9 +473,11 @@ static void yahoo_packet_free(struct yahoo_packet *pkt)
 {
 	while (pkt->hash) {
 		struct yahoo_pair *pair = pkt->hash->data;
+		YList * l = pkt->hash;
 		FREE(pair->value);
 		FREE(pair);
 		pkt->hash = y_list_remove_link(pkt->hash, pkt->hash);
+		FREE(l);
 	}
 	FREE(pkt);
 }
@@ -588,7 +590,7 @@ static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt
 			stat = atoi(pair->value);
 		if (pair->key == 14)
 			game = pair->value;
-		if (pair->key == 16) {
+		if (pair->key == 16) {	/* status == -1 */
 			NOTICE((pair->value));
 			return;
 		}
@@ -784,25 +786,8 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 
 	if (pkt->service == YAHOO_SERVICE_SYSMESSAGE) {
 		YAHOO_CALLBACK(ext_yahoo_system_message)(yd->client_id, msg);
-	} else if (pkt->status <= 1 || pkt->status == 5) {
-		char *m;
-		int i, j;
-		//strip_linefeed(msg);
-		m = msg;
-		for (i = 0, j = 0; m[i]; i++) {
-			if (m[i] == 033) {
-				while (m[i] && (m[i] != 'm'))
-					i++;
-				if (!m[i])
-					i--;
-				continue;
-			}
-			msg[j++] = m[i];
-		}
-		msg[j] = 0;
-		YAHOO_CALLBACK(ext_yahoo_got_im)(yd->client_id, from, msg, tm, (int)pkt->status);
-	} else if (pkt->status == 2) {
-		YAHOO_CALLBACK(ext_yahoo_got_im)(yd->client_id, from, NULL, tm, 2);
+	} else if (pkt->status <= 2 || pkt->status == 5) {
+		YAHOO_CALLBACK(ext_yahoo_got_im)(yd->client_id, from, msg, tm, pkt->status);
 	} else if (pkt->status == 0xffffffff) {
 		YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
 	}

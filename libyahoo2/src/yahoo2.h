@@ -32,6 +32,7 @@
 #if HAVE_GLIB
 # include <glib.h>
 # define snprintf g_snprintf
+# define vsnprintf g_vsnprintf
 #endif
 
 #ifdef __cplusplus
@@ -82,7 +83,7 @@ void yahoo_ignore_buddy(int id, const char *who, int unignore);
 void yahoo_change_buddy_group(int id, const char *who, const char *old_group, const char *new_group);
 
 void yahoo_conference_invite(int id, YList *who, const char *room, const char *msg);
-void yahoo_conference_addinvite(int id, const char *who, const char *room, const char *msg);
+void yahoo_conference_addinvite(int id, const char *who, const char *room, const YList * members, const char *msg);
 void yahoo_conference_decline(int id, YList *who, const char *room, const char *msg);
 void yahoo_conference_message(int id, YList *who, const char *room, const char *msg);
 void yahoo_conference_logon(int id, YList *who, const char *room);

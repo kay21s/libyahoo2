@@ -686,6 +686,9 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 
 		if (pair->key == 13)
 			;
+		if (pair->key == 16)		// error
+			msg = pair->value;
+
 		if (pair->key == 1)		// my id
 			id = pair->value;
 		if (pair->key == 3)		// message sender
@@ -702,6 +705,11 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 
 	switch(pkt->service) {
 	case YAHOO_SERVICE_CONFINVITE:
+		if(members)
+			YAHOO_CALLBACK(ext_yahoo_got_conf_invite)(yd->client_id, host, room, msg, members);
+		else
+			YAHOO_CALLBACK(ext_yahoo_error)(yd->client_id, msg, 0);
+		break;
 	case YAHOO_SERVICE_CONFADDINVITE:
 		YAHOO_CALLBACK(ext_yahoo_got_conf_invite)(yd->client_id, host, room, msg, members);
 		break;
@@ -1779,7 +1787,7 @@ void yahoo_change_buddy_group(int id, const char *who, const char *old_group, co
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_addinvite(int id, const char *who, const char *room, const char *msg)
+void yahoo_conference_addinvite(int id, const char *who, const char *room, const YList * members, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1794,6 +1802,11 @@ void yahoo_conference_addinvite(int id, const char *who, const char *room, const
 	yahoo_packet_hash(pkt, 57, room);
 	yahoo_packet_hash(pkt, 58, msg);
 	yahoo_packet_hash(pkt, 13, "0");
+	for(; members; members = members->next) {
+		yahoo_packet_hash(pkt, 52, (char *)members->data);
+		yahoo_packet_hash(pkt, 53, (char *)members->data);
+	}
+	// 52, 53 -> other members?
 
 	yahoo_send_packet(yd, pkt, 0);
 

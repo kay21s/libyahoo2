@@ -88,12 +88,13 @@ nor for IMvironments.
 <p>libyahoo2 can use glib version 1.2 or version 2 if you have them and
 want them.</p>
 
-<h2>Acknowledgements</h2>
-<p>
-libyahoo2 is used in <a href="http://www.everybuddy.com/">Everybuddy</a>.
-Thanks to everyone at everybuddy for testing the module and suggesting
-fixes.
-</p>
+<h2>Authors</h2>
+<table>
+<tr><td>Philip S Tellis</td> <td>philip . tellis AT gmx . net</td> <td>Maintainer</td></tr>
+<tr><td>Steve McAndrewSmith</td> <td>steve AT finalge . org</td> <td>Code cleanups</td></tr>
+<tr><td>Mik Sun</td> <td>miksun AT users . sourceforge . net</td> <td>Webcam Support</td></tr>
+<tr><td>Wayne Parrot</td> <td>wayne_p AT pacific . net . au</td> <td>Yahoo Chat</td></tr>
+</table>
 
 <p>
 libyahoo2 is derivative of the yahoo module from <a 

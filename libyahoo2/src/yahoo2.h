@@ -39,22 +39,22 @@ void yahoo_get_list(int id);
 void yahoo_keepalive(int id);
 
 void yahoo_send_im(int id, const char *who, const char *what);
-void yahoo_send_typing(int id, const char *who, gboolean typ);
+void yahoo_send_typing(int id, const char *who, int typ);
 
-void yahoo_set_away(int id, enum yahoo_status state, const char *msg, gboolean away);
+void yahoo_set_away(int id, enum yahoo_status state, const char *msg, int away);
 
 void yahoo_add_buddy(int id, const char *who, const char *group);
 void yahoo_remove_buddy(int id, const char *who, const char *group);
 void yahoo_reject_buddy(int id, const char *who, const char *msg);
-void yahoo_ignore_buddy(int id, const char *who, gboolean unignore);
+void yahoo_ignore_buddy(int id, const char *who, int unignore);
 void yahoo_change_buddy_group(int id, const char *who, const char *old_group, const char *new_group);
 
-void yahoo_conference_invite(int id, GList *who, const char *room, const char *msg);
+void yahoo_conference_invite(int id, YList *who, const char *room, const char *msg);
 void yahoo_conference_addinvite(int id, const char *who, const char *room, const char *msg);
-void yahoo_conference_decline(int id, GList *who, const char *room, const char *msg);
-void yahoo_conference_message(int id, GList *who, const char *room, const char *msg);
-void yahoo_conference_logon(int id, GList *who, const char *room);
-void yahoo_conference_logoff(int id, GList *who, const char *room);
+void yahoo_conference_decline(int id, YList *who, const char *room, const char *msg);
+void yahoo_conference_message(int id, YList *who, const char *room, const char *msg);
+void yahoo_conference_logon(int id, YList *who, const char *room);
+void yahoo_conference_logoff(int id, YList *who, const char *room);
 
 int  yahoo_send_file(int id, const char *who, const char *msg, const char *name, long size);
 
@@ -62,9 +62,9 @@ int  yahoo_read_ready(int id, int fd);
 int  yahoo_write_ready(int id, int fd);
 
 enum yahoo_status yahoo_current_status(int id);
-const GList * yahoo_get_buddylist(int id);
-const GList * yahoo_get_ignorelist(int id);
-const GList * yahoo_get_identities(int id);
+const YList * yahoo_get_buddylist(int id);
+const YList * yahoo_get_ignorelist(int id);
+const YList * yahoo_get_identities(int id);
 const char  * yahoo_get_cookie(int id, const char *which);
 
 int yahoo_get_url_handle(int id, const char *url, char *filename, unsigned long *filesize);

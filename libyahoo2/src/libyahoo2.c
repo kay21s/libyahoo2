@@ -41,16 +41,35 @@
  *
  */
 
-#include <glib.h>
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
+#include <stdio.h>
+
+#if STDC_HEADERS
+# include <string.h>
+#else
+# if !HAVE_STRCHR
+#  define strchr index
+#  define strrchr rindex
+# endif
+char *strchr (), *strrchr ();
+# if !HAVE_MEMCPY
+#  define memcpy(d, s, n) bcopy ((s), (d), (n))
+#  define memmove(d, s, n) bcopy ((s), (d), (n))
+# endif
+#endif
+
 #include <stdlib.h>
 #include <ctype.h>
 #include "md5.h"
 #include "yahoo2.h"
 #include "yahoo_connections.h"
 #include "yahoo_httplib.h"
+#include "yahoo_util.h"
 
 #include "yahoo2_callbacks.h"
 #include "yahoo_debug.h"
@@ -115,10 +134,10 @@ struct yahoo_pair {
 };
 
 struct yahoo_packet {
-	guint16 service;
-	guint32 status;
-	guint32 id;
-	GSList *hash;
+	unsigned short int service;
+	unsigned int status;
+	unsigned int id;
+	YList *hash;
 };
 
 static int last_id=0;
@@ -137,7 +156,7 @@ int yahoo_set_log_level(enum yahoo_log_level level)
 /* Free a buddy list */
 static void yahoo_free_buddies(struct yahoo_data *yd)
 {
-	GList *l;
+	YList *l;
 
 	for(l = yd->buddies; l; l = l->next)
 	{
@@ -145,46 +164,46 @@ static void yahoo_free_buddies(struct yahoo_data *yd)
 		if(!bud)
 			continue;
 
-		g_free(bud->group);
-		g_free(bud->id);
-		g_free(bud->real_name);
-		g_free(bud);
+		FREE(bud->group);
+		FREE(bud->id);
+		FREE(bud->real_name);
+		FREE(bud);
 		l->data = bud = NULL;
 	}
 
-	g_list_free(yd->buddies);
+	y_list_free(yd->buddies);
 	yd->buddies=NULL;
 }
 
 /* Free an identities list */
 static void yahoo_free_identities(struct yahoo_data *yd)
 {
-	GList * l;
+	YList * l;
 	for (l = yd->identities; l; l=l->next) {
-		g_free(l->data);
+		FREE(l->data);
 		l->data=NULL;
 	}
 
-	g_list_free(yd->identities);
+	y_list_free(yd->identities);
 	yd->identities=NULL;
 }
 
 static void yahoo_free_data(struct yahoo_data *yd)
 {
-	g_free(yd->user);
-	g_free(yd->password);
-	g_free(yd->cookie_y);
-	g_free(yd->cookie_t);
-	g_free(yd->login_cookie);
-	g_free(yd->login_id);
+	FREE(yd->user);
+	FREE(yd->password);
+	FREE(yd->cookie_y);
+	FREE(yd->cookie_t);
+	FREE(yd->login_cookie);
+	FREE(yd->login_id);
 
-	g_free(yd->rxqueue);
+	FREE(yd->rxqueue);
 	yd->rxlen = 0;
 
 	yahoo_free_buddies(yd);
 	yahoo_free_identities(yd);
 
-	g_free(yd);
+	FREE(yd);
 }
 
 #define YAHOO_PACKET_HDRLEN (4 + 2 + 2 + 2 + 2 + 4 + 4)
@@ -192,7 +211,7 @@ static void yahoo_free_data(struct yahoo_data *yd)
 static struct yahoo_packet *yahoo_packet_new(enum yahoo_service service, 
 		enum yahoo_status status, int id)
 {
-	struct yahoo_packet *pkt = g_new0(struct yahoo_packet, 1);
+	struct yahoo_packet *pkt = y_new0(struct yahoo_packet, 1);
 
 	pkt->service = service;
 	pkt->status = status;
@@ -203,15 +222,15 @@ static struct yahoo_packet *yahoo_packet_new(enum yahoo_service service,
 
 static void yahoo_packet_hash(struct yahoo_packet *pkt, int key, const char *value)
 {
-	struct yahoo_pair *pair = g_new0(struct yahoo_pair, 1);
+	struct yahoo_pair *pair = y_new0(struct yahoo_pair, 1);
 	pair->key = key;
-	pair->value = g_strdup(value);
-	pkt->hash = g_slist_append(pkt->hash, pair);
+	pair->value = strdup(value);
+	pkt->hash = y_list_append(pkt->hash, pair);
 }
 
 static int yahoo_packet_length(struct yahoo_packet *pkt)
 {
-	GSList *l;
+	YList *l;
 
 	int len = 0;
 
@@ -246,7 +265,7 @@ static int yahoo_packet_length(struct yahoo_packet *pkt)
 		(((*((buf)+2))<< 8)&0x0000ff00) + \
 		(((*((buf)+3)    )&0x000000ff)))
 
-static void yahoo_packet_read(struct yahoo_packet *pkt, guchar *data, int len)
+static void yahoo_packet_read(struct yahoo_packet *pkt, unsigned char *data, int len)
 {
 	int pos = 0;
 
@@ -255,7 +274,7 @@ static void yahoo_packet_read(struct yahoo_packet *pkt, guchar *data, int len)
 		int accept;
 		int x;
 
-		struct yahoo_pair *pair = g_new0(struct yahoo_pair, 1);
+		struct yahoo_pair *pair = y_new0(struct yahoo_pair, 1);
 
 		x = 0;
 		while (pos + 1 < len) {
@@ -269,7 +288,7 @@ static void yahoo_packet_read(struct yahoo_packet *pkt, guchar *data, int len)
 		accept = x; 
 		/* if x is 0 there was no key, so don't accept it */
 		if (accept)
-			value = g_malloc(len - pos + 1);
+			value = malloc(len - pos + 1);
 		x = 0;
 		while (pos + 1 < len) {
 			if (data[pos] == 0xc0 && data[pos + 1] == 0x80)
@@ -281,27 +300,27 @@ static void yahoo_packet_read(struct yahoo_packet *pkt, guchar *data, int len)
 			value[x] = 0;
 		pos += 2;
 		if (accept) {
-			pair->value = g_strdup(value);
-			g_free(value);
-			pkt->hash = g_slist_append(pkt->hash, pair);
+			pair->value = strdup(value);
+			FREE(value);
+			pkt->hash = y_list_append(pkt->hash, pair);
 			DEBUG_MSG(("Key: %d  \tValue: %s", 
 					pair->key, pair->value));
 		} else {
-			g_free(pair);
+			FREE(pair);
 		}
 	}
 }
 
-static void yahoo_packet_write(struct yahoo_packet *pkt, guchar *data)
+static void yahoo_packet_write(struct yahoo_packet *pkt, unsigned char *data)
 {
-	GSList *l;
+	YList *l;
 	int pos = 0;
 
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
-		guchar buf[100];
+		unsigned char buf[100];
 
-		g_snprintf(buf, sizeof(buf), "%d", pair->key);
+		snprintf(buf, sizeof(buf), "%d", pair->key);
 		strcpy(data + pos, buf);
 		pos += strlen(buf);
 		data[pos++] = 0xc0;
@@ -316,7 +335,7 @@ static void yahoo_packet_write(struct yahoo_packet *pkt, guchar *data)
 
 static void yahoo_dump_unhandled(struct yahoo_packet *pkt)
 {
-	GSList *l;
+	YList *l;
 
 	NOTICE(("Service: 0x%02x\tStatus: %d", pkt->service, pkt->status));
 	for (l = pkt->hash; l; l = l->next) {
@@ -326,7 +345,7 @@ static void yahoo_dump_unhandled(struct yahoo_packet *pkt)
 }
 
 
-static void yahoo_packet_dump(guchar *data, int len)
+static void yahoo_packet_dump(unsigned char *data, int len)
 {
 	if(log_level >= YAHOO_LOG_DEBUG) {
 		int i;
@@ -388,13 +407,13 @@ static int yahoo_send_packet(struct yahoo_data *yd, struct yahoo_packet *pkt, in
 	int len = YAHOO_PACKET_HDRLEN + pktlen;
 	int ret;
 
-	guchar *data;
+	unsigned char *data;
 	int pos = 0;
 
 	if (yd->fd < 0)
 		return -1;
 
-	data = g_malloc0(len + 1);
+	data = y_new0(unsigned char, len + 1);
 
 	memcpy(data + pos, "YMSG", 4); pos += 4;
 	pos += yahoo_put16(data + pos, 0x0900);
@@ -413,7 +432,7 @@ redo_write:
 		goto redo_write;
 	LOG(("wrote packet"));
 
-	g_free(data);
+	FREE(data);
 
 	return ret;
 }
@@ -422,65 +441,65 @@ static void yahoo_packet_free(struct yahoo_packet *pkt)
 {
 	while (pkt->hash) {
 		struct yahoo_pair *pair = pkt->hash->data;
-		g_free(pair->value);
-		g_free(pair);
-		pkt->hash = g_slist_remove_link(pkt->hash, pkt->hash);
+		FREE(pair->value);
+		FREE(pair);
+		pkt->hash = y_list_remove_link(pkt->hash, pkt->hash);
 	}
-	g_free(pkt);
+	FREE(pkt);
 }
 
-static gint is_same_bud(gconstpointer a, gconstpointer b) {
+static int is_same_bud(const void * a, const void * b) {
 	const struct yahoo_buddy *subject = a;
 	const struct yahoo_buddy *object = b;
 
 	return strcmp(subject->id, object->id);
 }
 
-static GList * bud_str2list(GString *rawlist)
+static YList * bud_str2list(char *rawlist)
 {
-	GList * l = NULL;
+	YList * l = NULL;
 
 	char **lines;
 	char **split;
 	char **buddies;
 	char **tmp, **bud;
 
-	lines = g_strsplit(rawlist->str, "\n", -1);
+	lines = y_strsplit(rawlist, "\n", -1);
 	for (tmp = lines; *tmp; tmp++) {
 		struct yahoo_buddy *newbud;
 
-		split = g_strsplit(*tmp, ":", 2);
+		split = y_strsplit(*tmp, ":", 2);
 		if (!split)
 			continue;
 		if (!split[0] || !split[1]) {
-			g_strfreev(split);
+			y_strfreev(split);
 			continue;
 		}
-		buddies = g_strsplit(split[1], ",", -1);
+		buddies = y_strsplit(split[1], ",", -1);
 
 		for (bud = buddies; bud && *bud; bud++) {
-			newbud = g_new0(struct yahoo_buddy, 1);
-			newbud->id = g_strdup(*bud);
-			newbud->group = g_strdup(split[0]);
+			newbud = y_new0(struct yahoo_buddy, 1);
+			newbud->id = strdup(*bud);
+			newbud->group = strdup(split[0]);
 
-			if(g_list_find_custom(l, newbud, is_same_bud)) {
-				g_free(newbud->id);
-				g_free(newbud->group);
-				g_free(newbud);
+			if(y_list_find_custom(l, newbud, is_same_bud)) {
+				FREE(newbud->id);
+				FREE(newbud->group);
+				FREE(newbud);
 				continue;
 			}
 
 			newbud->real_name = NULL;
 
-			l = g_list_append(l, newbud);
+			l = y_list_append(l, newbud);
 
 			NOTICE(("Added buddy %s to group %s", newbud->id, newbud->group));
 		}
 
-		g_strfreev(buddies);
-		g_strfreev(split);
+		y_strfreev(buddies);
+		y_strfreev(split);
 	}
-	g_strfreev(lines);
+	y_strfreev(lines);
 
 	return l;
 }
@@ -488,14 +507,14 @@ static GList * bud_str2list(GString *rawlist)
 static char * getcookie(char *rawcookie)
 {
 	char * cookie=NULL;
-	char * tmpcookie = g_strdup(rawcookie+2);
+	char * tmpcookie = strdup(rawcookie+2);
 	char * cookieend = strchr(tmpcookie, ';');
 
 	if(cookieend)
 		*cookieend = '\0';
 
-	cookie = g_strdup(tmpcookie);
-	g_free(tmpcookie);
+	cookie = strdup(tmpcookie);
+	FREE(tmpcookie);
 	cookieend=NULL;
 
 	return cookie;
@@ -509,12 +528,12 @@ static char * getlcookie(char *cookie)
 
 	tmpend = strstr(cookie, "n=");
 	if(tmpend) {
-		tmp = g_strdup(tmpend+2);
+		tmp = strdup(tmpend+2);
 		tmpend = strchr(tmp, '&');
 		if(tmpend)
 			*tmpend='\0';
-		login_cookie = g_strdup(tmp);
-		g_free(tmp);
+		login_cookie = strdup(tmp);
+		FREE(tmp);
 	}
 
 	return login_cookie;
@@ -526,7 +545,7 @@ static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt
 	char *from = NULL;
 	char *stat = NULL;
 	char *game = NULL;
-	GSList *l;
+	YList *l;
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 		if (pair->key == 4)
@@ -539,9 +558,9 @@ static void yahoo_process_notify(struct yahoo_data *yd, struct yahoo_packet *pkt
 			game = pair->value;
 	}
 	
-	if (!g_strncasecmp(msg, "TYPING", strlen("TYPING"))) 
+	if (!strncasecmp(msg, "TYPING", strlen("TYPING"))) 
 		ext_yahoo_typing_notify(yd->client_id, from, *stat?1:0);
-	else if (!g_strncasecmp(msg, "GAME", strlen("GAME"))) 
+	else if (!strncasecmp(msg, "GAME", strlen("GAME"))) 
 		ext_yahoo_game_notify(yd->client_id, from, *stat?1:0);
 }
 
@@ -558,7 +577,7 @@ static void yahoo_process_filetransfer(struct yahoo_data *yd, struct yahoo_packe
 	char *filename=NULL;
 	unsigned long filesize=0L;
 
-	GSList *l;
+	YList *l;
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 		if (pair->key == 4)
@@ -607,8 +626,8 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 	char *who = NULL;
 	char *room = NULL;
 	char *id = NULL;
-	GList *members = NULL;
-	GSList *l;
+	YList *members = NULL;
+	YList *l;
 	
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
@@ -616,7 +635,7 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 			host = pair->value;
 		
 		if (pair->key == 52) {		// invite
-			members = g_list_append(members, g_strdup(pair->value));
+			members = y_list_append(members, strdup(pair->value));
 		}
 		if (pair->key == 53)		// logon
 			who = pair->value;
@@ -645,7 +664,7 @@ static void yahoo_process_conference(struct yahoo_data *yd, struct yahoo_packet 
 		return;
 
 	if(host) {
-		members = g_list_append(members, g_strdup(host));
+		members = y_list_append(members, strdup(host));
 	}
 	// invite, decline, join, left, message -> status == 1
 
@@ -678,7 +697,7 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 	char *msg = NULL;
 	char *from = NULL;
 	long tm = 0L;
-	GSList *l;
+	YList *l;
 	
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
@@ -724,7 +743,7 @@ static void yahoo_process_message(struct yahoo_data *yd, struct yahoo_packet *pk
 
 static void yahoo_process_status(struct yahoo_data *yd, struct yahoo_packet *pkt)
 {
-	GSList *l;
+	YList *l;
 	char *name = NULL;
 	int state = 0;
 	int away = 0;
@@ -800,7 +819,7 @@ static void yahoo_process_status(struct yahoo_data *yd, struct yahoo_packet *pkt
 
 static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 {
-	GSList *l;
+	YList *l;
 
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
@@ -808,47 +827,45 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 		switch(pair->key) {
 		case 87: /* buddies */
 			if(!yd->rawbuddylist)
-				yd->rawbuddylist = g_string_new(pair->value);
+				yd->rawbuddylist = strdup(pair->value);
 			else {
-				g_string_append(yd->rawbuddylist, pair->value);
+				y_string_append(yd->rawbuddylist, pair->value);
 			}
 			break;
 
 		case 88: /* ignore list */
 			if(!yd->ignorelist)
-				yd->ignorelist = g_string_new("Ignore:");
-			g_string_append(yd->ignorelist, pair->value);
+				yd->ignorelist = strdup("Ignore:");
+			y_string_append(yd->ignorelist, pair->value);
 			break;
 
 		case 89: /* me */
 			break;
 		case 59: /* cookies add C cookie */
-			if(yd->ignorelist && yd->ignorelist->str) {
+			if(yd->ignorelist) {
 				yd->ignore = bud_str2list(yd->ignorelist);
-				g_string_free(yd->ignorelist, TRUE);
-				yd->ignorelist = NULL;
+				FREE(yd->ignorelist);
 				ext_yahoo_got_ignore(yd->client_id, yd->ignore);
 			}
-			if(yd->rawbuddylist && yd->rawbuddylist->str) {
+			if(yd->rawbuddylist) {
 				yd->buddies = bud_str2list(yd->rawbuddylist);
-				g_string_free(yd->rawbuddylist, TRUE);
-				yd->rawbuddylist = NULL;
+				FREE(yd->rawbuddylist);
 				ext_yahoo_got_buddies(yd->client_id, yd->buddies);
 			}
 
 			if(pair->value[0]=='Y') {
-				g_free(yd->cookie_y);
-				g_free(yd->login_cookie);
+				FREE(yd->cookie_y);
+				FREE(yd->login_cookie);
 
 				yd->cookie_y = getcookie(pair->value);
 				yd->login_cookie = getlcookie(yd->cookie_y);
 
 			} else if(pair->value[0]=='T') {
-				g_free(yd->cookie_t);
+				FREE(yd->cookie_t);
 				yd->cookie_t = getcookie(pair->value);
 
 			} else if(pair->value[0]=='C') {
-				g_free(yd->cookie_c);
+				FREE(yd->cookie_c);
 				yd->cookie_c = getcookie(pair->value);
 			} 
 
@@ -866,7 +883,7 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 {
 	char *seed = NULL;
 	char *sn   = NULL;
-	GSList *l;
+	YList *l;
 	
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
@@ -897,17 +914,17 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	md5_byte_t result[16];
 	md5_state_t ctx;
 	char *crypt_result;
-	char *password_hash = g_malloc(25);
-	char *crypt_hash = g_malloc(25);
-	char *hash_string_p = g_malloc(50 + strlen(sn));
-	char *hash_string_c = g_malloc(50 + strlen(sn));
+	char *password_hash = malloc(25);
+	char *crypt_hash = malloc(25);
+	char *hash_string_p = malloc(50 + strlen(sn));
+	char *hash_string_c = malloc(50 + strlen(sn));
 	
 	char checksum;
 	
 	int sv;
 	
-	char *result6 = g_malloc(25);
-	char *result96 = g_malloc(25);
+	char *result6 = malloc(25);
+	char *result96 = malloc(25);
 
 	sv = seed[15];
 	sv = sv % 8;
@@ -926,37 +943,37 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	switch (sv%5) {
 	case 0:
 		checksum = seed[seed[7] % 16];
-		g_snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf(hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, password_hash, yd->user, seed);
-		g_snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf(hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, crypt_hash, yd->user, seed);
 		break;
 	case 1:
 		checksum = seed[seed[9] % 16];
-		g_snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf(hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, seed, password_hash);
-		g_snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf(hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, seed, crypt_hash);
 		break;
 	case 2:
 		checksum = seed[seed[15] % 16];
-		g_snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf(hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, seed, password_hash, yd->user);
-		g_snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf(hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, seed, crypt_hash, yd->user);
 		break;
 	case 3:
 		checksum = seed[seed[1] % 16];
-		g_snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf(hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, password_hash, seed);
-		g_snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf(hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, yd->user, crypt_hash, seed);
 		break;
 	case 4:
 		checksum = seed[seed[3] % 16];
-		g_snprintf(hash_string_p, strlen(sn) + 50,
+		snprintf(hash_string_p, strlen(sn) + 50,
 			"%c%s%s%s", checksum, password_hash, seed, yd->user);
-		g_snprintf(hash_string_c, strlen(sn) + 50,
+		snprintf(hash_string_c, strlen(sn) + 50,
 			"%c%s%s%s", checksum, crypt_hash, seed, yd->user);
 		break;
 	}
@@ -979,10 +996,10 @@ static void yahoo_process_auth(struct yahoo_data *yd, struct yahoo_packet *pkt)
 		
 	yahoo_send_packet(yd, pack, 0);
 		
-	g_free(password_hash);
-	g_free(crypt_hash);
-	g_free(hash_string_p);
-	g_free(hash_string_c);
+	FREE(password_hash);
+	FREE(crypt_hash);
+	FREE(hash_string_p);
+	FREE(hash_string_c);
 
 	yahoo_packet_free(pack);
 
@@ -996,7 +1013,7 @@ static void yahoo_process_auth_resp(struct yahoo_data *yd, struct yahoo_packet *
 	char *url=NULL;
 	int  login_status=0;
 
-	GSList *l;
+	YList *l;
 
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
@@ -1022,7 +1039,7 @@ static void yahoo_process_mail(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	char *email = NULL;
 	char *subj = NULL;
 	int count = 0;
-	GSList *l;
+	YList *l;
 
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
@@ -1039,9 +1056,9 @@ static void yahoo_process_mail(struct yahoo_data *yd, struct yahoo_packet *pkt)
 	}
 
 	if (who && email && subj) {
-		char *from = g_strdup_printf("%s (%s)", who, email);
+		char from[1024];
+		snprintf(from, sizeof(from), "%s (%s)", who, email);
 		ext_yahoo_mail_notify(yd->client_id, from, subj, count);
-		g_free(from);
 	} else 
 		ext_yahoo_mail_notify(yd->client_id, NULL, NULL, count);
 }
@@ -1056,7 +1073,7 @@ static void yahoo_process_contact(struct yahoo_data *yd, struct yahoo_packet *pk
 	int online = FALSE;
 	int away = 0;
 
-	GSList *l;
+	YList *l;
 
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
@@ -1093,7 +1110,7 @@ static void yahoo_process_buddyadd(struct yahoo_data *yd, struct yahoo_packet *p
 
 	struct yahoo_buddy *bud=NULL;
 
-	GSList *l;
+	YList *l;
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 		if (pair->key == 1)
@@ -1113,12 +1130,12 @@ static void yahoo_process_buddyadd(struct yahoo_data *yd, struct yahoo_packet *p
 	if(!where)
 		where = "Unknown";
 
-	bud = g_new0(struct yahoo_buddy, 1);
-	bud->id = g_strdup(who);
-	bud->group = g_strdup(where);
+	bud = y_new0(struct yahoo_buddy, 1);
+	bud->id = strdup(who);
+	bud->group = strdup(where);
 	bud->real_name = NULL;
 
-	yd->buddies = g_list_append(yd->buddies, bud);
+	yd->buddies = y_list_append(yd->buddies, bud);
 
 /*	ext_yahoo_status_changed(yd->client_id, who, status, NULL, (status==YAHOO_STATUS_AVAILABLE?0:1)); */
 }
@@ -1131,9 +1148,9 @@ static void yahoo_process_buddydel(struct yahoo_data *yd, struct yahoo_packet *p
 	char *me = NULL;
 	struct yahoo_buddy *bud;
 
-	GList *buddy;
+	YList *buddy;
 
-	GSList *l;
+	YList *l;
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 		if (pair->key == 1)
@@ -1146,24 +1163,24 @@ static void yahoo_process_buddydel(struct yahoo_data *yd, struct yahoo_packet *p
 			unk_66 = strtol(pair->value, NULL, 10);
 	}
 	
-	bud = g_new0(struct yahoo_buddy, 1);
-	bud->id = g_strdup(who);
-	bud->group = g_strdup(where);
+	bud = y_new0(struct yahoo_buddy, 1);
+	bud->id = strdup(who);
+	bud->group = strdup(where);
 
-	buddy = g_list_find_custom(yd->buddies, bud, is_same_bud);
+	buddy = y_list_find_custom(yd->buddies, bud, is_same_bud);
 
-	g_free(bud->id);
-	g_free(bud->group);
-	g_free(bud);
+	FREE(bud->id);
+	FREE(bud->group);
+	FREE(bud);
 
 	if(buddy) {
 		bud = buddy->data;
-		yd->buddies = g_list_remove_link(yd->buddies, buddy);
+		yd->buddies = y_list_remove_link(yd->buddies, buddy);
 
-		g_free(bud->id);
-		g_free(bud->group);
-		g_free(bud->real_name);
-		g_free(bud);
+		FREE(bud->id);
+		FREE(bud->group);
+		FREE(bud->real_name);
+		FREE(bud);
 
 		bud=NULL;
 	}
@@ -1176,7 +1193,7 @@ static void yahoo_process_ignore(struct yahoo_data *yd, struct yahoo_packet *pkt
 	char *me = NULL;
 	int  un_ignore = 0;
 
-	GSList *l;
+	YList *l;
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 		if (pair->key == 0)
@@ -1328,12 +1345,12 @@ static struct yahoo_packet * yahoo_getdata(struct yahoo_data * yd)
 
 	yd->rxlen -= YAHOO_PACKET_HDRLEN + pktlen;
 	if (yd->rxlen) {
-		char *tmp = g_memdup(yd->rxqueue + YAHOO_PACKET_HDRLEN 
+		char *tmp = y_memdup(yd->rxqueue + YAHOO_PACKET_HDRLEN 
 				+ pktlen, yd->rxlen);
-		g_free(yd->rxqueue);
+		FREE(yd->rxqueue);
 		yd->rxqueue = tmp;
 	} else {
-		g_free(yd->rxqueue);
+		FREE(yd->rxqueue);
 		yd->rxqueue = NULL;
 	}
 
@@ -1380,7 +1397,7 @@ redo:
 		return -1;
 	}
 
-	yd->rxqueue = g_realloc(yd->rxqueue, len + yd->rxlen);
+	yd->rxqueue = realloc(yd->rxqueue, len + yd->rxlen);
 	memcpy(yd->rxqueue + yd->rxlen, buf, len);
 	yd->rxlen += len;
 
@@ -1405,11 +1422,11 @@ int yahoo_login(const char *username, const char *password, int initial)
 	if(fd <= 0)
 		return fd;
 
-	yd = g_new0(struct yahoo_data, 1);
+	yd = y_new0(struct yahoo_data, 1);
 	yd->fd = fd;
 
-	yd->user = g_strdup(username);
-	yd->password = g_strdup(password);
+	yd->user = strdup(username);
+	yd->password = strdup(password);
 
 	yd->initial_status = initial;
 	yd->current_status = -1;
@@ -1448,7 +1465,7 @@ static void yahoo_close(struct yahoo_data *yd)
 	if (yd->fd >= 0)
 		close(yd->fd);
 	if (yd->rxqueue)
-		g_free(yd->rxqueue);
+		FREE(yd->rxqueue);
 	yd->rxlen = 0;
 	yahoo_free_data(yd);
 }
@@ -1472,7 +1489,7 @@ void yahoo_send_im(int id, const char *who, const char *what)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_send_typing(int id, const char *who, gboolean typ)
+void yahoo_send_typing(int id, const char *who, int typ)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1492,7 +1509,7 @@ void yahoo_send_typing(int id, const char *who, gboolean typ)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_set_away(int id, enum yahoo_status state, const char *msg, gboolean away)
+void yahoo_set_away(int id, enum yahoo_status state, const char *msg, int away)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt = NULL;
@@ -1513,7 +1530,7 @@ void yahoo_set_away(int id, enum yahoo_status state, const char *msg, gboolean a
 	else
 		service = YAHOO_SERVICE_ISAWAY;
 	pkt = yahoo_packet_new(service, yd->current_status, yd->id);
-	g_snprintf(s, sizeof(s), "%d", yd->current_status);
+	snprintf(s, sizeof(s), "%d", yd->current_status);
 	yahoo_packet_hash(pkt, 10, s);
 	if (yd->current_status == YAHOO_STATUS_CUSTOM) {
 		yahoo_packet_hash(pkt, 19, msg);
@@ -1645,7 +1662,7 @@ void yahoo_reject_buddy(int id, const char *who, const char *msg)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_ignore_buddy(int id, const char *who, gboolean unignore)
+void yahoo_ignore_buddy(int id, const char *who, int unignore)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1716,7 +1733,7 @@ void yahoo_conference_addinvite(int id, const char *who, const char *room, const
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_invite(int id, GList *who, const char *room, const char *msg)
+void yahoo_conference_invite(int id, YList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1740,7 +1757,7 @@ void yahoo_conference_invite(int id, GList *who, const char *room, const char *m
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_logon(int id, GList *who, const char *room)
+void yahoo_conference_logon(int id, YList *who, const char *room)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1761,7 +1778,7 @@ void yahoo_conference_logon(int id, GList *who, const char *room)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_decline(int id, GList *who, const char *room, const char *msg)
+void yahoo_conference_decline(int id, YList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1783,7 +1800,7 @@ void yahoo_conference_decline(int id, GList *who, const char *room, const char *
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_logoff(int id, GList *who, const char *room)
+void yahoo_conference_logoff(int id, YList *who, const char *room)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1804,7 +1821,7 @@ void yahoo_conference_logoff(int id, GList *who, const char *room)
 	yahoo_packet_free(pkt);
 }
 
-void yahoo_conference_message(int id, GList *who, const char *room, const char *msg)
+void yahoo_conference_message(int id, YList *who, const char *room, const char *msg)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	struct yahoo_packet *pkt;
@@ -1839,16 +1856,16 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 	if(!yd)
 		return -1;
 
-	nyd = g_new0(struct yahoo_data, 1);
+	nyd = y_new0(struct yahoo_data, 1);
 	nyd->id = yd->id;
 	nyd->client_id = ++last_id;
-	nyd->user = g_strdup(yd->user);
-	nyd->cookie_y = g_strdup(yd->cookie_y);
-	nyd->cookie_t = g_strdup(yd->cookie_t);
+	nyd->user = strdup(yd->user);
+	nyd->cookie_y = strdup(yd->cookie_y);
+	nyd->cookie_t = strdup(yd->cookie_t);
 
 	pkt = yahoo_packet_new(YAHOO_SERVICE_FILETRANSFER, YAHOO_STATUS_AVAILABLE, nyd->id);
 
-	g_snprintf(size_str, sizeof(size_str), "%ld", size);
+	snprintf(size_str, sizeof(size_str), "%ld", size);
 
 	yahoo_packet_hash(pkt, 0, nyd->user);
 	yahoo_packet_hash(pkt, 5, who);
@@ -1858,7 +1875,7 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 
 	content_length = YAHOO_PACKET_HDRLEN + yahoo_packet_length(pkt);
 
-	g_snprintf(url, sizeof(url), "http://%s:%s/notifyft", 
+	snprintf(url, sizeof(url), "http://%s:%s/notifyft", 
 			filetransfer_host, filetransfer_port);
 	nyd->fd = yahoo_http_post(url, nyd, content_length + 4 + size);
 
@@ -1867,7 +1884,7 @@ int yahoo_send_file(int id, const char *who, const char *msg, const char *name, 
 	yahoo_send_packet(nyd, pkt, 8);
 	yahoo_packet_free(pkt);
 
-	g_snprintf(buff, sizeof(buff), "29");
+	snprintf(buff, sizeof(buff), "29");
 	buff[2] = 0xc0;
 	buff[3] = 0x80;
 	
@@ -1896,7 +1913,7 @@ enum yahoo_status yahoo_current_status(int id)
 	return yd->current_status;
 }
 
-const GList * yahoo_get_buddylist(int id)
+const YList * yahoo_get_buddylist(int id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1904,7 +1921,7 @@ const GList * yahoo_get_buddylist(int id)
 	return yd->buddies;
 }
 
-const GList * yahoo_get_ignorelist(int id)
+const YList * yahoo_get_ignorelist(int id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)
@@ -1912,7 +1929,7 @@ const GList * yahoo_get_ignorelist(int id)
 	return yd->ignore;
 }
 
-const GList * yahoo_get_identities(int id)
+const YList * yahoo_get_identities(int id)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	if(!yd)

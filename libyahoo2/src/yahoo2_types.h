@@ -22,11 +22,11 @@
 #ifndef YAHOO2_TYPES_H
 #define YAHOO2_TYPES_H
 
+#include "list.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <glib.h>
 
 enum yahoo_status {
 	YAHOO_STATUS_AVAILABLE = 0,
@@ -100,25 +100,25 @@ struct yahoo_data {
 	char  *cookie_c;
 	char  *login_cookie;
 
-	GList *buddies;
-	GList *ignore;
-	GList *identities;
+	YList *buddies;
+	YList *ignore;
+	YList *identities;
 	char  *login_id;
 
 	int   fd;
 
 	int   current_status;
 	int   initial_status;
-	gboolean logged_in;
+	int   logged_in;
 
 	int id;
 
 	int client_id;
 
-	guchar	*rxqueue;
-	int	rxlen;
-	GString *rawbuddylist;
-	GString *ignorelist;
+	unsigned char	*rxqueue;
+	int   rxlen;
+	char *rawbuddylist;
+	char *ignorelist;
 };
 
 struct yahoo_buddy {

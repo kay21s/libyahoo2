@@ -19,10 +19,27 @@
  *
  */
 
-#include <glib.h>
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
+#if STDC_HEADERS
+# include <string.h>
+#else
+# if !HAVE_STRCHR
+#  define strchr index
+#  define strrchr rindex
+# endif
+char *strchr (), *strrchr ();
+# if !HAVE_MEMCPY
+#  define memcpy(d, s, n) bcopy ((s), (d), (n))
+#  define memmove(d, s, n) bcopy ((s), (d), (n))
+# endif
+#endif
+
 #include <errno.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -30,6 +47,7 @@
 #include "yahoo2_callbacks.h"
 #include "yahoo_httplib.h"
 #include "yahoo_debug.h"
+#include "yahoo_util.h"
 
 extern enum yahoo_log_level log_level;
 
@@ -64,7 +82,7 @@ int yahoo_tcp_readline(char *ptr, int maxlen, int fd)
 	return (n);
 }
 
-static gboolean url_to_host_port_path(const char *url,
+static int url_to_host_port_path(const char *url,
 		char *host, int *port, char *path)
 {
 	char *urlcopy=NULL;
@@ -83,7 +101,7 @@ static gboolean url_to_host_port_path(const char *url,
 	 */
 
 	if(strstr(url, "http://") == url) {
-		urlcopy = g_strdup(url+7);
+		urlcopy = strdup(url+7);
 	} else {
 		WARNING(("Weird url - unknown protocol: %s", url));
 		return 0;
@@ -108,13 +126,12 @@ static gboolean url_to_host_port_path(const char *url,
 
 	strcpy(host, urlcopy);
 	
-	g_free(urlcopy);
-	urlcopy = NULL;
+	FREE(urlcopy);
 
 	return 1;
 }
 
-static gboolean isurlchar(guchar c)
+static int isurlchar(unsigned char c)
 {
 	return (isalnum(c) || '-' == c || '_' == c);
 }
@@ -125,7 +142,7 @@ char *yahoo_urlencode(const char *instr)
 	char *str = NULL;
 	int len = strlen(instr);
 
-	if(!(str = g_new(char, 3*len + 1) ))
+	if(!(str = y_new(char, 3*len + 1) ))
 		return "";
 
 	while(instr[ipos]) {
@@ -134,7 +151,7 @@ char *yahoo_urlencode(const char *instr)
 		if(!instr[ipos])
 			break;
 		
-		g_snprintf(&str[bpos], 3, "%%%.2x", instr[ipos]);
+		snprintf(&str[bpos], 3, "%%%.2x", instr[ipos]);
 		bpos+=3;
 		ipos++;
 	}
@@ -142,7 +159,7 @@ char *yahoo_urlencode(const char *instr)
 
 	//free extra alloc'ed mem.
 	len = strlen(str);
-	str = g_renew(char, str, len+1);
+	str = y_renew(char, str, len+1);
 
 	return (str);
 }
@@ -155,7 +172,7 @@ char *yahoo_urldecode(const char *instr)
 	unsigned dec;
 	int len = strlen(instr);
 
-	if(!(str = g_new(char, len+1) ))
+	if(!(str = y_new(char, len+1) ))
 		return "";
 
 	while(instr[ipos]) {
@@ -178,7 +195,7 @@ char *yahoo_urldecode(const char *instr)
 
 	//free extra alloc'ed mem.
 	len = strlen(str);
-	str = g_renew(char, str, len+1);
+	str = y_renew(char, str, len+1);
 
 	return (str);
 }
@@ -203,7 +220,7 @@ int yahoo_http_post(const char *url, const struct yahoo_data *yd, long content_l
 	if(!url_to_host_port_path(url, host, &port, path))
 		return 0;
 
-	g_snprintf(buff, sizeof(buff), 
+	snprintf(buff, sizeof(buff), 
 			"POST %s HTTP/1.0\n"
 			"Content-length: %ld\n"
 			"User-Agent: Mozilla/4.5 [en] (libyahoo2/1.0)\n"
@@ -227,7 +244,7 @@ int yahoo_http_get(const char *url, const struct yahoo_data *yd)
 	if(!url_to_host_port_path(url, host, &port, path))
 		return 0;
 
-	g_snprintf(buff, sizeof(buff), 
+	snprintf(buff, sizeof(buff), 
 			"GET %s HTTP/1.0\r\n"
 			"Host: %s:%d\r\n"
 			"User-Agent: Mozilla/4.6 (libyahoo/1.0)\r\n"

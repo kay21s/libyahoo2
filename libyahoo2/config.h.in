@@ -9,6 +9,9 @@
 /* Define if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define if your system has a working `malloc' function. */
+#undef HAVE_MALLOC
+
 /* Define if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -20,9 +23,6 @@
 
 /* Define if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
-
-/* Define if you have the `strcasecmp' function. */
-#undef HAVE_STRCASECMP
 
 /* Define if you have the `strchr' function. */
 #undef HAVE_STRCHR

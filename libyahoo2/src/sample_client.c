@@ -203,10 +203,11 @@ void ext_yahoo_contact_added(guint32 id, char *myid, char *who, char *msg)
 	}
 	strcat(buff, "Do you want to allow this [Y/N]?");
 
-	print_message((buff));
+/*	print_message((buff));
 	scanf("%c", &choice);
 	if(choice != 'y' && choice != 'Y')
 		yahoo_reject_buddy(id, who, "Thanks, but no thanks.");
+*/
 }
 
 void ext_yahoo_typing_notify(guint32 id, char *who, int stat)

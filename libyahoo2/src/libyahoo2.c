@@ -2993,16 +2993,15 @@ int yahoo_write_ready(int id, int fd, void *data)
 		free(tx);
 		yid->txqueues = y_list_remove_link(yid->txqueues, yid->txqueues);
 		y_list_free_1(l);
-		/* having trouble with this and wanted to log its real action -dd */
+		/*
 		if(!yid->txqueues) 
 			LOG(("yahoo_write_ready(%d, %d) !yxqueues", id, fd));
-		/*
+		*/
 		if(!yid->txqueues) {
 			LOG(("yahoo_write_ready(%d, %d) !yxqueues", id, fd));
 			YAHOO_CALLBACK(ext_yahoo_remove_handler)(yid->write_tag);
 			yid->write_tag = 0;
 		}
-		*/
 	}
 
 	return 1;

@@ -1,3 +1,19 @@
+* Fri Sep 12 2003 Philip 0.7.1
+- configure checks for socket library and won't build sample client
+if not found
+
+* Thu Sep 11 2003 Philip
+- Up version number to 0x0a so that we don't get blocked
+
+* Thu Jun 5 2003 Philip
+- fix a bunch of memory leaks
+
+* Sun May 25 2003 Philip
+- Add option to disable building sample client
+
+* Sat May 24 2003 Philip 0.7.0-1
+- Fix configure error because of old missing script in distribution
+
 * Mon May 19 2003 Philip (version 0.7.0)
 - Update README
 - release 0.7.0

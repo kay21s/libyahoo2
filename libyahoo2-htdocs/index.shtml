@@ -10,13 +10,7 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.7.0 - 19 May 2003
-</p>
-
-<p>
-There have been incompatible interface changes.  See the 
-<a href="ChangeLog">ChangeLog</a> and <a href="README">README</a> for 
-complete details.
+libyahoo2 version 0.7.1 - 12 Sep 2003
 </p>
 
 <p>

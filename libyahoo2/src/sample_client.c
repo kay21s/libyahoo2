@@ -1182,7 +1182,7 @@ static void process_commands(char *line)
 
 
 	} else if(!strncasecmp(cmd, "CHL", strlen("CHL"))) {
-		int *roomid;
+		int roomid;
 		roomid = atoi(copy);
 		yahoo_get_chatrooms(ylad->id, roomid);
 	} else if(!strncasecmp(cmd, "CHJ", strlen("CHJ"))) {

@@ -121,7 +121,7 @@ ext_yahoo_got_cookies has been called.
 - To refresh the status of all buddies, make a call to yahoo_refresh.
 
 - To add a buddy, call yahoo_add_buddy:
-void yahoo_add_buddy(id, char *who, char *group);
+void yahoo_add_buddy(id, char *who, char *group, char* msg);
 
 You can add a buddy to multiple groups by calling this function once for
 each group.

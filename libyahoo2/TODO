@@ -6,3 +6,14 @@ Video Chat
 Bugs:
 Check which pointers are freed by the lib and which must be freed by the
 client, and document these.
+
+Make function arguments and return values const correct (check if all targets
+can handle it)
+
+Use enums instead of int where appropriate (yahoo_status, for example)
+
+Make sure that ALL callbacks which could refer to multiple profiles include
+the profile as an argument
+
+Move error handling to the appropriate place (ext_yahoo_error instead of
+ext_yahoo_login_response)

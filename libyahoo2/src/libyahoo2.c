@@ -545,6 +545,7 @@ static int yahoo_send_data(struct yahoo_data *yd, char *data, int len)
 
 static void yahoo_close(struct yahoo_data *yd) 
 {
+	int id = yd->client_id;
 	del_from_list(yd);
 
 	if (yd->fd >= 0)
@@ -552,6 +553,9 @@ static void yahoo_close(struct yahoo_data *yd)
 	FREE(yd->rxqueue);
 	yd->rxlen = 0;
 	yahoo_free_data(yd);
+	if(id == last_id)
+		last_id--;
+
 }
 
 static int is_same_bud(const void * a, const void * b) {
@@ -2065,9 +2069,6 @@ int yahoo_read_ready(int id, int fd)
 			yd->buddies = NULL;
 		yahoo_close(yd);
 
-		if(yd->client_id == last_id)
-			last_id--;
-
 		/* no need to return an error, because we've already fixed it */
 		if(len == 0)
 			return 1;
@@ -2671,36 +2672,6 @@ void yahoo_conference_message(int id, const char * from, YList *who, const char 
 	yahoo_packet_free(pkt);
 }
 
-/*
-void yahoo_get_chatrooms(int id)
-{
-	struct yahoo_data *yd = find_conn_by_id(id);
-	struct yahoo_data *nyd;
-	char url[1024];
-	char buff[1024];
-
-	if(!yd)
-		return;
-
-	nyd = y_new0(struct yahoo_data, 1);
-	nyd->id = yd->id;
-	nyd->client_id = ++last_id;
-	nyd->type = YAHOO_CONNECTION_YAB;
-	nyd->buddies = yd->buddies;
-
-	snprintf(url, 1024, "http://insider.msg.yahoo.com/ycontent/?chatcat=0");
-
-	snprintf(buff, sizeof(buff), "Y=%s; T=%s",
-			yd->cookie_y, yd->cookie_t);
-
-	nyd->fd = yahoo_http_get(url, buff);
-
-	add_to_list(nyd, nyd->fd);
-
-	YAHOO_CALLBACK(ext_yahoo_add_handler)(nyd->client_id, nyd->fd, YAHOO_INPUT_READ);
-
-}
-*/
 void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);

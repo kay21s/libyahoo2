@@ -1,3 +1,6 @@
+* Fri Mar 21 2003 Philip
+- Don't dereference yd after it has been freed
+
 * Fri Mar 21 2003 Mik
 - Clean up webcam data when yahoo data is cleaned up
 - Added connection type to webcam

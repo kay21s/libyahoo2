@@ -1351,7 +1351,6 @@ static struct yahoo_packet * yahoo_getdata(struct yahoo_data * yd)
 		yd->rxqueue = tmp;
 	} else {
 		FREE(yd->rxqueue);
-		yd->rxqueue = NULL;
 	}
 
 	return pkt;

@@ -28,7 +28,7 @@ supports almost all current features of the protocol.
 <ul>
 <li>Messaging:
 	<ul>
-	<li>Sending messages</li>
+	<li>Sending messages (UTF-8 supported)</li>
 	<li>Send typing notification</li>
 	</ul>
 </li>
@@ -41,8 +41,10 @@ supports almost all current features of the protocol.
 	<li>Unignore buddy</li>
 	<li>Reject buddy</li>
 	<li>Buddy status updates</li>
+	<li>Group renaming</li>
 	</ul>
 </li>
+<li>Yahoo Address book support</li>
 <li>Changing Status:
 	<ul>
 	<li>Regular status messages</li>

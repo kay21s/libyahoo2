@@ -108,6 +108,8 @@ extern char pager_port[];
 extern char filetransfer_host[];
 extern char filetransfer_port[];
 
+static char profile_url[] = "http://profiles.yahoo.com/";
+
 enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_LOGON = 1,
 	YAHOO_SERVICE_LOGOFF,
@@ -867,7 +869,7 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			yd->ignorelist = y_string_append(yd->ignorelist, pair->value);
 			break;
 
-		case 89: /* me */
+		case 89: /* my id */
 			break;
 		case 59: /* cookies add C cookie */
 			if(yd->ignorelist) {
@@ -898,7 +900,16 @@ static void yahoo_process_list(struct yahoo_data *yd, struct yahoo_packet *pkt)
 			} 
 
 			break;
-		case 3: /* my id */
+		case 3: /* TODO comma separated identities, active first */
+/*			{
+			char **identities = y_strsplit(pair->value, ",", -1);
+			int i;
+			for(i=0; identities[i]; i++)
+				yd->identities = y_list_append(yd->identities, 
+						identities[i]);
+			y_strfreev(identities);
+			}
+*/			break;
 		case 90: /* 1 */
 		case 100: /* 0 */
 		case 101: /* NULL */
@@ -1994,4 +2005,8 @@ int yahoo_get_url_handle(int id, const char *url, char *filename, unsigned long 
 	return yahoo_get_url_fd(url, yd, filename, filesize);
 }
 
+const char * yahoo_get_profile_url( void )
+{
+	return profile_url;
+}
 

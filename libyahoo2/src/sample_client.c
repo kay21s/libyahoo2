@@ -57,8 +57,6 @@ static int do_yahoo_debug = 0;
 static int ignore_system = 0;
 static int do_typing_notify = 1;
 
-static int poll_fd=0;
-static int poll_id=0;
 static int poll_loop=1;
 
 /* Exported to libyahoo2 */
@@ -75,8 +73,16 @@ typedef struct {
 	int id;
 	int fd;
 	int status;
-	char *status_message;
+	char *msg;
 } yahoo_local_account;
+
+typedef struct {
+	char yahoo_id[255];
+	int status;
+	int away;
+	char *msg;
+	char group[255];
+} yahoo_account;
 
 typedef struct {
 	int id;
@@ -141,24 +147,51 @@ int ext_yahoo_log(char *fmt,...)
 #define print_message(x) { printf x; printf("\n"); }
 
 static yahoo_local_account * ylad = NULL;
+static YList * buddies = NULL;
 
 int yahoo_ping_timeout_callback()
 {
-	yahoo_keepalive(poll_id);
+	yahoo_keepalive(ylad->id);
 	return 1;
 }
 
 void ext_yahoo_status_changed(int id, char *who, int stat, char *msg, int away)
 {
+	yahoo_account * ya=NULL;
+	YList * b;
+	for(b = buddies; b; b = b->next) {
+		if(!strcmp(((yahoo_account *)b->data)->yahoo_id, who)) {
+			ya = b->data;
+			break;
+		}
+	}
+	
 	if(msg)
 		print_message(("%s is now %s", who, msg))
 	else
 		print_message(("%s is now %s", who, 
 					yahoo_status_code(stat)))
+
+	if(ya) {
+		ya->status = stat;
+		ya->away = away;
+		if(msg) {
+			FREE(ya->msg);
+			ya->msg = strdup(msg);
+		}
+	}
 }
 
 void ext_yahoo_got_buddies(int id, YList * buds)
 {
+	for(; buds; buds = buds->next) {
+		yahoo_account *ya = y_new0(yahoo_account, 1);
+		struct yahoo_buddy *bud = buds->data;
+		strncpy(ya->yahoo_id, bud->id, 255);
+		strncpy(ya->group, bud->group, 255);
+		ya->status = YAHOO_STATUS_OFFLINE;
+		buddies = y_list_append(buddies, ya);
+	}
 }
 
 void ext_yahoo_got_ignore(int id, YList * igns)
@@ -182,9 +215,9 @@ void ext_yahoo_got_im(int id, char *who, char *msg, long tm, int stat)
 		timestr[strlen(timestr) - 1] = '\0';
 
 		print_message(("[Offline message at %s from %s]: %s", 
-				timestr, who, msg));
+				timestr, who, msg))
 	} else {
-		print_message(("%s: %s", who, msg));
+		print_message(("%s: %s", who, msg))
 	}
 }
 
@@ -336,8 +369,8 @@ void yahoo_set_current_state(int yahoo_state)
 
 	ylad->status = yahoo_state;
 	if(yahoo_state == YAHOO_STATUS_CUSTOM) {
-		if(ylad->status_message)
-			yahoo_set_away(ylad->id, yahoo_state, ylad->status_message, 1);
+		if(ylad->msg)
+			yahoo_set_away(ylad->id, yahoo_state, ylad->msg, 1);
 		else
 			yahoo_set_away(ylad->id, yahoo_state, "delta p * delta x too large", 1);
 	} else
@@ -397,7 +430,7 @@ void yahoo_callback(int source)
 	int ret=1;
 	char buff[1024]={0};
 
-	ret = yahoo_read_ready(poll_id, source);
+	ret = yahoo_read_ready(ylad->id, source);
 
 	if(ret == -1)
 		snprintf(buff, sizeof(buff), 
@@ -412,14 +445,14 @@ void yahoo_callback(int source)
 
 void ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond)
 {
-	poll_fd=fd;
-	poll_id=id;
+	ylad->fd=fd;
+	ylad->id=id;
 }
 
 void ext_yahoo_remove_handler(int id, int fd)
 {
-	poll_fd=0;
-	poll_id=0;
+	ylad->fd=0;
+	ylad->id=0;
 }
 /*
  * Callback handling code ends here
@@ -471,6 +504,26 @@ static void process_commands(char *line)
 		FREE(start);
 		poll_loop=0;
 		return;
+	} else if(!strcasecmp(cmd, "IDS")) {
+		// print identities
+		const YList * ids = yahoo_get_identities(ylad->id);
+		printf("Identities: ");
+		for(; ids; ids = ids->next)
+			printf("%s, ", (char *)ids->data);
+		printf("\n");
+	} else if(!strcasecmp(cmd, "LST")) {
+		YList * b = buddies;
+		for(; b; b=b->next) {
+			yahoo_account * ya = b->data;
+			if(ya->status == YAHOO_STATUS_OFFLINE)
+				continue;
+			if(ya->msg)
+				print_message(("%s is now %s", ya->yahoo_id, 
+							ya->msg))
+			else
+				print_message(("%s is now %s", ya->yahoo_id, 
+						yahoo_status_code(ya->status)))
+		}
 	} else {
 		fprintf(stderr, "Unknown command: %s\n", cmd);
 		FREE(start);
@@ -538,14 +591,14 @@ int main(int argc, char * argv[])
 	while(poll_loop) {
 		FD_ZERO(&inp);
 		FD_SET(0, &inp);
-		FD_SET(poll_fd, &inp);
+		FD_SET(ylad->fd, &inp);
 		tv.tv_sec=600000;
 		tv.tv_usec=0;
-		select(poll_fd + 1, &inp, NULL, NULL, &tv);
+		select(ylad->fd + 1, &inp, NULL, NULL, &tv);
 
 		if(call_timeout)		yahoo_ping_timeout_callback();
 		if(FD_ISSET(0, &inp)) 		local_input_callback(0);
-		if(FD_ISSET(poll_fd, &inp))	yahoo_callback(poll_fd);
+		if(FD_ISSET(ylad->fd, &inp))	yahoo_callback(ylad->fd);
 	}
 
 	yahoo_logout();

@@ -55,6 +55,7 @@ enum yahoo_login_status {
 };
 
 enum yahoo_error {
+	/* responses from ignore buddy */
 	E_IGNOREDUP = 2,
 	E_IGNORENONE = 3,
 	E_IGNORECONF = 12,

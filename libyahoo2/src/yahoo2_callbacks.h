@@ -58,6 +58,13 @@ typedef enum {
  * event occurs.
  */
 
+/* 
+ * should we use a callback structure or directly call functions
+ * if you want the structure, you *must* define USE_STRUCT_CALLBACKS
+ * both when you compile the library, and when you compile your code
+ * that uses the library
+ */
+
 #ifdef USE_STRUCT_CALLBACKS
 #define YAHOO_CALLBACK_TYPE(x)	(*x)
 struct yahoo_callbacks {
@@ -374,6 +381,10 @@ int YAHOO_CALLBACK_TYPE(ext_yahoo_connect)(char *host, int port);
 #ifdef USE_STRUCT_CALLBACKS
 };
 
+/*
+ * if using a callback structure, call yahoo_register_callbacks
+ * before doing anything else
+ */
 void yahoo_register_callbacks(struct yahoo_callbacks * tyc);
 	
 #undef YAHOO_CALLBACK_TYPE

@@ -1,3 +1,7 @@
+* Mon May 19 2003 Philip (version 0.7.0)
+- Update README
+- release 0.7.0
+
 * Tue May 6 2003 Mik
 - fixes for webcam uploading
 - extra callback for closing connection

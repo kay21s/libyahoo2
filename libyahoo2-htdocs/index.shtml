@@ -10,12 +10,13 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.6.3 - 19 February 2003
+libyahoo2 version 0.7.0 - 19 May 2003
 </p>
 
 <p>
-There have been interface changes.  See the <a href="ChangeLog">ChangeLog</a>
-and <a href="README">README</a> for complete details.
+There have been incompatible interface changes.  See the 
+<a href="ChangeLog">ChangeLog</a> and <a href="README">README</a> for 
+complete details.
 </p>
 
 <p>
@@ -61,6 +62,19 @@ supports almost all current features of the protocol.
 	<li>Send message to conference</li>
 	</ul>
 </li>
+<li>Yahoo Chat
+	<ul>
+	<li>List chatrooms</li>
+	<li>Join/leave a chatroom</li>
+	<li>Chat :)</li>
+	</ul>
+</li>
+<li>Webcam support
+	<ul>
+	<li>Support for viewing other people's webcams</li>
+	<li>Support for broadcasting webcam images</li>
+	</ul>
+</li>
 <li>File Transfer:
 	<ul>
 	<li>Send file via Yahoo file transfer server</li>
@@ -79,8 +93,7 @@ supports almost all current features of the protocol.
 </ul>
 
 <p>
-libyahoo2 does not yet have support for Voice and Video messages,
-nor for IMvironments.
+libyahoo2 does not yet have support for Voice messages, nor for IMvironments.
 </p>
 
 <h2>Requires</h2>
@@ -93,7 +106,7 @@ want them.</p>
 <tr><td>Philip S Tellis</td> <td>philip . tellis AT gmx . net</td> <td>Maintainer</td></tr>
 <tr><td>Steve McAndrewSmith</td> <td>steve AT finalge . org</td> <td>Code cleanups</td></tr>
 <tr><td>Michaël Kamp</td> <td>miksun AT users . sourceforge . net</td> <td>Webcam Support</td></tr>
-<tr><td>Wayne Parrot</td> <td>wayne_p AT pacific . net . au</td> <td>Yahoo Chat</td></tr>
+<tr><td>Wayne Parrott</td> <td>wayne_p AT pacific . net . au</td> <td>Yahoo Chat</td></tr>
 </table>
 
 <p>

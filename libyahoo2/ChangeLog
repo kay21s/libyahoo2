@@ -5,7 +5,19 @@ version 0.6.2cvs
 - added protocol documentation
 - libyahoo2 now automatically scans ports 21, 23, 25 and 80 if it cannot 
 connect on the default port.
-- added colour entry for any colour to yahoo2_types.h
+- added colour entry for any colour to yahoo2_types.h (Nelson Ferreira)
+- Check for glib-2 as well as glib-1
+- Multiple offline messages are now received correctly
+- Memory leaks cleaned up
+
+Rodney Dawes:
+- Make libyahoo2 versioned
+- Add a pkgconfig file
+- Install headers in $(pkgincludedir)
+- Make yahoo sample client a noinst program
+- Require autoconf >= 2.50
+- Cleanups in configure.ac
+
 
 18-10-2002: version 0.6.1
 

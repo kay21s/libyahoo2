@@ -1,6 +1,6 @@
 #!/bin/bash
 libtoolize --copy --force --automake
-aclocal
+aclocal -I m4
 automake --add-missing -c
 autoconf
 

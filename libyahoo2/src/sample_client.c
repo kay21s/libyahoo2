@@ -946,8 +946,8 @@ static void register_callbacks()
 
 	yc.ext_yahoo_login_response = ext_yahoo_login_response;
 	yc.ext_yahoo_got_buddies = ext_yahoo_got_buddies;
-	yc.ext_yahoo_got_ignore = ext_yahoo_got_ignore;
-	yc.ext_yahoo_got_identities = ext_yahoo_got_identities;
+	yc.ext_yahoo_got_ignore = NULL;
+	yc.ext_yahoo_got_identities = NULL;
 	yc.ext_yahoo_status_changed = ext_yahoo_status_changed;
 	yc.ext_yahoo_got_im = ext_yahoo_got_im;
 	yc.ext_yahoo_got_conf_invite = ext_yahoo_got_conf_invite;
@@ -955,11 +955,11 @@ static void register_callbacks()
 	yc.ext_yahoo_conf_userjoin = ext_yahoo_conf_userjoin;
 	yc.ext_yahoo_conf_userleave = ext_yahoo_conf_userleave;
 	yc.ext_yahoo_conf_message = ext_yahoo_conf_message;
-	yc.ext_yahoo_got_file = ext_yahoo_got_file;
+	yc.ext_yahoo_got_file = NULL;
 	yc.ext_yahoo_contact_added = ext_yahoo_contact_added;
 	yc.ext_yahoo_rejected = ext_yahoo_rejected;
 	yc.ext_yahoo_typing_notify = ext_yahoo_typing_notify;
-	yc.ext_yahoo_game_notify = ext_yahoo_game_notify;
+	yc.ext_yahoo_game_notify = NULL;
 	yc.ext_yahoo_mail_notify = ext_yahoo_mail_notify;
 	yc.ext_yahoo_system_message = ext_yahoo_system_message;
 	yc.ext_yahoo_error = ext_yahoo_error;

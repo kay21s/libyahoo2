@@ -1,6 +1,4 @@
 Makefile
-.deps
-.libs
 configure
 Makefile.in
 aclocal.m4
@@ -16,3 +14,4 @@ libltdl
 install-sh
 config.h
 stamp-h
+libyahoo2.pc

@@ -48,22 +48,28 @@ char ** y_strsplit(char * str, char * sep, int nelem)
 	char ** vector;
 	char *s, *p;
 	int i=0;
+	int l = strlen(sep);
 	if(nelem < 0) {
 		char * s;
 		nelem=0;
-		for(s=strstr(str, sep); s; s=strstr(s, sep), nelem++)
+		for(s=strstr(str, sep); s; s=strstr(s+l, sep),nelem++)
 			;
+		if(strcmp(str+strlen(str)-l, sep))
+			nelem++;
 	}
 
 	vector = y_new(char *, nelem + 1);
 
-	for(p=str, s=strstr(p, sep); i<nelem && s; p=s, s=strstr(p, sep), i++) {
+	for(p=str, s=strstr(p,sep); i<nelem && s; p=s+l, s=strstr(p,sep), i++) {
 		int len = s-p;
 		vector[i] = y_new(char, len+1);
 		strncpy(vector[i], p, len);
 		vector[i][len] = '\0';
 	}
 
+	if(i<nelem) /* str didn't end with sep */
+		vector[i++] = strdup(p);
+			
 	vector[i] = NULL;
 
 	return vector;

@@ -3,6 +3,9 @@ version 0.6.2cvs
 - no longer strip colour/style codes from messages
 - compiles with -ansi and -pedantic
 - added protocol documentation
+- libyahoo2 now automatically scans ports 21, 23, 25 and 80 if it cannot 
+connect on the default port.
+- added colour entry for any colour to yahoo2_types.h
 
 18-10-2002: version 0.6.1
 

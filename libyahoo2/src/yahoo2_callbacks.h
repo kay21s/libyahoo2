@@ -427,6 +427,47 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_mail_notify)(int id, const char *from, const 
  */
 void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, const char *msg);
 
+/*
+ * Name: ext_yahoo_got_buddyicon
+ * 	Buddy icon received
+ * Params:
+ * 	id - the id that identifies the server connection
+ * 	me - the handle of the identity the notification is sent to
+ * 	who - the person the buddy icon is for
+ * 	url - the url to use to load the icon
+ * 	checksum - the checksum of the icon content
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_buddyicon)(int id, const char *me, const char *who, const char *url, int checksum);
+
+/*
+ * Name: ext_yahoo_got_buddyicon_checksum
+ * 	Buddy icon checksum received
+ * Params:
+ * 	id - the id that identifies the server connection
+ * 	me - the handle of the identity the notification is sent to
+ * 	who - the yahoo id of the buddy icon checksum is for
+ * 	checksum - the checksum of the icon content
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_buddyicon_checksum)(int id, const char *me,const char *who, int checksum);
+
+/*
+ * Name: ext_yahoo_got_buddyicon_request
+ * 	Buddy icon request received
+ * Params:
+ * 	id - the id that identifies the server connection
+ * 	me - the handle of the identity the notification is sent to
+ * 	who - the yahoo id of the buddy that requested the buddy icon
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_got_buddyicon_request)(int id, const char *me, const char *who);
+
+/*
+ * Name: ext_yahoo_got_buddyicon_request
+ * 	Buddy icon request received
+ * Params:
+ * 	id - the id that identifies the server connection
+ * 	url - remote url, the uploaded buddy icon can be fetched from
+ */
+void YAHOO_CALLBACK_TYPE(ext_yahoo_buddyicon_uploaded)(int id, const char *url);
 
 /*
  * Name: ext_yahoo_got_webcam_image

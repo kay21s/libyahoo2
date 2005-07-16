@@ -1169,10 +1169,10 @@ static void process_commands(char *line)
 		msg = copy;
 		if(to && msg) {
 			if(!strcmp(msg, "\a"))
-				yahoo_send_im(ylad->id, NULL, to, "<ding>", 0);
+				yahoo_send_im(ylad->id, NULL, to, "<ding>", 0,0);
 			else {
 				msg = y_str_to_utf8(msg);
-				yahoo_send_im(ylad->id, NULL, to, msg, 1);
+				yahoo_send_im(ylad->id, NULL, to, msg, 1,0);
 				FREE(msg);
 			}
 		}
@@ -1621,6 +1621,26 @@ void ext_yahoo_got_search_result(int id, int found, int start, int total, YList 
 	LOG(("got search result"));
 }
 
+void ext_yahoo_got_buddyicon_checksum(int id, const char *a, const char *b, int checksum)
+{
+	LOG(("got buddy icon checksum"));
+}
+
+void ext_yahoo_got_buddyicon(int id, const char *a, const char *b, const char *c, int checksum)
+{
+	LOG(("got buddy icon"));
+}
+
+void ext_yahoo_buddyicon_uploaded(int id, const char *url)
+{
+	LOG(("buddy icon uploaded"));
+}
+
+void ext_yahoo_got_buddyicon_request(int id, const char *me, const char *who)
+{
+	LOG(("got buddy icon request from %s",who));
+}
+
 static void register_callbacks()
 {
 #ifdef USE_STRUCT_CALLBACKS
@@ -1665,6 +1685,10 @@ static void register_callbacks()
 	yc.ext_yahoo_remove_handler = ext_yahoo_remove_handler;
 	yc.ext_yahoo_connect = ext_yahoo_connect;
 	yc.ext_yahoo_connect_async = ext_yahoo_connect_async;
+	yc.ext_yahoo_got_buddyicon = ext_yahoo_got_buddyicon;
+	yc.ext_yahoo_got_buddyicon_checksum = ext_yahoo_got_buddyicon_checksum;
+	yc.ext_yahoo_buddyicon_uploaded = ext_yahoo_buddyicon_uploaded;
+	yc.ext_yahoo_got_buddyicon_request = ext_yahoo_got_buddyicon_request;
 
 	yahoo_register_callbacks(&yc);
 	

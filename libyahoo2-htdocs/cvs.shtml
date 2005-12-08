@@ -17,7 +17,7 @@ You can get the latest source code by anonymous cvs:
 
 <p>
 <code>
-cvs -z3 -d:pserver:anonymous@cvs.libyahoo2.sourceforge.net:/cvsroot/libyahoo2 co libyahoo2
+cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/libyahoo2 co libyahoo2
 </code>
 </p>
 

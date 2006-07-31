@@ -2048,6 +2048,7 @@ static void yahoo_process_auth_0x0b(struct yahoo_input_data *yid, const char *se
 	md5_append(&ctx, (md5_byte_t *)crypt_result, strlen(crypt_result));
 	md5_finish(&ctx, result);
 	to_y64(crypt_hash, result, 16);
+	free(crypt_result);
 
 	/* Our first authentication response is based off 
 	 * of the password hash. */

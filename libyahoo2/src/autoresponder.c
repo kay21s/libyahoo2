@@ -1433,6 +1433,7 @@ static void register_callbacks()
 	yc.ext_yahoo_got_buddyicon_checksum = ext_yahoo_got_buddyicon_checksum;
 	yc.ext_yahoo_buddyicon_uploaded = ext_yahoo_buddyicon_uploaded;
 	yc.ext_yahoo_got_buddyicon_request = ext_yahoo_got_buddyicon_request;
+	yc.ext_yahoo_got_ping = ext_yahoo_got_ping;
 
 	yahoo_register_callbacks(&yc);
 	

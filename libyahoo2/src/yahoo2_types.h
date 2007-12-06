@@ -131,7 +131,6 @@ enum yahoo_stealth_visibility_type {
 /* chat member attribs */
 #define YAHOO_CHAT_MALE 0x8000
 #define YAHOO_CHAT_FEMALE 0x10000
-#define YAHOO_CHAT_FEMALE 0x10000
 #define YAHOO_CHAT_DUNNO 0x400
 #define YAHOO_CHAT_WEBCAM 0x10
 

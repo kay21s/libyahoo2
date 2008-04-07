@@ -167,7 +167,11 @@ SHA1Init (SHA1Context *sc)
   setEndian (&sc->littleEndian);
 #endif /* RUNTIME_ENDIAN */
 
+#ifdef _MSC_VER
+  sc->totalLength = 0ui64;
+#else
   sc->totalLength = 0LL;
+#endif
   sc->hash[0] = 0x67452301L;
   sc->hash[1] = 0xefcdab89L;
   sc->hash[2] = 0x98badcfeL;

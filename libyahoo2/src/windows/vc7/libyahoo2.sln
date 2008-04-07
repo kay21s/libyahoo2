@@ -1,0 +1,65 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "autoresponder", "autoresponder.vcproj", "{38B17FFB-EC71-417D-A64A-ED33CD3917AF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4AB5074B-8127-4404-800E-5843C9128362} = {4AB5074B-8127-4404-800E-5843C9128362}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "autoresponder_dll", "autoresponder_dll.vcproj", "{73A72A38-C4F3-4C60-8CE4-3DFFD6DCB1FC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9751199A-C04C-464F-A1F4-07CCA18E9941} = {9751199A-C04C-464F-A1F4-07CCA18E9941}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libyahoo2", "libyahoo2.vcproj", "{4AB5074B-8127-4404-800E-5843C9128362}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libyahoo2_dll", "libyahoo2_dll.vcproj", "{9751199A-C04C-464F-A1F4-07CCA18E9941}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yahoo", "yahoo.vcproj", "{FA35085A-CC7E-423F-98F3-29B7F7925B49}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4AB5074B-8127-4404-800E-5843C9128362} = {4AB5074B-8127-4404-800E-5843C9128362}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yahoo_dll", "yahoo_dll.vcproj", "{95DE70E0-B67C-4D46-9D29-E492E581E3EA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9751199A-C04C-464F-A1F4-07CCA18E9941} = {9751199A-C04C-464F-A1F4-07CCA18E9941}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{38B17FFB-EC71-417D-A64A-ED33CD3917AF}.Debug.ActiveCfg = Debug|Win32
+		{38B17FFB-EC71-417D-A64A-ED33CD3917AF}.Debug.Build.0 = Debug|Win32
+		{38B17FFB-EC71-417D-A64A-ED33CD3917AF}.Release.ActiveCfg = Release|Win32
+		{38B17FFB-EC71-417D-A64A-ED33CD3917AF}.Release.Build.0 = Release|Win32
+		{73A72A38-C4F3-4C60-8CE4-3DFFD6DCB1FC}.Debug.ActiveCfg = Debug|Win32
+		{73A72A38-C4F3-4C60-8CE4-3DFFD6DCB1FC}.Debug.Build.0 = Debug|Win32
+		{73A72A38-C4F3-4C60-8CE4-3DFFD6DCB1FC}.Release.ActiveCfg = Release|Win32
+		{73A72A38-C4F3-4C60-8CE4-3DFFD6DCB1FC}.Release.Build.0 = Release|Win32
+		{4AB5074B-8127-4404-800E-5843C9128362}.Debug.ActiveCfg = Debug|Win32
+		{4AB5074B-8127-4404-800E-5843C9128362}.Debug.Build.0 = Debug|Win32
+		{4AB5074B-8127-4404-800E-5843C9128362}.Release.ActiveCfg = Release|Win32
+		{4AB5074B-8127-4404-800E-5843C9128362}.Release.Build.0 = Release|Win32
+		{9751199A-C04C-464F-A1F4-07CCA18E9941}.Debug.ActiveCfg = Debug|Win32
+		{9751199A-C04C-464F-A1F4-07CCA18E9941}.Debug.Build.0 = Debug|Win32
+		{9751199A-C04C-464F-A1F4-07CCA18E9941}.Release.ActiveCfg = Release|Win32
+		{9751199A-C04C-464F-A1F4-07CCA18E9941}.Release.Build.0 = Release|Win32
+		{FA35085A-CC7E-423F-98F3-29B7F7925B49}.Debug.ActiveCfg = Debug|Win32
+		{FA35085A-CC7E-423F-98F3-29B7F7925B49}.Debug.Build.0 = Debug|Win32
+		{FA35085A-CC7E-423F-98F3-29B7F7925B49}.Release.ActiveCfg = Release|Win32
+		{FA35085A-CC7E-423F-98F3-29B7F7925B49}.Release.Build.0 = Release|Win32
+		{95DE70E0-B67C-4D46-9D29-E492E581E3EA}.Debug.ActiveCfg = Debug|Win32
+		{95DE70E0-B67C-4D46-9D29-E492E581E3EA}.Debug.Build.0 = Debug|Win32
+		{95DE70E0-B67C-4D46-9D29-E492E581E3EA}.Release.ActiveCfg = Release|Win32
+		{95DE70E0-B67C-4D46-9D29-E492E581E3EA}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

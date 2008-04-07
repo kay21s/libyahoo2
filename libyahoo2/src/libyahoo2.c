@@ -47,7 +47,9 @@
 # include <config.h>
 #endif
 
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>

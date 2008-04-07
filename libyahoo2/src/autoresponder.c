@@ -27,33 +27,39 @@
 #if HAVE_CONFIG_H
 # include <config.h>
 #endif
+#ifndef _WIN32
 #include <netdb.h>
 #include <sys/time.h>
+#endif
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <termios.h>
+#endif
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 /* Get these from http://libyahoo2.sourceforge.net/ */
 #include <yahoo2.h>
 #include <yahoo2_callbacks.h>
 #include "yahoo_util.h"
 
+#ifndef _WIN32
 int fileno(FILE * stream);
-
+#endif
 
 #define MAX_PREF_LEN 255
 
@@ -188,17 +194,20 @@ static void rearm(time_t *timer, int seconds)
 	*timer += seconds;
 }
 
+#ifndef _WIN32
 FILE *popen(const char *command, const char *type);
 int pclose(FILE *stream);
 int gethostname(char *name, size_t len);
+#endif
 
 static char * get_local_addresses()
 {
 	static char addresses[1024];
 	char buff[1024];
+	struct hostent * hn;
+#ifndef _WIN32
 	char gateway[16];
 	char  * c;
-	struct hostent * hn;
 	int i;
 	FILE * f;
 	f = popen("netstat -nr", "r");
@@ -250,6 +259,7 @@ static char * get_local_addresses()
 		
 		
 IP_TEST_2:
+#endif /* _WIN32 */
 
 	gethostname(buff,sizeof(buff));
 
@@ -264,11 +274,15 @@ IP_TEST_2:
 
 static double get_time()
 {
+#ifndef _WIN32
 	struct timeval ct;
 	gettimeofday(&ct, 0);
 
 	/* return time in milliseconds */
 	return (ct.tv_sec * 1E3 + ct.tv_usec / 1E3);
+#else
+	return timeGetTime();
+#endif
 }
 
 static int yahoo_ping_timeout_callback()
@@ -1188,6 +1202,7 @@ static void process_commands(char *line)
 	FREE(start);
 }
 
+#ifndef _WIN32
 static void local_input_callback(int source)
 {
 	char line[1024] = {0};
@@ -1216,6 +1231,34 @@ static void local_input_callback(int source)
 	if(line[0])
 		process_commands(line);
 }
+#else
+#include <conio.h>
+static void local_input_callback(char c)
+{
+	static char line[1024] = {0};
+	static int line_length = 0;
+
+	if (c == '\b' || (int)c == 127) {
+		if (line_length > 0) {
+			_cputs("\b \b");
+			line_length--;
+		}
+		return;
+	}
+
+	if (c == '\n' || c == '\r' || c == 3) {
+		_cputs("\n");
+		line[line_length] = 0;
+		process_commands(line);
+		line_length = 0;
+		line[0] = 0;
+		return;
+	}
+
+	_putch(c);
+	line[line_length++] = c;
+}
+#endif
 
 int main(int argc, char * argv[])
 {
@@ -1227,8 +1270,16 @@ int main(int argc, char * argv[])
 	struct timeval tv;
 
 
+#ifndef _WIN32
 	int fd_stdin = fileno(stdin);
+#endif
 	YList *l=connections;
+
+#ifdef _WIN32
+	WSADATA wsa;	
+	if (WSAStartup(MAKEWORD(2,2), &wsa))
+		return -1;
+#endif
 
 	if (argc != 5) {
 		fprintf(stderr, "Usage: autoresponder <yahoo_id> <password> \"staus message\" \"autoresponse message\"\n");
@@ -1266,9 +1317,14 @@ int main(int argc, char * argv[])
 	while(poll_loop) {
 		FD_ZERO(&inp);
 		FD_ZERO(&outp);
+#ifndef _WIN32
 		FD_SET(fd_stdin, &inp);
 		tv.tv_sec=1;
 		tv.tv_usec=0;
+#else
+		tv.tv_sec=0;
+		tv.tv_usec=1E4;
+#endif
 		lfd=0;
 
 		for(l=connections; l; ) {
@@ -1294,7 +1350,11 @@ int main(int argc, char * argv[])
 		select(lfd + 1, &inp, &outp, NULL, &tv);
 		time(&curTime);
 
+#ifndef _WIN32
 		if(FD_ISSET(fd_stdin, &inp))	local_input_callback(0);
+#else
+		if (_kbhit()) local_input_callback(_getch());
+#endif
 
 		for(l = connections; l; l = y_list_next(l)) {
 			struct _conn *c = l->data;
@@ -1326,6 +1386,9 @@ int main(int argc, char * argv[])
 
 	FREE(ylad);
 
+#ifdef _WIN32
+	WSACleanup();
+#endif
 	return 0;
 }
 

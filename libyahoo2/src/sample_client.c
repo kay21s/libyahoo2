@@ -1514,7 +1514,6 @@ static void local_input_callback(char c)
 	if (c == '\n' || c == '\r' || c == 3) {
 		_cputs("\n");
 		line[line_length] = 0;
-		printf("------------ PROCESS: %s\n", line);
 		process_commands(line);
 		line_length = 0;
 		line[0] = 0;

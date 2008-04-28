@@ -1,3 +1,5 @@
+SUBDIRS = windows
+
 lib_LTLIBRARIES = libyahoo2.la
 
 EXTRA_DIST = sample_client.c autoresponder.c

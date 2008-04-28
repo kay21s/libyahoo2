@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(libyahoo2, 0.7.5, libyahoo2-users@lists.sourceforge.net)
+AC_INIT(libyahoo2, 0.7.6, libyahoo2-users@lists.sourceforge.net)
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR(src/libyahoo2.c)
 AM_INIT_AUTOMAKE([1.6 dist-bzip2])
@@ -19,15 +19,16 @@ dnl # +1 :  0 :  0   == removed/changed an interface. Breaks old apps.
 dnl #  ? : +1 :  ?   == internal changes that doesn't break anything.
 dnl #
 dnl # CURRENT : REVISION : AGE
-YAHOO2_CURRENT=9	# 1 - < 0.6
-			# 2 - pre utf8 (0.6.2)
-			# 3 - pre webcam/chat support (0.6.3)
-			# 4 - 0.7.0
-			# 5 - 0.7.1-2 - yahoo_init_with_attributes
-			# 6 - yahoo_get_log_level() (0.7.2)
-			# 7 - contact search, add/remove handler (0.7.3)
-			# 8 - remove_handler takes client id (0.7.4)
-			# 9 - add_buddy takes buddy add message (0.7.5)
+YAHOO2_CURRENT=10	# 1 - < 0.6
+			# 2  - pre utf8 (0.6.2)
+			# 3  - pre webcam/chat support (0.6.3)
+			# 4  - 0.7.0
+			# 5  - 0.7.1-2 - yahoo_init_with_attributes
+			# 6  - yahoo_get_log_level() (0.7.2)
+			# 7  - contact search, add/remove handler (0.7.3)
+			# 8  - remove_handler takes client id (0.7.4)
+			# 9  - add_buddy takes buddy add message (0.7.5)
+      # 10 - Windows support (0.7.6)
 YAHOO2_REVISION=0
 YAHOO2_AGE=0
 YAHOO2_VERSION="$YAHOO2_CURRENT:$YAHOO2_REVISION:$YAHOO2_AGE"
@@ -117,6 +118,11 @@ DATE=`date +"%Y%m%d"`
 AC_CONFIG_FILES([
 	Makefile libyahoo2.pc libyahoo2.spec 
 	src/Makefile 
+  src/windows/Makefile
+  src/windows/vc6/Makefile
+  src/windows/vc7/Makefile
+  src/windows/vc8/Makefile
+  src/windows/vc9/Makefile
 	doc/Makefile
 ])
 

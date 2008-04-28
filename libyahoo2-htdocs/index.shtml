@@ -96,12 +96,13 @@ libyahoo2 does not yet have support for Voice messages, nor for IMvironments.
 <p>libyahoo2 can use glib version 1.2 or version 2 if you have them and
 want them.</p>
 
-<h2>Authors</h2>
+<h2>Authors / Contributors</h2>
 <table>
 <tr><td>Philip S Tellis</td> <td>philip . tellis AT gmx . net</td> <td>Maintainer</td></tr>
 <tr><td>Steve McAndrewSmith</td> <td>steve AT finalge . org</td> <td>Code cleanups</td></tr>
 <tr><td>Michaël Kamp</td> <td>miksun AT users . sourceforge . net</td> <td>Webcam Support</td></tr>
 <tr><td>Wayne Parrott</td> <td>wayne_p AT pacific . net . au</td> <td>Yahoo Chat</td></tr>
+<tr><td>Ray Van Dolson</td> <td>rayvd AT bludgeon . org</td> <td>Fedora Packager / Release</td></tr>
 </table>
 
 <p>
@@ -110,7 +111,7 @@ href="http://gaim.sourceforge.net/">gaim</a>.  The following persons have
 contributed to gaim:
 </p>
 <pre>
-Copyright &copy; 1998-1999, Mark Spencer &lt;markster AT marko.net&gt;
+  Copyright &copy; 1998-1999, Mark Spencer &lt;markster AT marko.net&gt;
 	      1998-1999, Adam Fritzler &lt;afritz AT marko.net&gt;
 	      1998-2002, Rob Flynn &lt;rob AT marko.net&gt;
 	      2000-2002, Eric Warmenhoven &lt;eric AT warmenhoven.org&gt;

@@ -10,14 +10,14 @@
 <!--#include virtual="links.shtml" -->
 
 <div class="content">
-<h2>CVS Information</h2>
+<h2>SVN Information</h2>
 <p>
-You can get the latest source code by anonymous cvs:
+You can get the latest source code via Subversion:
 </p>
 
 <p>
 <code>
-cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/libyahoo2 co libyahoo2
+svn co https://libyahoo2.svn.sourceforge.net/svnroot/libyahoo2 libyahoo2
 </code>
 </p>
 
@@ -26,19 +26,20 @@ This will create a directory called libyahoo2 in your current working
 directory.
 </p>
 <p>
-To update your cvs from within the libyahoo2 directory:
+To update your Subversion repository from within the libyahoo2 directory:
 </p>
 
 <p>
-<code>cvs update</code>
+<code>svn update</code>
 </p>
 
 <p>
-If you find bugs in the releases, try the CVS, some bugs are fixed in here.
+If you find bugs in the releases, try the latest Subversion trunk, some bugs are
+fixed in here.
 </p>
 
 <p>
-To build the code from CVS, first run the gen script.  Then proceed with 
+To build the code from Subversion, first run the gen script.  Then proceed with
 the normal configure, make, make install process.
 </p>
 

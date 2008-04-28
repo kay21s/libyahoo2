@@ -1,3 +1,18 @@
+* Sun Apr 27 2008 Ray Van Dolson
+- up version number 0.7.6
+
+* Mon Apr  7 2008 Tri S.
+- Added Windows support for 0.7.6
+
+* Fri Apr  4 2008 Tri S.
+- Changed packet version to 0x000c
+
+* Thu Feb  3 2005 A. Craig West
+- status changes thanks to Gennady Feldman 
+- server ping support thanks to Gennady Feldman 
+- better support for multiple status changes in one packet
+- added profile support to conference and chat rooms (needs testing)
+
 * Sun Nov 28 2004 A. Craig West
 - changed interface to include which id incoming messages are intended for
 - changed error reporting interface

@@ -10,7 +10,7 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.7.5 - 8 Aug 2004
+libyahoo2 version 0.7.6 - 27 Aug 2008
 </p>
 
 <p>
@@ -119,6 +119,7 @@ Copyright &copy; 1998-1999, Mark Spencer &lt;markster AT marko.net&gt;
 		   2001, Valdis Kletnieks
 		   2002, Sean Egan &lt;bj91704 AT binghamton.edu&gt;
 		   2002, Toby Gray &lt;toby.gray AT ntlworld.com&gt;
+       2008, Tri S. &lt;trist AT users.sourceforge.net&gt;
 </pre>
 
 <p>
@@ -135,7 +136,7 @@ me to library versioning and redhat spec files.
 
 <h2>Copyright</h2>
 <p>
-libyahoo2 is Copyright &copy; 2002-2004 <a href="http://staff.ncst.ernet.in/1/1/philip/">Philip S Tellis</a> (philip . tellis At gmx . net).
+libyahoo2 is Copyright &copy; 2002-2008 <a href="http://staff.ncst.ernet.in/1/1/philip/">Philip S Tellis</a> (philip . tellis At gmx . net).
 Distribution is under the terms of the GNU General Public Licence.
 </p>
 

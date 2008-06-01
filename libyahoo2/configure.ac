@@ -28,7 +28,7 @@ YAHOO2_CURRENT=10	# 1 - < 0.6
 			# 7  - contact search, add/remove handler (0.7.3)
 			# 8  - remove_handler takes client id (0.7.4)
 			# 9  - add_buddy takes buddy add message (0.7.5)
-      # 10 - Windows support (0.7.6)
+			# 10 - Windows support (0.7.6)
 YAHOO2_REVISION=0
 YAHOO2_AGE=0
 YAHOO2_VERSION="$YAHOO2_CURRENT:$YAHOO2_REVISION:$YAHOO2_AGE"

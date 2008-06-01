@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(libyahoo2, 0.7.6, libyahoo2-users@lists.sourceforge.net)
+AC_INIT(libyahoo2, 0.7.7, libyahoo2-users@lists.sourceforge.net)
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR(src/libyahoo2.c)
 AM_INIT_AUTOMAKE([1.6 dist-bzip2])
@@ -29,7 +29,7 @@ YAHOO2_CURRENT=10	# 1 - < 0.6
 			# 8  - remove_handler takes client id (0.7.4)
 			# 9  - add_buddy takes buddy add message (0.7.5)
 			# 10 - Windows support (0.7.6)
-YAHOO2_REVISION=0
+YAHOO2_REVISION=1
 YAHOO2_AGE=0
 YAHOO2_VERSION="$YAHOO2_CURRENT:$YAHOO2_REVISION:$YAHOO2_AGE"
 AC_SUBST(YAHOO2_VERSION)

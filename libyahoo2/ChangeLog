@@ -1,3 +1,9 @@
+* Sun Jun 01 2008 Ray Van Dolson <rayvd@bludgeon.org>
+- Up version number to 0.7.6.1
+- Enable _GNU_SOURCE macro for builds.  This makes newer libc's provide us
+  with the standard GNU systems interface (fixes compilation issues with
+  Fedora 9 and Fedora 10 (rawhide) specifically)
+
 * Sun Apr 27 2008 Ray Van Dolson
 - up version number 0.7.6
 

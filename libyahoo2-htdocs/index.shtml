@@ -10,7 +10,7 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.7.6 - 27 Apr 2008
+libyahoo2 version 0.7.7 - 1 Jun 2008
 </p>
 
 <p>
@@ -96,6 +96,13 @@ libyahoo2 does not yet have support for Voice messages, nor for IMvironments.
 <p>libyahoo2 can use glib version 1.2 or version 2 if you have them and
 want them.</p>
 
+<h2>Contact</h2>
+<p>
+  Please direct any comments or questions to the 
+  <a href="https://lists.sourceforge.net/lists/listinfo/libyahoo2-users/">libyahoo2-users</a>
+  mailing list.
+</p>
+
 <h2>Authors / Contributors</h2>
 <table>
 <tr><td>Philip S Tellis</td> <td>philip . tellis AT gmx . net</td> <td>Maintainer</td></tr>
@@ -120,7 +127,6 @@ contributed to gaim:
 		   2001, Valdis Kletnieks
 		   2002, Sean Egan &lt;bj91704 AT binghamton.edu&gt;
 		   2002, Toby Gray &lt;toby.gray AT ntlworld.com&gt;
-	           2008, Tri S. &lt;trist AT users.sourceforge.net&gt;
 </pre>
 
 <p>
@@ -137,7 +143,7 @@ me to library versioning and redhat spec files.
 
 <h2>Copyright</h2>
 <p>
-libyahoo2 is Copyright &copy; 2002-2008 <a href="http://staff.ncst.ernet.in/1/1/philip/">Philip S Tellis</a> (philip . tellis At gmx . net).
+libyahoo2 is Copyright &copy; 2002-2008 The libyahoo2 Project Authors and Contributors.
 Distribution is under the terms of the GNU General Public Licence.
 </p>
 

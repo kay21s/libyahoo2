@@ -1,6 +1,6 @@
 * 01-Jun-2008
 
-Releasing 0.7.6.1 with fixes to enable compilation on Fedora 9 and newer
+Releasing 0.7.7 with fixes to enable compilation on Fedora 9 and newer
 (issues with newer versions of glibc headers).
 
 * 27-Apr-2008

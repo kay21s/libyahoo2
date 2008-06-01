@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(libyahoo2, 0.7.6.1, libyahoo2-users@lists.sourceforge.net)
+AC_INIT(libyahoo2, 0.7.7, libyahoo2-users@lists.sourceforge.net)
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR(src/libyahoo2.c)
 AM_INIT_AUTOMAKE([1.6 dist-bzip2])

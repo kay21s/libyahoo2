@@ -8,7 +8,7 @@
 #define PACKAGE "libyahoo2"
 
 /* Version number of package */
-#define VERSION "0.7.6"
+#define VERSION "0.7.7"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS  1

@@ -779,12 +779,12 @@ static void yahoo_send_packet(struct yahoo_input_data *yid, struct yahoo_packet 
 	data = y_new0(unsigned char, len + 1);
 
 	memcpy(data + pos, "YMSG", 4); pos += 4;
-	pos += yahoo_put16(data + pos, 0x000c);
-	pos += yahoo_put16(data + pos, 0x0000);
-	pos += yahoo_put16(data + pos, pktlen + extra_pad);
-	pos += yahoo_put16(data + pos, pkt->service);
-	pos += yahoo_put32(data + pos, pkt->status);
-	pos += yahoo_put32(data + pos, pkt->id);
+	pos += yahoo_put16(data + pos, YAHOO_PROTO_VER); /* version [latest 12 0x000c] */
+	pos += yahoo_put16(data + pos, 0x0000); /* HIWORD pkt length??? */
+	pos += yahoo_put16(data + pos, pktlen + extra_pad); /* LOWORD pkt length? */
+	pos += yahoo_put16(data + pos, pkt->service); /* service */
+	pos += yahoo_put32(data + pos, pkt->status); /* status [4bytes] */
+	pos += yahoo_put32(data + pos, pkt->id); /* session [4bytes] */
 
 	yahoo_packet_write(pkt, data + pos);
 

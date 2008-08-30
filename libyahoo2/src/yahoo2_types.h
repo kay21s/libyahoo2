@@ -84,7 +84,7 @@ enum yahoo_log_level {
 	YAHOO_LOG_DEBUG
 };
 
-#define YAHOO_PROTO_VER 0x000b
+#define YAHOO_PROTO_VER 0x000c
 
 /* Yahoo style/color directives */
 #define YAHOO_COLOR_BLACK "\033[30m"

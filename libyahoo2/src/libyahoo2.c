@@ -552,7 +552,7 @@ static void yahoo_free_data(struct yahoo_data *yd)
 #define YAHOO_PACKET_HDRLEN (4 + 2 + 2 + 2 + 2 + 4 + 4)
 
 static struct yahoo_packet *yahoo_packet_new(enum yahoo_service service, 
-		enum yahoo_status status, int id)
+		enum ypacket_status status, int id)
 {
 	struct yahoo_packet *pkt = y_new0(struct yahoo_packet, 1);
 
@@ -1621,7 +1621,7 @@ static void yahoo_process_verify(struct yahoo_input_data *yid, struct yahoo_pack
 		return;
 	}
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_send_packet(yid, pkt, 0);
@@ -2321,7 +2321,7 @@ static void yahoo_process_auth_resp(struct yahoo_input_data *yid, struct yahoo_p
 	char *login_id;
 	char *handle;
 	char *url=NULL;
-	int  login_status=0;
+	int  login_status=-1;
 
 	YList *l;
 
@@ -2337,7 +2337,7 @@ static void yahoo_process_auth_resp(struct yahoo_input_data *yid, struct yahoo_p
 			login_status = atoi(pair->value);
 	}
 
-	if(pkt->status == 0xffffffff) {
+	if(pkt->status == YPACKET_STATUS_DISCONNECTED) {
 		YAHOO_CALLBACK(ext_yahoo_login_response)(yd->client_id, login_status, url);
 	/*	yahoo_logoff(yd->client_id);*/
 	}
@@ -2707,6 +2707,7 @@ static void yahoo_packet_process(struct yahoo_input_data *yid, struct yahoo_pack
 	case YAHOO_SERVICE_GAMELOGOFF:
 	case YAHOO_SERVICE_IDACT:
 	case YAHOO_SERVICE_IDDEACT:
+	case YAHOO_SERVICE_Y6_STATUS_UPDATE:
 		yahoo_process_status(yid, pkt);
 		break;
 	case YAHOO_SERVICE_NOTIFY:
@@ -3703,7 +3704,7 @@ static void yahoo_connected(int fd, int error, void *data)
 	if(fd < 0)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_AUTH, YPACKET_STATUS_DEFAULT, yd->session_id);
 	NOTICE(("Sending initial packet"));
 
 	yahoo_packet_hash(pkt, 1, yd->user);
@@ -3803,7 +3804,7 @@ void yahoo_send_typing(int id, const char *from, const char *who, int typ)
 		return;
 
 	yd = yid->yd;
-	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YAHOO_STATUS_NOTIFY, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YPACKET_STATUS_NOTIFY, yd->session_id);
 
 	yahoo_packet_hash(pkt, 5, who);
 	yahoo_packet_hash(pkt, 4, from?from:yd->user);
@@ -3845,7 +3846,7 @@ void yahoo_set_away(int id, enum yahoo_status state, const char *msg, int away)
 		yahoo_packet_hash(pkt, 10, "999");
 		yahoo_packet_hash(pkt, 47, "2");
 	}else {
-		pkt = yahoo_packet_new(service, YAHOO_STATUS_AVAILABLE, yd->session_id);
+		pkt = yahoo_packet_new(service, YPACKET_STATUS_DEFAULT, yd->session_id);
 		snprintf(s, sizeof(s), "%d", yd->current_status);
 		yahoo_packet_hash(pkt, 10, s);
 		if (yd->current_status == YAHOO_STATUS_CUSTOM) {
@@ -3876,7 +3877,7 @@ void yahoo_logoff(int id)
 	LOG(("yahoo_logoff: current status: %d", yd->current_status));
 
 	if(yd->current_status != -1) {
-		pkt = yahoo_packet_new(YAHOO_SERVICE_LOGOFF, YAHOO_STATUS_AVAILABLE, yd->session_id);
+		pkt = yahoo_packet_new(YAHOO_SERVICE_LOGOFF, YPACKET_STATUS_DEFAULT, yd->session_id);
 		yd->current_status = -1;
 
 		if (pkt) {
@@ -3902,7 +3903,7 @@ void yahoo_get_list(int id)
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_LIST, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_LIST, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	if (pkt) {
 		yahoo_send_packet(yid, pkt, 0);
@@ -4042,7 +4043,7 @@ void yahoo_set_identity_status(int id, const char * identity, int active)
 	yd = yid->yd;
 
 	pkt = yahoo_packet_new(active?YAHOO_SERVICE_IDACT:YAHOO_SERVICE_IDDEACT,
-			YAHOO_STATUS_AVAILABLE, yd->session_id);
+			YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 3, identity);
 	if (pkt) {
 		yahoo_send_packet(yid, pkt, 0);
@@ -4060,7 +4061,7 @@ void yahoo_refresh(int id)
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_USERSTAT, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_USERSTAT, YPACKET_STATUS_DEFAULT, yd->session_id);
 	if (pkt) {
 		yahoo_send_packet(yid, pkt, 0);
 		yahoo_packet_free(pkt);
@@ -4076,7 +4077,7 @@ void yahoo_keepalive(int id)
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_PING, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_PING, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_send_packet(yid, pkt, 0);
 	yahoo_packet_free(pkt);
 }
@@ -4092,7 +4093,7 @@ void yahoo_chat_keepalive (int id)
 
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new (YAHOO_SERVICE_CHATPING, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new (YAHOO_SERVICE_CHATPING, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_send_packet (yid, pkt, 0);
 	yahoo_packet_free (pkt);
 }
@@ -4110,7 +4111,7 @@ void yahoo_add_buddy(int id, const char *who, const char *group, const char *msg
 	if (!yd->logged_in)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, group);
@@ -4130,7 +4131,7 @@ void yahoo_remove_buddy(int id, const char *who, const char *group)
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
@@ -4152,7 +4153,7 @@ void yahoo_reject_buddy(int id, const char *who, const char *msg)
 	if (!yd->logged_in)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_REJECTCONTACT, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_REJECTCONTACT, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 14, msg);
@@ -4173,7 +4174,7 @@ void yahoo_ignore_buddy(int id, const char *who, int unignore)
 	if (!yd->logged_in)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_IGNORECONTACT, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_IGNORECONTACT, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 13, unignore?"2":"1");
@@ -4194,7 +4195,7 @@ void yahoo_stealth_buddy(int id, const char *who, int unstealth)
 	if (!yd->logged_in)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_STEALTH_PERM, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_STEALTH_PERM, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 31, unstealth?"2":"1");
@@ -4213,7 +4214,7 @@ void yahoo_change_buddy_group(int id, const char *who, const char *old_group, co
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_ADDBUDDY, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, new_group);
@@ -4222,7 +4223,7 @@ void yahoo_change_buddy_group(int id, const char *who, const char *old_group, co
 	yahoo_send_packet(yid, pkt, 0);
 	yahoo_packet_free(pkt);
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_REMBUDDY, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 7, who);
 	yahoo_packet_hash(pkt, 65, old_group);
@@ -4240,7 +4241,7 @@ void yahoo_group_rename(int id, const char *old_group, const char *new_group)
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_GROUPRENAME, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_GROUPRENAME, YPACKET_STATUS_DEFAULT, yd->session_id);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 65, old_group);
 	yahoo_packet_hash(pkt, 67, new_group);
@@ -4259,7 +4260,7 @@ void yahoo_conference_addinvite(int id, const char * from, const char *who, cons
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFADDINVITE, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFADDINVITE, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 51, who);
@@ -4287,7 +4288,7 @@ void yahoo_conference_invite(int id, const char * from, YList *who, const char *
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFINVITE, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFINVITE, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 50, yd->user);
@@ -4313,7 +4314,7 @@ void yahoo_conference_logon(int id, const char *from, YList *who, const char *ro
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGON, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGON, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -4336,7 +4337,7 @@ void yahoo_conference_decline(int id, const char * from, YList *who, const char 
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFDECLINE, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFDECLINE, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -4360,7 +4361,7 @@ void yahoo_conference_logoff(int id, const char * from, YList *who, const char *
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGOFF, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFLOGOFF, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -4383,7 +4384,7 @@ void yahoo_conference_message(int id, const char * from, YList *who, const char 
 		return;
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFMSG, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CONFMSG, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	for(; who; who = who->next) {
@@ -4438,7 +4439,7 @@ void yahoo_chat_logon(int id, const char *from, const char *room, const char *ro
 
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATONLINE, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATONLINE, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 109, yd->user);
@@ -4448,7 +4449,7 @@ void yahoo_chat_logon(int id, const char *from, const char *room, const char *ro
 
 	yahoo_packet_free(pkt);
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATJOIN, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATJOIN, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 104, room);
@@ -4473,7 +4474,7 @@ void  yahoo_chat_message(int id, const char *from, const char *room, const char 
 
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_COMMENT, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_COMMENT, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 	yahoo_packet_hash(pkt, 104, room);
@@ -4502,7 +4503,7 @@ void yahoo_chat_logoff(int id, const char *from)
 
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATLOGOUT, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATLOGOUT, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from?from:yd->user));
 
@@ -4522,7 +4523,7 @@ void yahoo_buddyicon_request(int id, const char *who)
 
 	yd = yid->yd;
 	
-	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE, YAHOO_STATUS_AVAILABLE, 0);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE, YPACKET_STATUS_DEFAULT, 0);
 	yahoo_packet_hash(pkt, 4, yd->user);
 	yahoo_packet_hash(pkt, 5, who);
 	yahoo_packet_hash(pkt, 13, "1");
@@ -4545,7 +4546,7 @@ void yahoo_send_picture_info(int id, const char *who, const char *url, int check
 
 	snprintf(checksum_str, sizeof(checksum_str), "%d", checksum);
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE, YAHOO_STATUS_AVAILABLE, 0);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE, YPACKET_STATUS_DEFAULT, 0);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 4, yd->user);
 	yahoo_packet_hash(pkt, 5, who);
@@ -4571,7 +4572,7 @@ void yahoo_send_picture_update(int id, const char *who, int type)
 
 	snprintf(type_str, sizeof(type_str), "%d", type);
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE_UPDATE, YAHOO_STATUS_AVAILABLE, 0);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE_UPDATE, YPACKET_STATUS_DEFAULT, 0);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	yahoo_packet_hash(pkt, 5, who);
 	yahoo_packet_hash(pkt, 206, type_str);
@@ -4594,7 +4595,7 @@ void yahoo_send_picture_checksum(int id, const char *who, int checksum)
 	
 	snprintf(checksum_str, sizeof(checksum_str), "%d", checksum);
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE_CHECKSUM, YAHOO_STATUS_AVAILABLE, 0);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE_CHECKSUM, YPACKET_STATUS_DEFAULT, 0);
 	yahoo_packet_hash(pkt, 1, yd->user);
 	if( who != 0 )
 		yahoo_packet_hash(pkt, 5, who);
@@ -4633,7 +4634,7 @@ void yahoo_webcam_get_feed(int id, const char *who)
 
 	yd = yid->yd;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_WEBCAM, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_WEBCAM, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, yd->user);
 	if (who != NULL)
@@ -4708,7 +4709,7 @@ void yahoo_webcam_invite(int id, const char *who)
 	if(!yid)
 		return;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YAHOO_STATUS_NOTIFY, yid->yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_NOTIFY, YPACKET_STATUS_NOTIFY, yid->yd->session_id);
 
 	yahoo_packet_hash(pkt, 49, "WEBCAMINVITE");
 	yahoo_packet_hash(pkt, 14, " ");
@@ -4874,7 +4875,7 @@ void yahoo_send_picture(int id, const char *name, unsigned long size,
 	yid->yd = yd;
 	yid->type = YAHOO_CONNECTION_FT;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE_UPLOAD, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_PICTURE_UPLOAD, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	snprintf(size_str, sizeof(size_str), "%ld", size);
 	snprintf(expire_str, sizeof(expire_str), "%ld", (long)604800);
@@ -4969,7 +4970,7 @@ void yahoo_send_file(int id, const char *who, const char *msg,
 	yid->yd = yd;
 	yid->type = YAHOO_CONNECTION_FT;
 
-	pkt = yahoo_packet_new(YAHOO_SERVICE_FILETRANSFER, YAHOO_STATUS_AVAILABLE, yd->session_id);
+	pkt = yahoo_packet_new(YAHOO_SERVICE_FILETRANSFER, YPACKET_STATUS_DEFAULT, yd->session_id);
 
 	snprintf(size_str, sizeof(size_str), "%ld", size);
 

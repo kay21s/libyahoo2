@@ -609,6 +609,12 @@ static void yahoo_packet_read(struct yahoo_packet *pkt, unsigned char *data, int
 		free(key);
 
 		accept = x; 
+
+		if (pos + 1 > len) {
+			/* Malformed packet! (Truncated--garbage or something) */
+			accept = 0;
+		}
+		
 		/* if x is 0 there was no key, so don't accept it */
 		if (accept)
 			value = malloc(len - pos + 1);

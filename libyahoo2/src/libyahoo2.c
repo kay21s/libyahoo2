@@ -722,9 +722,10 @@ static void yahoo_packet_dump(unsigned char *data, int len)
 	}
 }
 
-static char base64digits[] = 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static const char base64digits[] = 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				"abcdefghijklmnopqrstuvwxyz"
 				"0123456789._";
+
 static void to_y64(unsigned char *out, const unsigned char *in, int inlen)
 /* raw bytes in quasi-big-endian order to base 64 string (NUL-terminated) */
 {
@@ -769,7 +770,6 @@ static void yahoo_send_packet(struct yahoo_input_data *yid, struct yahoo_packet 
 {
 	int pktlen = yahoo_packet_length(pkt);
 	int len = YAHOO_PACKET_HDRLEN + pktlen;
-
 	unsigned char *data;
 	int pos = 0;
 
@@ -793,7 +793,7 @@ static void yahoo_send_packet(struct yahoo_input_data *yid, struct yahoo_packet 
 	if( yid->type == YAHOO_CONNECTION_FT )
 		yahoo_send_data(yid->fd, data, len);
 	else
-	yahoo_add_to_send_queue(yid, data, len);
+		yahoo_add_to_send_queue(yid, data, len);
 	FREE(data);
 }
 
@@ -2280,12 +2280,18 @@ static void yahoo_process_auth(struct yahoo_input_data *yid, struct yahoo_packet
 
 	while (l) {
 		struct yahoo_pair *pair = l->data;
-		if (pair->key == 94)
+		
+		switch (pair->key){
+		case 94:
 			seed = pair->value;
-		if (pair->key == 1)
+			break;
+		case 1:
 			sn = pair->value;
-		if (pair->key == 13)
+			break;
+		case 13:
 			m = atoi(pair->value);
+			break;
+		}
 		l = l->next;
 	}
 
@@ -3246,7 +3252,7 @@ int yahoo_write_ready(int id, int fd, void *data)
 			LOG(("yahoo_write_ready(%d, %d) !yxqueues", id, fd));
 		*/
 		if(!yid->txqueues) {
-			LOG(("yahoo_write_ready(%d, %d) !yxqueues", id, fd));
+			LOG(("yahoo_write_ready(%d, %d) !txqueues", id, fd));
 			YAHOO_CALLBACK(ext_yahoo_remove_handler)(id, yid->write_tag);
 			yid->write_tag = 0;
 		}

@@ -4823,10 +4823,11 @@ static void _yahoo_send_picture_connected(int id, int fd, int error, void *data)
 	}
 
 	yid->fd = fd;
-	yahoo_send_packet(yid, pkt, 8);
+	yahoo_send_packet(yid, pkt, 4); // pad the length by 4 bytes (this was wrong before)
 	yahoo_packet_free(pkt);
 
-	snprintf((char *)buff, sizeof(buff), "29");
+	buff[0] = 0x32;
+	buff[1] = 0x39;
 	buff[2] = 0xc0;
 	buff[3] = 0x80;
 	
@@ -4916,10 +4917,11 @@ static void _yahoo_send_file_connected(int id, int fd, int error, void *data)
 	}
 
 	yid->fd = fd;
-	yahoo_send_packet(yid, pkt, 8);
+	yahoo_send_packet(yid, pkt, 4);
 	yahoo_packet_free(pkt);
 
-	snprintf((char *)buff, sizeof(buff), "29");
+	buff[0] = 0x32;
+	buff[1] = 0x39;
 	buff[2] = 0xc0;
 	buff[3] = 0x80;
 	

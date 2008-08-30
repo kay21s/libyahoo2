@@ -3654,9 +3654,10 @@ int yahoo_read_ready(int id, int fd, void *data)
 		return -1;
 	}
 
-	yid->rxqueue = y_renew(unsigned char, yid->rxqueue, len + yid->rxlen);
+	yid->rxqueue = y_renew(unsigned char, yid->rxqueue, len + yid->rxlen + 1);
 	memcpy(yid->rxqueue + yid->rxlen, buf, len);
 	yid->rxlen += len;
+	yid->rxqueue[yid->rxlen] = 0; // zero terminate
 
 	yahoo_process_connection[yid->type](yid, 0);
 

@@ -1532,13 +1532,7 @@ static void yahoo_process_list(struct yahoo_input_data *yid, struct yahoo_packet
 	struct yahoo_data *yd = yid->yd;
 	YList *l;
 
-	if (!yd->logged_in) {
-		yd->logged_in = TRUE;
-		if(yd->current_status < 0)
-			yd->current_status = yd->initial_status;
-		YAHOO_CALLBACK(ext_yahoo_login_response)(yd->client_id, YAHOO_LOGIN_OK, NULL);
-	}
-
+	/* we could be getting multiple packets here */
 	for (l = pkt->hash; l; l = l->next) {
 		struct yahoo_pair *pair = l->data;
 
@@ -1569,17 +1563,6 @@ static void yahoo_process_list(struct yahoo_input_data *yid, struct yahoo_packet
 			YAHOO_CALLBACK(ext_yahoo_got_identities)(yd->client_id, yd->identities);
 			break;
 		case 59: /* cookies */
-			if(yd->ignorelist) {
-				yd->ignore = bud_str2list(yd->ignorelist);
-				FREE(yd->ignorelist);
-				YAHOO_CALLBACK(ext_yahoo_got_ignore)(yd->client_id, yd->ignore);
-			}
-			if(yd->rawbuddylist) {
-				yd->buddies = bud_str2list(yd->rawbuddylist);
-				FREE(yd->rawbuddylist);
-				YAHOO_CALLBACK(ext_yahoo_got_buddies)(yd->client_id, yd->buddies);
-			}
-
 			if(pair->value[0]=='Y') {
 				FREE(yd->cookie_y);
 				FREE(yd->login_cookie);
@@ -1596,9 +1579,6 @@ static void yahoo_process_list(struct yahoo_input_data *yid, struct yahoo_packet
 				yd->cookie_c = getcookie(pair->value);
 			} 
 
-			if(yd->cookie_y && yd->cookie_t && yd->cookie_c)
-				YAHOO_CALLBACK(ext_yahoo_got_cookies)(yd->client_id);
-
 			break;
 		case 3: /* my id */
 		case 90: /* 1 */
@@ -1608,6 +1588,34 @@ static void yahoo_process_list(struct yahoo_input_data *yid, struct yahoo_packet
 		case 93: /* 86400/1440 */
 			break;
 		}
+	}
+/* we could be getting multiple packets here */
+	if (pkt->status != 0) /* Thanks for the fix GAIM */
+		return;
+	
+	if(yd->ignorelist) {
+		yd->ignore = bud_str2list(yd->ignorelist);
+		FREE(yd->ignorelist);
+		YAHOO_CALLBACK(ext_yahoo_got_ignore)(yd->client_id, yd->ignore);
+	}
+	
+	if(yd->rawbuddylist) {
+		yd->buddies = bud_str2list(yd->rawbuddylist);
+		FREE(yd->rawbuddylist);
+		
+		YAHOO_CALLBACK(ext_yahoo_got_buddies)(yd->client_id, yd->buddies);
+	}
+
+
+	if(yd->cookie_y && yd->cookie_t && yd->cookie_c)
+				YAHOO_CALLBACK(ext_yahoo_got_cookies)(yd->client_id);
+	
+	/*** We login at the very end of the packet communication */
+	if (!yd->logged_in) {
+		yd->logged_in = TRUE;
+		if(yd->current_status < 0)
+			yd->current_status = yd->initial_status;
+		YAHOO_CALLBACK(ext_yahoo_login_response)(yd->client_id, YAHOO_LOGIN_OK, NULL);
 	}
 }
 

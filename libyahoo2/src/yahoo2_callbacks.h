@@ -402,8 +402,9 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_typing_notify)(int id, const char *me, const 
  * 	me   - the handle of the identity the notification is sent to
  * 	who  - the handle of the remote user
  * 	stat - 1 if game, 0 if stopped gaming
+ * 	msg  - game description and/or other text
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_game_notify)(int id, const char *me, const char *who, int stat);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_game_notify)(int id, const char *me, const char *who, int stat, const char *msg);
 
 
 /*
@@ -423,9 +424,11 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_mail_notify)(int id, const char *from, const 
  * 	System message
  * Params:
  * 	id   - the id that identifies the server connection
+ * 	me   - the handle of the identity the notification is sent to
+ * 	who  - the source of the system message (there are different types)
  * 	msg  - the message
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, const char *msg);
+void YAHOO_CALLBACK_TYPE(ext_yahoo_system_message)(int id, const char *me, const char *who, const char *msg);
 
 /*
  * Name: ext_yahoo_got_buddyicon

@@ -1008,7 +1008,7 @@ static void yahoo_process_notify(struct yahoo_input_data *yid, struct yahoo_pack
 	if (!strncasecmp(msg, "TYPING", strlen("TYPING"))) 
 		YAHOO_CALLBACK(ext_yahoo_typing_notify)(yd->client_id, to, from, stat);
 	else if (!strncasecmp(msg, "GAME", strlen("GAME"))) 
-		YAHOO_CALLBACK(ext_yahoo_game_notify)(yd->client_id, to, from, stat);
+		YAHOO_CALLBACK(ext_yahoo_game_notify)(yd->client_id, to, from, stat, ind);
 	else if (!strncasecmp(msg, "WEBCAMINVITE", strlen("WEBCAMINVITE"))) 
 	{
 		if (!strcmp(ind, " ")) {
@@ -1078,6 +1078,8 @@ static void yahoo_process_filetransfer(struct yahoo_input_data *yid, struct yaho
 	}
 	if(url && from)
 		YAHOO_CALLBACK(ext_yahoo_got_file)(yd->client_id, to, from, url, expires, msg, filename, filesize);
+	else if (strcmp(from, "FILE_TRANSFER_SYSTEM") == 0 && msg != NULL)
+		YAHOO_CALLBACK(ext_yahoo_system_message)(yd->client_id, to, from, msg);
 
 }
 
@@ -1376,7 +1378,7 @@ static void yahoo_process_message(struct yahoo_input_data *yid, struct yahoo_pac
 	for (l = messages; l; l=l->next) {
 		message = l->data;
 		if (pkt->service == YAHOO_SERVICE_SYSMESSAGE) {
-			YAHOO_CALLBACK(ext_yahoo_system_message)(yd->client_id, message->msg);
+			YAHOO_CALLBACK(ext_yahoo_system_message)(yd->client_id, message->to, message->from, message->msg);
 		} else if (pkt->status <= 2 || pkt->status == 5) {
 			YAHOO_CALLBACK(ext_yahoo_got_im)(yd->client_id, message->to, message->from, message->msg, message->tm, pkt->status, message->utf8);
 		} else if (pkt->status == 0xffffffff) {

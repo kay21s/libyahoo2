@@ -4823,9 +4823,10 @@ static void _yahoo_send_picture_connected(int id, int fd, int error, void *data)
 	}
 
 	yid->fd = fd;
-	yahoo_send_packet(yid, pkt, 4); // pad the length by 4 bytes (this was wrong before)
+	yahoo_send_packet(yid, pkt, 4); /* we pad with 4 chars that follow bellow */
 	yahoo_packet_free(pkt);
 
+	/* 4 magic padding chars that we need to send */
 	buff[0] = 0x32;
 	buff[1] = 0x39;
 	buff[2] = 0xc0;
@@ -4884,7 +4885,7 @@ void yahoo_send_picture(int id, const char *name, unsigned long size,
 	yahoo_packet_hash(pkt, 38, expire_str);
 	
 
-	content_length = YAHOO_PACKET_HDRLEN + yahoo_packet_length(pkt);
+	content_length = YAHOO_PACKET_HDRLEN + yahoo_packet_length(pkt)+size+4;
 
 	snprintf(url, sizeof(url), "http://%s:%d/notifyft",
 				yss->filetransfer_host, yss->filetransfer_port);
@@ -4896,7 +4897,7 @@ void yahoo_send_picture(int id, const char *name, unsigned long size,
 	sfd->pkt = pkt;
 	sfd->callback = callback;
 	sfd->user_data = data;
-	yahoo_http_post(yid->yd->client_id, url, (char *)buff, content_length+4+size,
+	yahoo_http_post(yid->yd->client_id, url, (char *)buff, content_length,
 						_yahoo_send_picture_connected, sfd);
 }
 
@@ -4917,9 +4918,10 @@ static void _yahoo_send_file_connected(int id, int fd, int error, void *data)
 	}
 
 	yid->fd = fd;
-	yahoo_send_packet(yid, pkt, 4);
+	yahoo_send_packet(yid, pkt, 4); /* we pad with 4 chars that follow bellow */
 	yahoo_packet_free(pkt);
 
+	/* 4 magic padding chars that we need to send */
 	buff[0] = 0x32;
 	buff[1] = 0x39;
 	buff[2] = 0xc0;
@@ -4975,7 +4977,7 @@ void yahoo_send_file(int id, const char *who, const char *msg,
 	yahoo_packet_hash(pkt, 27, name);
 	yahoo_packet_hash(pkt, 28, size_str);
 
-	content_length = YAHOO_PACKET_HDRLEN + yahoo_packet_length(pkt);
+	content_length = YAHOO_PACKET_HDRLEN + yahoo_packet_length(pkt)+size+4;
 
 	snprintf(url, sizeof(url), "http://%s:%d/notifyft", 
 			yss->filetransfer_host, yss->filetransfer_port);
@@ -4987,7 +4989,7 @@ void yahoo_send_file(int id, const char *who, const char *msg,
 	sfd->pkt = pkt;
 	sfd->callback = callback;
 	sfd->user_data = data;
-	yahoo_http_post(yid->yd->client_id, url, (char *)buff, content_length+4+size,
+	yahoo_http_post(yid->yd->client_id, url, (char *)buff, content_length,
 			_yahoo_send_file_connected, sfd);
 }
 

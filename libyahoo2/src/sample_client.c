@@ -665,7 +665,7 @@ void ext_yahoo_typing_notify(int id, const char* me, const char *who, int stat)
 		print_message(("[%s]%s is typing...", me, who));
 }
 
-void ext_yahoo_game_notify(int id, const char *me, const char *who, int stat)
+void ext_yahoo_game_notify(int id, const char *me, const char *who, int stat, const char *msg)
 {
 }
 
@@ -797,7 +797,7 @@ void ext_yahoo_webcam_invite_reply(int id, const char *me, const char *from, int
 	}
 }
 
-void ext_yahoo_system_message(int id, const char *msg)
+void ext_yahoo_system_message(int id, const char *me, const char *who, const char *msg)
 {
 	if(ignore_system)
 		return;

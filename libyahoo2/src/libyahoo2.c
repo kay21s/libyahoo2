@@ -139,14 +139,14 @@ int yahoo_set_log_level(enum yahoo_log_level level)
 }
 
 /* default values for servers */
-static char pager_host[] = "scs.msg.yahoo.com"; 
-static int pager_port = 5050;
-static int fallback_ports[]={23, 25, 80, 20, 119, 8001, 8002, 5050, 0};
-static char filetransfer_host[]="filetransfer.msg.yahoo.com";
-static int filetransfer_port=80;
-static char webcam_host[]="webcam.yahoo.com";
-static int webcam_port=5100;
-static char webcam_description[]="";
+static const char pager_host[] = "scs.msg.yahoo.com";
+static const int pager_port = 5050;
+static const int fallback_ports[]={23, 25, 80, 20, 119, 8001, 8002, 5050, 0};
+static const char filetransfer_host[]="filetransfer.msg.yahoo.com";
+static const int filetransfer_port=80;
+static const char webcam_host[]="webcam.yahoo.com";
+static const int webcam_port=5100;
+static const char webcam_description[]="";
 static char local_host[]="";
 static int conn_type=Y_WCM_DSL;
 
@@ -1555,8 +1555,8 @@ static void yahoo_process_verify(struct yahoo_input_data *yid, struct yahoo_pack
 static void yahoo_process_picture_checksum( struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	struct yahoo_data *yd = yid->yd;
-	char *from;
-	char *to;
+	char *from = NULL;
+	char *to = NULL;
 	int checksum = 0;
 	YList *l;
 
@@ -1586,9 +1586,9 @@ static void yahoo_process_picture_checksum( struct yahoo_input_data *yid, struct
 static void yahoo_process_picture(struct yahoo_input_data *yid, struct yahoo_packet *pkt)
 {
 	struct yahoo_data *yd = yid->yd;
-	char *url;
-	char *from;
-	char *to;
+	char *url = NULL;
+	char *from = NULL;
+	char *to = NULL;
 	int status = 0;
 	int checksum = 0;
 	YList *l;
@@ -1633,7 +1633,7 @@ static void yahoo_process_picture_upload(struct yahoo_input_data *yid, struct ya
 {
 	struct yahoo_data *yd = yid->yd;
 	YList *l;
-	char *url;
+	char *url = NULL;
 
 	if ( pkt->status != 1 )
 		return;		/* something went wrong */
@@ -3225,7 +3225,7 @@ static void yahoo_process_yab_connection(struct yahoo_input_data *yid, int over)
 	YList *buds;
 	int changed=0;
 	int id = yd->client_id;
-	BOOL yab_used = FALSE;
+	int yab_used = 0;
 
 	if(over)
 		return;
@@ -3236,11 +3236,11 @@ static void yahoo_process_yab_connection(struct yahoo_input_data *yid, int over)
 			continue;
 		
 		changed=1;
-		yab_used = FALSE;
+		yab_used = 0;
 		for(buds = yd->buddies; buds; buds=buds->next) {
 			struct yahoo_buddy * bud = buds->data;
 			if(!strcmp(bud->id, yab->id)) {
-				yab_used = TRUE;
+				yab_used = 1;
 				bud->yab_entry = yab;
 				if(yab->nname) {
 					bud->real_name = strdup(yab->nname);
@@ -3260,7 +3260,7 @@ static void yahoo_process_yab_connection(struct yahoo_input_data *yid, int over)
 		
 		if (!yab_used)
 		{
-			//need to free the yab entry
+			/* need to free the yab entry */
 			FREE(yab->fname);
 			FREE(yab->lname);
 			FREE(yab->nname);
@@ -3571,7 +3571,7 @@ int yahoo_read_ready(int id, int fd, void *data)
 	yid->rxqueue = y_renew(unsigned char, yid->rxqueue, len + yid->rxlen + 1);
 	memcpy(yid->rxqueue + yid->rxlen, buf, len);
 	yid->rxlen += len;
-	yid->rxqueue[yid->rxlen] = 0; // zero terminate
+	yid->rxqueue[yid->rxlen] = 0; /* zero terminate */
 
 	yahoo_process_connection[yid->type](yid, 0);
 

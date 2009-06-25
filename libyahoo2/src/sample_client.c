@@ -127,7 +127,7 @@ yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_IDLE, "Idle"},
 	{YAHOO_STATUS_OFFLINE, "Offline"},
 	{YAHOO_STATUS_CUSTOM, "[Custom]"},
-	{YAHOO_STATUS_NOTIFY, "Notify"},
+	{YPACKET_STATUS_NOTIFY, "Notify"},
 	{0, NULL}
 };
 

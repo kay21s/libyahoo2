@@ -7,6 +7,7 @@
  * $Date$
  * 
  * Copyright (C) 2002-2004, Philip S Tellis <philip.tellis AT gmx.net>
+ * Copyright (C) 2009, Siddhesh Poyarekar <siddhesh.poyarekar@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +49,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <openssl/ssl.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -198,7 +200,7 @@ static char * get_local_addresses()
 	int i;
 	FILE * f;
 	f = popen("netstat -nr", "r");
-	if((int)f < 1)
+	if(!f)
 			goto IP_TEST_2;
 	while( fgets(buff, sizeof(buff), f)  != NULL ) {
 			c = strtok( buff, " " );
@@ -222,7 +224,7 @@ static char * get_local_addresses()
 		gateway[i] = 0;
 
 	f = popen("/sbin/ifconfig -a", "r");
-	if((int)f < 1)
+	if(!f)
 		goto IP_TEST_2;
 
 	while( fgets(buff, sizeof(buff), f) != NULL ) {
@@ -461,7 +463,7 @@ void ext_yahoo_chat_cat_xml(int id, const char *xml)
 	print_message(("%s", xml));
 }
 
-void ext_yahoo_chat_join(int id, const char *me, const char *room, const char * topic, YList *members, int fd)
+void ext_yahoo_chat_join(int id, const char *me, const char *room, const char * topic, YList *members, void *fd)
 {
 	print_message(("You [%s] have joined the chatroom %s with topic %s", me, room, topic));
 
@@ -960,52 +962,7 @@ void yahoo_set_current_state(int yahoo_state)
 
 int ext_yahoo_connect(const char *host, int port)
 {
-	struct sockaddr_in serv_addr;
-	static struct hostent *server;
-	static char last_host[256];
-	int servfd;
-	char **p;
-
-	if(last_host[0] || strcasecmp(last_host, host)!=0) {
-		if(!(server = gethostbyname(host))) {
-			WARNING(("failed to look up server (%s:%d)\n%d: %s", 
-						host, port,
-						h_errno, strerror(h_errno)));
-			return -1;
-		}
-		strncpy(last_host, host, 255);
-	}
-
-	if((servfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		WARNING(("Socket create error (%d): %s", errno, strerror(errno)));
-		return -1;
-	}
-
-	LOG(("connecting to %s:%d", host, port));
-
-	for (p = server->h_addr_list; *p; p++)
-	{
-		memset(&serv_addr, 0, sizeof(serv_addr));
-		serv_addr.sin_family = AF_INET;
-		memcpy(&serv_addr.sin_addr.s_addr, *p, server->h_length);
-		serv_addr.sin_port = htons(port);
-
-		LOG(("trying %s", inet_ntoa(serv_addr.sin_addr)));
-		if(connect(servfd, (struct sockaddr *) &serv_addr, 
-					sizeof(serv_addr)) == -1) {
-			if(errno!=ECONNREFUSED && errno!=ETIMEDOUT && 
-					errno!=ENETUNREACH) {
-				break;
-			}
-		} else {
-			LOG(("connected"));
-			return servfd;
-		}
-	}
-
-	WARNING(("Could not connect to %s:%d\n%d:%s", host, port, errno, 
-				strerror(errno)));
-	close(servfd);
+	WARNING(("This should not be used anymore. File a bug report."));
 	return -1;
 }
 
@@ -1014,44 +971,76 @@ int ext_yahoo_connect(const char *host, int port)
  */
 YList *connections = NULL;
 struct _conn {
-	int tag;
 	int fd;
-	int id;
-	yahoo_input_condition cond;
-	void *data;
+	SSL *ssl;
+	int use_ssl;
 	int remove;
 };
+
+struct conn_handler {
+	struct _conn *con;
+	int id;
+	int tag;
+	yahoo_input_condition cond;
+	int remove;
+	void *data;
+};
+
 static int connection_tags=0;
 
-int ext_yahoo_add_handler(int id, int fd, yahoo_input_condition cond, void *data)
+int ext_yahoo_add_handler(int id, void *d, yahoo_input_condition cond, void *data)
 {
-	struct _conn *c = y_new0(struct _conn, 1);
-	c->tag = ++connection_tags;
-	c->id = id;
-	c->fd = fd;
-	c->cond = cond;
-	c->data = data;
+	struct conn_handler *h = y_new0(struct conn_handler, 1);
 
-	LOG(("Add %d for %d, tag %d", fd, id, c->tag));
+	h->id = id;
+	h->tag = ++connection_tags;
+	h->con = d;
+	h->cond = cond;
+	h->data = data;
 
-	connections = y_list_prepend(connections, c);
+	LOG(("Add %d(%d) for %d, tag %d", h->con->fd, cond, id, h->tag));
 
-	return c->tag;
+	connections = y_list_prepend(connections, h);
+
+	return h->tag;
 }
 
 void ext_yahoo_remove_handler(int id, int tag)
 {
 	YList *l;
+	if (!tag)
+		return;
+
 	for(l = connections; l; l = y_list_next(l)) {
-		struct _conn *c = l->data;
+		struct conn_handler *c = l->data;
 		if(c->tag == tag) {
 			/* don't actually remove it, just mark it for removal */
 			/* we'll remove when we start the next poll cycle */
-			LOG(("Marking id:%d fd:%d tag:%d for removal", c->id, c->fd, c->tag));
+			LOG(("Marking id:%d fd:%p tag:%d for removal",
+				c->id, c->con, c->tag));
 			c->remove = 1;
 			return;
 		}
 	}
+}
+
+static SSL *do_ssl_connect(int fd)
+{
+	SSL *ssl;
+	SSL_CTX *ctx;
+
+	LOG(("SSL Handshake"));
+
+	SSL_library_init ();
+	ctx = SSL_CTX_new(SSLv23_client_method());
+	ssl = SSL_new(ctx);
+	SSL_CTX_free(ctx);
+	SSL_set_fd(ssl, fd);
+
+	if (SSL_connect(ssl) == 1)
+		return ssl;
+
+	return NULL;
 }
 
 struct connect_callback_data {
@@ -1061,37 +1050,51 @@ struct connect_callback_data {
 	int tag;
 };
 
-static void connect_complete(void *data, int source, yahoo_input_condition condition)
+static void connect_complete(void *data, struct _conn *source, yahoo_input_condition condition)
 {
 	struct connect_callback_data *ccd = data;
 	int error, err_size = sizeof(error);
 
 	ext_yahoo_remove_handler(0, ccd->tag);
-	getsockopt(source, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&err_size);
+	getsockopt(source->fd, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&err_size);
 
-	if(error) {
-		close(source);
-		source = -1;
+	if(error)
+		goto err;
+
+	LOG(("Connected fd: %d, error: %d", source->fd, error));
+
+	if (source->use_ssl) {
+		source->ssl = do_ssl_connect(source->fd);
+
+		if (!source->ssl) {
+err:
+			LOG(("SSL Handshake Failed!"));
+			ext_yahoo_close(source);
+
+			ccd->callback(NULL, 0, ccd->callback_data);
+			FREE(ccd);
+			return;
+		}
 	}
 
-	LOG(("Connected fd: %d, error: %d", source, error));
+	fcntl(source->fd, F_SETFL, O_NONBLOCK);
 
 	ccd->callback(source, error, ccd->callback_data);
 	FREE(ccd);
 }
 
-void yahoo_callback(struct _conn *c, yahoo_input_condition cond)
+void yahoo_callback(struct conn_handler *c, yahoo_input_condition cond)
 {
 	int ret=1;
 	char buff[1024]={0};
 
 	if(c->id < 0) {
-		connect_complete(c->data, c->fd, cond);
+		connect_complete(c->data, c->con, cond);
 	} else {
 		if(cond & YAHOO_INPUT_READ)
-			ret = yahoo_read_ready(c->id, c->fd, c->data);
+			ret = yahoo_read_ready(c->id, c->con, c->data);
 		if(ret>0 && cond & YAHOO_INPUT_WRITE)
-			ret = yahoo_write_ready(c->id, c->fd, c->data);
+			ret = yahoo_write_ready(c->id, c->con, c->data);
 
 		if(ret == -1)
 			snprintf(buff, sizeof(buff), 
@@ -1105,15 +1108,62 @@ void yahoo_callback(struct _conn *c, yahoo_input_condition cond)
 	}
 }
 
+int ext_yahoo_write(void *fd, char *buf, int len)
+{
+	struct _conn *c = fd;
+
+	if (c->use_ssl)
+		return SSL_write(c->ssl, buf, len);
+	else
+		return write(c->fd, buf, len);
+}
+
+int ext_yahoo_read(void *fd, char *buf, int len)
+{
+	struct _conn *c = fd;
+
+	if (c->use_ssl)
+		return SSL_read(c->ssl, buf, len);
+	else
+		return read(c->fd, buf, len);
+}
+
+void ext_yahoo_close(void *fd)
+{
+	struct _conn *c = fd;
+	YList *l;
+
+	if (c->use_ssl)
+		SSL_free(c->ssl);
+
+	close(c->fd);
+	c->fd = 0;
+
+	/* Remove all handlers */
+	for (l = connections; l; l = y_list_next(l)) {
+		struct conn_handler *h = l->data;
+
+		if (h->con == c)
+			h->remove = 1;
+	}
+
+	c->remove = 1;
+}
+
 int ext_yahoo_connect_async(int id, const char *host, int port, 
-		yahoo_connect_callback callback, void *data)
+		yahoo_connect_callback callback, void *data, int use_ssl)
 {
 	struct sockaddr_in serv_addr;
 	static struct hostent *server;
 	int servfd;
 	struct connect_callback_data * ccd;
 	int error;
+	SSL *ssl = NULL;
 
+	struct _conn *c;
+
+	LOG(("Connecting to %s", host));
+	
 	if(!(server = gethostbyname(host))) {
 		errno=h_errno;
 		return -1;
@@ -1128,11 +1178,31 @@ int ext_yahoo_connect_async(int id, const char *host, int port,
 	memcpy(&serv_addr.sin_addr.s_addr, *server->h_addr_list, server->h_length);
 	serv_addr.sin_port = htons(port);
 
+	c = y_new0(struct _conn, 1);
+	c->fd = servfd;
+	c->use_ssl = use_ssl;
+
 	error = connect(servfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
 
 	LOG(("Trying to connect: fd:%d error:%d", servfd, error));
 	if(!error) {
-		callback(servfd, 0, data);
+		LOG(("Connected"));
+		if (use_ssl) {
+			ssl = do_ssl_connect(servfd);
+
+			if (!ssl) {
+				LOG(("SSL Handshake Failed!"));
+				ext_yahoo_close(c);
+
+				callback(NULL, 0, data);
+				return -1;
+			}
+		}
+
+		c->ssl = ssl;
+		fcntl(c->fd, F_SETFL, O_NONBLOCK);
+
+		callback(c, 0, data);
 		return 0;
 	} else if(error == -1 && errno == EINPROGRESS) {
 		ccd = calloc(1, sizeof(struct connect_callback_data));
@@ -1140,13 +1210,15 @@ int ext_yahoo_connect_async(int id, const char *host, int port,
 		ccd->callback_data = data;
 		ccd->id = id;
 
-		ccd->tag = ext_yahoo_add_handler(-1, servfd, YAHOO_INPUT_WRITE, ccd);
+		ccd->tag = ext_yahoo_add_handler(-1, c, YAHOO_INPUT_WRITE, ccd);
 		return ccd->tag;
 	} else {
-		if(error == -1) {
-			LOG(("%s", strerror(errno)));
-		}
-		close(servfd);
+		if(error == -1)
+			LOG(("Connection failure: %s", strerror(errno)));
+
+		ext_yahoo_close(c);
+
+		callback(NULL, 0, data);
 		return -1;
 	}
 }
@@ -1599,21 +1671,21 @@ int main(int argc, char * argv[])
 		lfd=0;
 
 		for(l=connections; l; ) {
-			struct _conn *c = l->data;
+			struct conn_handler *c = l->data;
 			if(c->remove) {
 				YList *n = y_list_next(l);
-				LOG(("Removing id:%d fd:%d", c->id, c->fd));
+				LOG(("Removing id:%d fd:%d", c->id, c->con->fd));
 				connections = y_list_remove_link(connections, l);
 				y_list_free_1(l);
-				free(c);
+				FREE(c);
 				l=n;
 			} else {
 				if(c->cond & YAHOO_INPUT_READ)
-					FD_SET(c->fd, &inp);
+					FD_SET(c->con->fd, &inp);
 				if(c->cond & YAHOO_INPUT_WRITE)
-					FD_SET(c->fd, &outp);
-				if(lfd < c->fd)
-					lfd = c->fd;
+					FD_SET(c->con->fd, &outp);
+				if(lfd < c->con->fd)
+					lfd = c->con->fd;
 				l = y_list_next(l);
 			}
 		}
@@ -1628,12 +1700,17 @@ int main(int argc, char * argv[])
 #endif
 
 		for(l = connections; l; l = y_list_next(l)) {
-			struct _conn *c = l->data;
+			struct conn_handler *c = l->data;
+			if(c->con->remove) {
+				FREE(c->con);
+				c->con = NULL;
+				continue;
+			}
 			if(c->remove)
 				continue;
-			if(FD_ISSET(c->fd, &inp))
+			if(FD_ISSET(c->con->fd, &inp))
 				yahoo_callback(c, YAHOO_INPUT_READ);
-			if(FD_ISSET(c->fd, &outp))
+			if(FD_ISSET(c->con->fd, &outp))
 				yahoo_callback(c, YAHOO_INPUT_WRITE);
 		}
 
@@ -1644,8 +1721,7 @@ int main(int argc, char * argv[])
 
 	while(connections) {
 		YList *tmp = connections;
-		struct _conn * c = connections->data;
-		close(c->fd);
+		struct conn_handler *c = connections->data;
 		FREE(c);
 		connections = y_list_remove_link(connections, connections);
 		y_list_free_1(tmp);
@@ -1661,7 +1737,22 @@ int main(int argc, char * argv[])
 	return 0;
 }
 
-void ext_yahoo_got_file(int id, const char *me, const char *who, const char *url, long expires, const char *msg, const char *fname, unsigned long fesize)
+void ext_yahoo_got_file(int id, const char *me, const char *who, const char *msg, const char *fname, 
+	unsigned long fesize, char *trid)
+{
+	LOG(("Got a File transfer request (%s, %ld bytes) from %s", fname, fesize, who));
+}
+
+void ext_yahoo_file_transfer_done(int id, int response, void *data)
+{
+}
+
+char *ext_yahoo_get_ip_addr(const char *domain)
+{
+	return NULL;
+}
+
+void ext_yahoo_got_ft_data(int id, const unsigned char *in, int count, void *data)
 {
 }
 
@@ -1690,6 +1781,11 @@ void ext_yahoo_got_search_result(int id, int found, int start, int total, YList 
 void ext_yahoo_got_buddyicon_checksum(int id, const char *a, const char *b, int checksum)
 {
 	LOG(("got buddy icon checksum"));
+}
+
+void ext_yahoo_got_buddy_change_group(int id, const char *me, const char *who, 
+	const char *old_group, const char *new_group)
+{
 }
 
 void ext_yahoo_got_buddyicon(int id, const char *a, const char *b, const char *c, int checksum)
@@ -1738,6 +1834,9 @@ static void register_callbacks()
 	yc.ext_yahoo_webcam_viewer = ext_yahoo_webcam_viewer;
 	yc.ext_yahoo_webcam_data_request = ext_yahoo_webcam_data_request;
 	yc.ext_yahoo_got_file = ext_yahoo_got_file;
+	yc.ext_yahoo_got_ft_data = ext_yahoo_got_ft_data;
+	yc.ext_yahoo_get_ip_addr = ext_yahoo_get_ip_addr;
+	yc.ext_yahoo_file_transfer_done = ext_yahoo_file_transfer_done;
 	yc.ext_yahoo_contact_added = ext_yahoo_contact_added;
 	yc.ext_yahoo_rejected = ext_yahoo_rejected;
 	yc.ext_yahoo_typing_notify = ext_yahoo_typing_notify;
@@ -1751,6 +1850,9 @@ static void register_callbacks()
 	yc.ext_yahoo_remove_handler = ext_yahoo_remove_handler;
 	yc.ext_yahoo_connect = ext_yahoo_connect;
 	yc.ext_yahoo_connect_async = ext_yahoo_connect_async;
+	yc.ext_yahoo_read = ext_yahoo_read;
+	yc.ext_yahoo_write = ext_yahoo_write;
+	yc.ext_yahoo_close = ext_yahoo_close;
 	yc.ext_yahoo_got_buddyicon = ext_yahoo_got_buddyicon;
 	yc.ext_yahoo_got_buddyicon_checksum = ext_yahoo_got_buddyicon_checksum;
 	yc.ext_yahoo_buddyicon_uploaded = ext_yahoo_buddyicon_uploaded;

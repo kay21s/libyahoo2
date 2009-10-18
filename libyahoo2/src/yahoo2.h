@@ -28,8 +28,8 @@ extern "C" {
 
 #include "yahoo2_types.h"
 
-/* returns the socket descriptor for a given pager connection. shouldn't be needed */
-int  yahoo_get_fd(int id);
+/* returns the socket descriptor object for a given pager connection. shouldn't be needed */
+	void *yahoo_get_fd(int id);
 
 /* says how much logging to do */
 /* see yahoo2_types.h for the different values */
@@ -65,7 +65,8 @@ enum yahoo_log_level  yahoo_get_log_level( void );
  *
  * You should set at least local_host if you intend to use webcams
  */
-int  yahoo_init_with_attributes(const char *username, const char *password, ...);
+	int yahoo_init_with_attributes(const char *username,
+		const char *password, ...);
 
 /* yahoo_init does the same as yahoo_init_with_attributes, assuming defaults
  * for all attributes */
@@ -84,7 +85,8 @@ void yahoo_logoff(int id);
 /* reloads status of all buddies */
 void yahoo_refresh(int id);
 /* activates/deactivates an identity */
-void yahoo_set_identity_status(int id, const char * identity, int active);
+	void yahoo_set_identity_status(int id, const char *identity,
+		int active);
 /* regets the entire buddy list from the server */
 void yahoo_get_list(int id);
 /* download buddy contact information from your yahoo addressbook */
@@ -97,36 +99,52 @@ void yahoo_chat_keepalive(int id);
 
 /* from is the identity you're sending from.  if NULL, the default is used */
 /* utf8 is whether msg is a utf8 string or not. */
-void yahoo_send_im(int id, const char *from, const char *who, const char *msg, int utf8, int picture);
+	void yahoo_send_im(int id, const char *from, const char *who,
+		const char *msg, int utf8, int picture);
 /* if type is true, send typing notice, else send stopped typing notice */
-void yahoo_send_typing(int id, const char *from, const char *who, int typ);
+	void yahoo_send_typing(int id, const char *from, const char *who,
+		int typ);
 
 /* used to set away/back status. */
 /* away says whether the custom message is an away message or a sig */
-void yahoo_set_away(int id, enum yahoo_status state, const char *msg, int away);
+	void yahoo_set_away(int id, enum yahoo_status state, const char *msg,
+		int away);
 
-void yahoo_add_buddy(int id, const char *who, const char *group, const char *msg);
+	void yahoo_add_buddy(int id, const char *who, const char *group,
+		const char *msg);
 void yahoo_remove_buddy(int id, const char *who, const char *group);
-void yahoo_reject_buddy(int id, const char *who, const char *msg);
+	void yahoo_confirm_buddy(int id, const char *who, int reject,
+		const char *msg);
 void yahoo_stealth_buddy(int id, const char *who, int unstealth);
 /* if unignore is true, unignore, else ignore */
 void yahoo_ignore_buddy(int id, const char *who, int unignore);
-void yahoo_change_buddy_group(int id, const char *who, const char *old_group, const char *new_group);
-void yahoo_group_rename(int id, const char *old_group, const char *new_group);
+	void yahoo_change_buddy_group(int id, const char *who,
+		const char *old_group, const char *new_group);
+	void yahoo_group_rename(int id, const char *old_group,
+		const char *new_group);
 
-void yahoo_conference_invite(int id, const char * from, YList *who, const char *room, const char *msg);
-void yahoo_conference_addinvite(int id, const char * from, const char *who, const char *room, const YList * members, const char *msg);
-void yahoo_conference_decline(int id, const char * from, YList *who, const char *room, const char *msg);
-void yahoo_conference_message(int id, const char * from, YList *who, const char *room, const char *msg, int utf8);
-void yahoo_conference_logon(int id, const char * from, YList *who, const char *room);
-void yahoo_conference_logoff(int id, const char * from, YList *who, const char *room);
+	void yahoo_conference_invite(int id, const char *from, YList *who,
+		const char *room, const char *msg);
+	void yahoo_conference_addinvite(int id, const char *from,
+		const char *who, const char *room, const YList *members,
+		const char *msg);
+	void yahoo_conference_decline(int id, const char *from, YList *who,
+		const char *room, const char *msg);
+	void yahoo_conference_message(int id, const char *from, YList *who,
+		const char *room, const char *msg, int utf8);
+	void yahoo_conference_logon(int id, const char *from, YList *who,
+		const char *room);
+	void yahoo_conference_logoff(int id, const char *from, YList *who,
+		const char *room);
 
 /* Get a list of chatrooms */
 void yahoo_get_chatrooms(int id,int chatroomid);
 /* join room with specified roomname and roomid */
-void yahoo_chat_logon(int id, const char *from, const char *room, const char *roomid);
+	void yahoo_chat_logon(int id, const char *from, const char *room,
+		const char *roomid);
 /* Send message "msg" to room with specified roomname, msgtype is 1-normal message or 2-/me mesage */
-void yahoo_chat_message(int id, const char *from, const char *room, const char *msg, const int msgtype, const int utf8);
+	void yahoo_chat_message(int id, const char *from, const char *room,
+		const char *msg, const int msgtype, const int utf8);
 /* Log off chat */
 void yahoo_chat_logoff(int id, const char *from);
 
@@ -140,7 +158,8 @@ void yahoo_webcam_close_feed(int id, const char *who);
 /* image points to a JPEG-2000 image, length is the length of the image */
 /* in bytes. The timestamp is the time in milliseconds since we started the */
 /* webcam. */
-void yahoo_webcam_send_image(int id, unsigned char *image, unsigned int length, unsigned int timestamp);
+	void yahoo_webcam_send_image(int id, unsigned char *image,
+		unsigned int length, unsigned int timestamp);
 
 /* this function should be called if we want to allow a user to watch the */
 /* webcam. Who is the user we want to accept. */
@@ -154,12 +173,22 @@ void yahoo_webcam_invite(int id, const char *who);
  * callback will be called with the fd that you should write
  * the file data to
  */
-void yahoo_send_file(int id, const char *who, const char *msg, const char *name, unsigned long size,
+	void yahoo_send_file(int id, const char *who, const char *msg,
+		const char *name, unsigned long size,
 		yahoo_get_fd_callback callback, void *data);
+
+/*
+ * Respond to a file transfer request. Be sure to provide the callback data
+ * since that is your only chance to recognize future callbacks
+ */
+	void yahoo_send_file_transfer_response(int client_id, int response,
+		char *id, void *data);
+
 
 /* send a search request
  */
-void yahoo_search(int id, enum yahoo_search_type t, const char *text, enum yahoo_search_gender g, enum yahoo_search_agerange ar,
+	void yahoo_search(int id, enum yahoo_search_type t, const char *text,
+		enum yahoo_search_gender g, enum yahoo_search_agerange ar,
 		int photo, int yahoo_only);
 
 /* continue last search
@@ -169,15 +198,11 @@ void yahoo_search(int id, enum yahoo_search_type t, const char *text, enum yahoo
  */
 void yahoo_search_again(int id, int start);
 
-/* returns a socket fd to a url for downloading a file. */
-void yahoo_get_url_handle(int id, const char *url, 
-		yahoo_get_url_handle_callback callback, void *data);
-
 /* these should be called when input is available on a fd */
 /* registered by ext_yahoo_add_handler */
 /* if these return negative values, errno may be set */
-int  yahoo_read_ready(int id, int fd, void *data);
-int  yahoo_write_ready(int id, int fd, void *data);
+	int yahoo_read_ready(int id, void *fd, void *data);
+	int yahoo_write_ready(int id, void *fd, void *data);
 
 /* utility functions. these do not hit the server */
 enum yahoo_status yahoo_current_status(int id);

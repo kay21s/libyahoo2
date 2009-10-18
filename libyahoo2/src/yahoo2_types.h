@@ -79,7 +79,7 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_IGNORECONTACT,	/* > 1, 7, 13 < 1, 66, 13, 0*/
 	YAHOO_SERVICE_REJECTCONTACT,
 	YAHOO_SERVICE_GROUPRENAME = 0x89, /* > 1, 65(new), 66(0), 67(old) */
-	YAHOO_SERVICE_Y7_PING = 0x8A,		  /* 0 - id and that's it?? */
+		YAHOO_SERVICE_Y7_PING = 0x8A,
 	YAHOO_SERVICE_CHATONLINE = 0x96, /* > 109(id), 1, 6(abcde) < 0,1*/
 	YAHOO_SERVICE_CHATGOTO,
 	YAHOO_SERVICE_CHATJOIN,	/* > 1 104-room 129-1600326591 62-2 */
@@ -112,8 +112,10 @@ enum yahoo_service { /* these are easier to see in hex */
 	YAHOO_SERVICE_Y7_FILETRANSFERACCEPT,	/* YMSG13 */
 	YAHOO_SERVICE_Y7_MINGLE = 0xe1, /* YMSG13 */
 	YAHOO_SERVICE_Y7_CHANGE_GROUP = 0xe7, /* YMSG13 */
+		YAHOO_SERVICE_MYSTERY = 0xef,	/* Don't know what this is for */
 	YAHOO_SERVICE_Y8_STATUS = 0xf0,			/* YMSG15 */
 	YAHOO_SERVICE_Y8_LIST = 0Xf1,			/* YMSG15 */
+		YAHOO_SERVICE_MESSAGE_CONFIRM = 0xfb,
 	YAHOO_SERVICE_WEBLOGIN = 0x0226,
 	YAHOO_SERVICE_SMS_MSG = 0x02ea
 };
@@ -132,7 +134,6 @@ enum yahoo_status {
 	YAHOO_STATUS_INVISIBLE = 12,
 	YAHOO_STATUS_CUSTOM = 99,
 	YAHOO_STATUS_IDLE = 999,
-/*	YAHOO_STATUS_WEBLOGIN = 0x5a55aa55,*/
 	YAHOO_STATUS_OFFLINE = 0x5a55aa56 /* don't ask */
 };
 
@@ -158,7 +159,8 @@ enum yahoo_login_status {
 	YAHOO_LOGIN_PASSWD = 13,
 	YAHOO_LOGIN_LOCK = 14,
 	YAHOO_LOGIN_DUPL = 99,
-	YAHOO_LOGIN_SOCK = -1
+		YAHOO_LOGIN_SOCK = -1,
+		YAHOO_LOGIN_UNKNOWN = 999
 };
 
 enum yahoo_error {
@@ -186,7 +188,17 @@ enum yahoo_log_level {
 	YAHOO_LOG_DEBUG
 };
 
-#define YAHOO_PROTO_VER 0x000c
+	enum yahoo_file_transfer {
+		YAHOO_FILE_TRANSFER_INIT = 1,
+		YAHOO_FILE_TRANSFER_ACCEPT = 3,
+		YAHOO_FILE_TRANSFER_REJECT = 4,
+		YAHOO_FILE_TRANSFER_DONE = 5,
+		YAHOO_FILE_TRANSFER_RELAY,
+		YAHOO_FILE_TRANSFER_FAILED,
+		YAHOO_FILE_TRANSFER_UNKNOWN
+	};
+
+#define YAHOO_PROTO_VER 0x0010
 
 /* Yahoo style/color directives */
 #define YAHOO_COLOR_BLACK "\033[30m"
@@ -216,7 +228,8 @@ enum yahoo_connection_type {
 	YAHOO_CONNECTION_WEBCAM_MASTER,
 	YAHOO_CONNECTION_WEBCAM,
 	YAHOO_CONNECTION_CHATCAT,
-	YAHOO_CONNECTION_SEARCH
+		YAHOO_CONNECTION_SEARCH,
+		YAHOO_CONNECTION_AUTH
 };
 
 enum yahoo_webcam_direction_type {
@@ -232,6 +245,7 @@ enum yahoo_stealth_visibility_type {
 
 /* chat member attribs */
 #define YAHOO_CHAT_MALE 0x8000
+#define YAHOO_CHAT_FEMALE 0x10000
 #define YAHOO_CHAT_FEMALE 0x10000
 #define YAHOO_CHAT_DUNNO 0x400
 #define YAHOO_CHAT_WEBCAM 0x10
@@ -264,7 +278,10 @@ struct yahoo_data {
 	char  *cookie_y;
 	char  *cookie_t;
 	char  *cookie_c;
+		char *cookie_b;
 	char  *login_cookie;
+		char *crumb;
+		char *seed;
 
 	YList *buddies;
 	YList *ignore;
@@ -331,14 +348,15 @@ struct yahoo_found_contact {
 /*
  * Function pointer to be passed to http get/post and send file
  */
-typedef void (*yahoo_get_fd_callback)(int id, int fd, int error, void *data);
+	typedef void (*yahoo_get_fd_callback) (int id, void *fd, int error,
+		void *data);
 
 /*
  * Function pointer to be passed to yahoo_get_url_handle
  */
-typedef void (*yahoo_get_url_handle_callback)(int id, int fd, int error,
-		const char *filename, unsigned long size, void *data);
-
+	typedef void (*yahoo_get_url_handle_callback) (int id, void *fd,
+		int error, const char *filename, unsigned long size,
+		void *data);
 
 struct yahoo_chat_member {
 	char *id;

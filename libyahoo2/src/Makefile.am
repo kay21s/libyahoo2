@@ -22,10 +22,10 @@ noinst_PROGRAMS = yahoo autoresponder
 
 yahoo_SOURCES = sample_client.c
 yahoo_LDADD = libyahoo2.la
-yahoo_LDFLAGS = -static
+yahoo_LDFLAGS = -static -lssl
 
 autoresponder_SOURCES = autoresponder.c
 autoresponder_LDADD = libyahoo2.la
-autoresponder_LDFLAGS = -static
+autoresponder_LDFLAGS = -static -lssl
 
 endif

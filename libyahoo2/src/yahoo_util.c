@@ -61,7 +61,7 @@ char * y_str_to_utf8(const char *in)
 	char *result = NULL;
 
 	if(in == NULL || *in == '\0')
-		return "";
+		return strdup("");
 	
 	result = y_new(char, strlen(in) * 2 + 1);
 
@@ -87,7 +87,7 @@ char * y_utf8_to_str(const char *in)
 	char *result = NULL;
 
 	if(in == NULL || *in == '\0')
-		return "";
+		return strdup("");
 	
 	result = y_new(char, strlen(in) + 1);
 

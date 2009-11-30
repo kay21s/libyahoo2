@@ -39,7 +39,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif /* HAVE_CONFIG_H */
+#endif				/* HAVE_CONFIG_H */
 
 #if HAVE_INTTYPES_H
 # include <inttypes.h>
@@ -56,7 +56,7 @@
 #ifndef lint
 static const char rcsid[] =
 	"$Id$";
-#endif /* !lint */
+#endif				/* !lint */
 
 #define ROTL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
@@ -87,7 +87,7 @@ static const char rcsid[] =
 #define BYTESWAP(x) (x)
 #define BYTESWAP64(x) (x)
 
-#else /* WORDS_BIGENDIAN */
+#else				/* WORDS_BIGENDIAN */
 
 #define BYTESWAP(x) ((ROTR((x), 8) & 0xff00ff00L) | (ROTL((x), 8) & 0x00ff00ffL))
 
@@ -100,11 +100,9 @@ static uint64_t _byteswap64(uint64_t x)
 
 #define BYTESWAP64(x) _byteswap64(x)
 
+#endif				/* WORDS_BIGENDIAN */
 
-
-#endif /* WORDS_BIGENDIAN */
-
-#else /* !RUNTIME_ENDIAN */
+#else				/* !RUNTIME_ENDIAN */
 
 #define BYTESWAP(x) _byteswap(sc->littleEndian, x)
 #define BYTESWAP64(x) _byteswap64(sc->littleEndian, x)
@@ -115,464 +113,456 @@ static uint64_t _byteswap64(uint64_t x)
 
 static uint64_t __byteswap64(uint64_t x)
 {
-  uint32_t a = x >> 32;
-  uint32_t b = (uint32_t) x;
-  return ((uint64_t) _BYTESWAP(b) << 32) | (uint64_t) _BYTESWAP(a);
+	uint32_t a = x >> 32;
+	uint32_t b = (uint32_t) x;
+	return ((uint64_t) _BYTESWAP(b) << 32) | (uint64_t) _BYTESWAP(a);
 }
 
 static uint32_t _byteswap(int littleEndian, uint32_t x)
 {
-  if (!littleEndian)
-    return x;
-  else
-    return _BYTESWAP(x);
+	if (!littleEndian)
+		return x;
+	else
+		return _BYTESWAP(x);
 }
 
 static uint64_t _byteswap64(int littleEndian, uint64_t x)
 {
-  if (!littleEndian)
-    return x;
-  else
-    return _BYTESWAP64(x);
+	if (!littleEndian)
+		return x;
+	else
+		return _BYTESWAP64(x);
 }
 
 static void setEndian(int *littleEndianp)
 {
-  union {
-    uint32_t w;
-    uint8_t b[4];
-  } endian;
+	union {
+		uint32_t w;
+		uint8_t b[4];
+	} endian;
 
-  endian.w = 1L;
-  *littleEndianp = endian.b[0] != 0;
+	endian.w = 1L;
+	*littleEndianp = endian.b[0] != 0;
 }
 
-#endif /* !RUNTIME_ENDIAN */
+#endif				/* !RUNTIME_ENDIAN */
 
 static const uint8_t padding[64] = {
-  0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-void
-SHA1Init (SHA1Context *sc)
+void SHA1Init(SHA1Context *sc)
 {
 #ifdef RUNTIME_ENDIAN
-  setEndian (&sc->littleEndian);
-#endif /* RUNTIME_ENDIAN */
+	setEndian(&sc->littleEndian);
+#endif				/* RUNTIME_ENDIAN */
 
-#ifdef _MSC_VER
-  sc->totalLength = 0ui64;
-#else
-  sc->totalLength = 0LL;
-#endif
-  sc->hash[0] = 0x67452301L;
-  sc->hash[1] = 0xefcdab89L;
-  sc->hash[2] = 0x98badcfeL;
-  sc->hash[3] = 0x10325476L;
-  sc->hash[4] = 0xc3d2e1f0L;
-  sc->bufferLength = 0L;
+	sc->totalLength = 0LL;
+	sc->hash[0] = 0x67452301L;
+	sc->hash[1] = 0xefcdab89L;
+	sc->hash[2] = 0x98badcfeL;
+	sc->hash[3] = 0x10325476L;
+	sc->hash[4] = 0xc3d2e1f0L;
+	sc->bufferLength = 0L;
 }
 
-static void
-burnStack (int size)
+static void burnStack(int size)
 {
-  char buf[128];
+	char buf[128];
 
-  memset (buf, 0, sizeof (buf));
-  size -= sizeof (buf);
-  if (size > 0)
-    burnStack (size);
+	memset(buf, 0, sizeof(buf));
+	size -= sizeof(buf);
+	if (size > 0)
+		burnStack(size);
 }
 
-static void
-SHA1Guts (SHA1Context *sc, const uint32_t *cbuf)
+static void SHA1Guts(SHA1Context *sc, const uint32_t *cbuf)
 {
-  uint32_t buf[80];
-  uint32_t *W, *W3, *W8, *W14, *W16;
-  uint32_t a, b, c, d, e, temp;
-  int i;
+	uint32_t buf[80];
+	uint32_t *W, *W3, *W8, *W14, *W16;
+	uint32_t a, b, c, d, e, temp;
+	int i;
 
-  W = buf;
+	W = buf;
 
-  for (i = 15; i >= 0; i--) {
-    *(W++) = BYTESWAP(*cbuf);
-    cbuf++;
-  }
+	for (i = 15; i >= 0; i--) {
+		*(W++) = BYTESWAP(*cbuf);
+		cbuf++;
+	}
 
-  W16 = &buf[0];
-  W14 = &buf[2];
-  W8 = &buf[8];
-  W3 = &buf[13];
+	W16 = &buf[0];
+	W14 = &buf[2];
+	W8 = &buf[8];
+	W3 = &buf[13];
 
-  for (i = 63; i >= 0; i--) {
-    *W = *(W3++) ^ *(W8++) ^ *(W14++) ^ *(W16++);
-    *W = ROTL(*W, 1);
-    W++;
-  }
+	for (i = 63; i >= 0; i--) {
+		*W = *(W3++) ^ *(W8++) ^ *(W14++) ^ *(W16++);
+		*W = ROTL(*W, 1);
+		W++;
+	}
 
-  a = sc->hash[0];
-  b = sc->hash[1];
-  c = sc->hash[2];
-  d = sc->hash[3];
-  e = sc->hash[4];
+	a = sc->hash[0];
+	b = sc->hash[1];
+	c = sc->hash[2];
+	d = sc->hash[3];
+	e = sc->hash[4];
 
-  W = buf;
+	W = buf;
 
 #ifndef SHA1_UNROLL
 #define SHA1_UNROLL 20
-#endif /* !SHA1_UNROLL */
+#endif				/* !SHA1_UNROLL */
 
 #if SHA1_UNROLL == 1
-  for (i = 19; i >= 0; i--)
-    DO_ROUND(F_0_19, K_0_19);
+	for (i = 19; i >= 0; i--)
+		DO_ROUND(F_0_19, K_0_19);
 
-  for (i = 19; i >= 0; i--)
-    DO_ROUND(F_20_39, K_20_39);
+	for (i = 19; i >= 0; i--)
+		DO_ROUND(F_20_39, K_20_39);
 
-  for (i = 19; i >= 0; i--)
-    DO_ROUND(F_40_59, K_40_59);
+	for (i = 19; i >= 0; i--)
+		DO_ROUND(F_40_59, K_40_59);
 
-  for (i = 19; i >= 0; i--)
-    DO_ROUND(F_60_79, K_60_79);
+	for (i = 19; i >= 0; i--)
+		DO_ROUND(F_60_79, K_60_79);
 #elif SHA1_UNROLL == 2
-  for (i = 9; i >= 0; i--) {
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-  }
+	for (i = 9; i >= 0; i--) {
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+	}
 
-  for (i = 9; i >= 0; i--) {
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-  }
+	for (i = 9; i >= 0; i--) {
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+	}
 
-  for (i = 9; i >= 0; i--) {
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-  }
+	for (i = 9; i >= 0; i--) {
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+	}
 
-  for (i = 9; i >= 0; i--) {
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-  }
+	for (i = 9; i >= 0; i--) {
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+	}
 #elif SHA1_UNROLL == 4
-  for (i = 4; i >= 0; i--) {
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-  }
+	for (i = 4; i >= 0; i--) {
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+	}
 
-  for (i = 4; i >= 0; i--) {
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-  }
+	for (i = 4; i >= 0; i--) {
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+	}
 
-  for (i = 4; i >= 0; i--) {
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-  }
+	for (i = 4; i >= 0; i--) {
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+	}
 
-  for (i = 4; i >= 0; i--) {
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-  }
+	for (i = 4; i >= 0; i--) {
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+	}
 #elif SHA1_UNROLL == 5
-  for (i = 3; i >= 0; i--) {
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-  }
+	for (i = 3; i >= 0; i--) {
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+	}
 
-  for (i = 3; i >= 0; i--) {
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-  }
+	for (i = 3; i >= 0; i--) {
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+	}
 
-  for (i = 3; i >= 0; i--) {
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-  }
+	for (i = 3; i >= 0; i--) {
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+	}
 
-  for (i = 3; i >= 0; i--) {
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-  }
+	for (i = 3; i >= 0; i--) {
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+	}
 #elif SHA1_UNROLL == 10
-  for (i = 1; i >= 0; i--) {
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-    DO_ROUND(F_0_19, K_0_19);
-  }
+	for (i = 1; i >= 0; i--) {
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+		DO_ROUND(F_0_19, K_0_19);
+	}
 
-  for (i = 1; i >= 0; i--) {
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-    DO_ROUND(F_20_39, K_20_39);
-  }
+	for (i = 1; i >= 0; i--) {
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+		DO_ROUND(F_20_39, K_20_39);
+	}
 
-  for (i = 1; i >= 0; i--) {
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-    DO_ROUND(F_40_59, K_40_59);
-  }
+	for (i = 1; i >= 0; i--) {
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+		DO_ROUND(F_40_59, K_40_59);
+	}
 
-  for (i = 1; i >= 0; i--) {
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-    DO_ROUND(F_60_79, K_60_79);
-  }
+	for (i = 1; i >= 0; i--) {
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+		DO_ROUND(F_60_79, K_60_79);
+	}
 #elif SHA1_UNROLL == 20
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
-  DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
+	DO_ROUND(F_0_19, K_0_19);
 
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
-  DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
+	DO_ROUND(F_20_39, K_20_39);
 
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
-  DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
+	DO_ROUND(F_40_59, K_40_59);
 
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-  DO_ROUND(F_60_79, K_60_79);
-#else /* SHA1_UNROLL */
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+	DO_ROUND(F_60_79, K_60_79);
+#else				/* SHA1_UNROLL */
 #error SHA1_UNROLL must be 1, 2, 4, 5, 10 or 20!
 #endif
 
-  sc->hash[0] += a;
-  sc->hash[1] += b;
-  sc->hash[2] += c;
-  sc->hash[3] += d;
-  sc->hash[4] += e;
+	sc->hash[0] += a;
+	sc->hash[1] += b;
+	sc->hash[2] += c;
+	sc->hash[3] += d;
+	sc->hash[4] += e;
 }
 
-void
-SHA1Update (SHA1Context *sc, const void *vdata, uint32_t len)
+void SHA1Update(SHA1Context *sc, const void *vdata, uint32_t len)
 {
-  const uint8_t *data = vdata;
-  uint32_t bufferBytesLeft;
-  uint32_t bytesToCopy;
-  int needBurn = 0;
+	const uint8_t *data = vdata;
+	uint32_t bufferBytesLeft;
+	uint32_t bytesToCopy;
+	int needBurn = 0;
 
 #ifdef SHA1_FAST_COPY
-  if (sc->bufferLength) {
-    bufferBytesLeft = 64L - sc->bufferLength;
+	if (sc->bufferLength) {
+		bufferBytesLeft = 64L - sc->bufferLength;
 
-    bytesToCopy = bufferBytesLeft;
-    if (bytesToCopy > len)
-      bytesToCopy = len;
+		bytesToCopy = bufferBytesLeft;
+		if (bytesToCopy > len)
+			bytesToCopy = len;
 
-    memcpy (&sc->buffer.bytes[sc->bufferLength], data, bytesToCopy);
+		memcpy(&sc->buffer.bytes[sc->bufferLength], data, bytesToCopy);
 
-    sc->totalLength += bytesToCopy * 8L;
+		sc->totalLength += bytesToCopy * 8L;
 
-    sc->bufferLength += bytesToCopy;
-    data += bytesToCopy;
-    len -= bytesToCopy;
+		sc->bufferLength += bytesToCopy;
+		data += bytesToCopy;
+		len -= bytesToCopy;
 
-    if (sc->bufferLength == 64L) {
-      SHA1Guts (sc, sc->buffer.words);
-      needBurn = 1;
-      sc->bufferLength = 0L;
-    }
-  }
+		if (sc->bufferLength == 64L) {
+			SHA1Guts(sc, sc->buffer.words);
+			needBurn = 1;
+			sc->bufferLength = 0L;
+		}
+	}
 
-  while (len > 63) {
-    sc->totalLength += 512L;
+	while (len > 63) {
+		sc->totalLength += 512L;
 
-    SHA1Guts (sc, data);
-    needBurn = 1;
+		SHA1Guts(sc, data);
+		needBurn = 1;
 
-    data += 64L;
-    len -= 64L;
-  }
+		data += 64L;
+		len -= 64L;
+	}
 
-  if (len) {
-    memcpy (&sc->buffer.bytes[sc->bufferLength], data, len);
+	if (len) {
+		memcpy(&sc->buffer.bytes[sc->bufferLength], data, len);
 
-    sc->totalLength += len * 8L;
+		sc->totalLength += len * 8L;
 
-    sc->bufferLength += len;
-  }
-#else /* SHA1_FAST_COPY */
-  while (len) {
-    bufferBytesLeft = 64L - sc->bufferLength;
+		sc->bufferLength += len;
+	}
+#else				/* SHA1_FAST_COPY */
+	while (len) {
+		bufferBytesLeft = 64L - sc->bufferLength;
 
-    bytesToCopy = bufferBytesLeft;
-    if (bytesToCopy > len)
-      bytesToCopy = len;
+		bytesToCopy = bufferBytesLeft;
+		if (bytesToCopy > len)
+			bytesToCopy = len;
 
-    memcpy (&sc->buffer.bytes[sc->bufferLength], data, bytesToCopy);
+		memcpy(&sc->buffer.bytes[sc->bufferLength], data, bytesToCopy);
 
-    sc->totalLength += bytesToCopy * 8L;
+		sc->totalLength += bytesToCopy * 8L;
 
-    sc->bufferLength += bytesToCopy;
-    data += bytesToCopy;
-    len -= bytesToCopy;
+		sc->bufferLength += bytesToCopy;
+		data += bytesToCopy;
+		len -= bytesToCopy;
 
-    if (sc->bufferLength == 64L) {
-      SHA1Guts (sc, sc->buffer.words);
-      needBurn = 1;
-      sc->bufferLength = 0L;
-    }
-  }
-#endif /* SHA1_FAST_COPY */
+		if (sc->bufferLength == 64L) {
+			SHA1Guts(sc, sc->buffer.words);
+			needBurn = 1;
+			sc->bufferLength = 0L;
+		}
+	}
+#endif				/* SHA1_FAST_COPY */
 
-  if (needBurn)
-    burnStack (sizeof (uint32_t[86]) + sizeof (uint32_t *[5]) + sizeof (int));
+	if (needBurn)
+		burnStack(sizeof(uint32_t[86]) + sizeof(uint32_t *[5]) +
+			sizeof(int));
 }
 
-void
-SHA1Final (SHA1Context *sc, uint8_t hash[SHA1_HASH_SIZE])
+void SHA1Final(SHA1Context *sc, uint8_t hash[SHA1_HASH_SIZE])
 {
-  uint32_t bytesToPad;
-  uint64_t lengthPad;
-  int i;
+	uint32_t bytesToPad;
+	uint64_t lengthPad;
+	int i;
 
-  bytesToPad = 120L - sc->bufferLength;
-  if (bytesToPad > 64L)
-    bytesToPad -= 64L;
+	bytesToPad = 120L - sc->bufferLength;
+	if (bytesToPad > 64L)
+		bytesToPad -= 64L;
 
-  lengthPad = BYTESWAP64(sc->totalLength);
+	lengthPad = BYTESWAP64(sc->totalLength);
 
-  SHA1Update (sc, padding, bytesToPad);
-  SHA1Update (sc, &lengthPad, 8L);
+	SHA1Update(sc, padding, bytesToPad);
+	SHA1Update(sc, &lengthPad, 8L);
 
-  if (hash) {
-    for (i = 0; i < SHA1_HASH_WORDS; i++) {
+	if (hash) {
+		for (i = 0; i < SHA1_HASH_WORDS; i++) {
 #ifdef SHA1_FAST_COPY
-      *((uint32_t *) hash) = BYTESWAP(sc->hash[i]);
-#else /* SHA1_FAST_COPY */
-      hash[0] = (uint8_t) (sc->hash[i] >> 24);
-      hash[1] = (uint8_t) (sc->hash[i] >> 16);
-      hash[2] = (uint8_t) (sc->hash[i] >> 8);
-      hash[3] = (uint8_t) sc->hash[i];
-#endif /* SHA1_FAST_COPY */
-      hash += 4;
-    }
-  }
+			*((uint32_t *)hash) = BYTESWAP(sc->hash[i]);
+#else				/* SHA1_FAST_COPY */
+			hash[0] = (uint8_t) (sc->hash[i] >> 24);
+			hash[1] = (uint8_t) (sc->hash[i] >> 16);
+			hash[2] = (uint8_t) (sc->hash[i] >> 8);
+			hash[3] = (uint8_t) sc->hash[i];
+#endif				/* SHA1_FAST_COPY */
+			hash += 4;
+		}
+	}
 }
 
 #ifdef SHA1_TEST
@@ -581,52 +571,50 @@ SHA1Final (SHA1Context *sc, uint8_t hash[SHA1_HASH_SIZE])
 #include <stdlib.h>
 #include <string.h>
 
-int
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-  SHA1Context foo;
-  uint8_t hash[SHA1_HASH_SIZE];
-  char buf[1000];
-  int i;
+	SHA1Context foo;
+	uint8_t hash[SHA1_HASH_SIZE];
+	char buf[1000];
+	int i;
 
-  SHA1Init (&foo);
-  SHA1Update (&foo, "abc", 3);
-  SHA1Final (&foo, hash);
+	SHA1Init(&foo);
+	SHA1Update(&foo, "abc", 3);
+	SHA1Final(&foo, hash);
 
-  for (i = 0; i < SHA1_HASH_SIZE;) {
-    printf ("%02x", hash[i++]);
-    if (!(i % 4))
-      printf (" ");
-  }
-  printf ("\n");
+	for (i = 0; i < SHA1_HASH_SIZE;) {
+		printf("%02x", hash[i++]);
+		if (!(i % 4))
+			printf(" ");
+	}
+	printf("\n");
 
-  SHA1Init (&foo);
-  SHA1Update (&foo,
-		"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
-		56);
-  SHA1Final (&foo, hash);
+	SHA1Init(&foo);
+	SHA1Update(&foo,
+		"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq", 56);
+	SHA1Final(&foo, hash);
 
-  for (i = 0; i < SHA1_HASH_SIZE;) {
-    printf ("%02x", hash[i++]);
-    if (!(i % 4))
-      printf (" ");
-  }
-  printf ("\n");
+	for (i = 0; i < SHA1_HASH_SIZE;) {
+		printf("%02x", hash[i++]);
+		if (!(i % 4))
+			printf(" ");
+	}
+	printf("\n");
 
-  SHA1Init (&foo);
-  memset (buf, 'a', sizeof (buf));
-  for (i = 0; i < 1000; i++)
-    SHA1Update (&foo, buf, sizeof (buf));
-  SHA1Final (&foo, hash);
+	SHA1Init(&foo);
+	memset(buf, 'a', sizeof(buf));
+	for (i = 0; i < 1000; i++)
+		SHA1Update(&foo, buf, sizeof(buf));
+	SHA1Final(&foo, hash);
 
-  for (i = 0; i < SHA1_HASH_SIZE;) {
-    printf ("%02x", hash[i++]);
-    if (!(i % 4))
-      printf (" ");
-  }
-  printf ("\n");
+	for (i = 0; i < SHA1_HASH_SIZE;) {
+		printf("%02x", hash[i++]);
+		if (!(i % 4))
+			printf(" ");
+	}
+	printf("\n");
 
-  exit (0);
+	exit(0);
 }
 
-#endif /* SHA1_TEST */
+#endif				/* SHA1_TEST */

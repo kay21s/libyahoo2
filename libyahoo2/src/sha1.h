@@ -43,16 +43,16 @@
 #define SHA1_HASH_WORDS 5
 
 struct _SHA1Context {
-  uint64_t totalLength;
-  uint32_t hash[SHA1_HASH_WORDS];
-  uint32_t bufferLength;
-  union {
-    uint32_t words[16];
-    uint8_t bytes[64];
-  } buffer;
+	uint64_t totalLength;
+	uint32_t hash[SHA1_HASH_WORDS];
+	uint32_t bufferLength;
+	union {
+		uint32_t words[16];
+		uint8_t bytes[64];
+	} buffer;
 #ifdef RUNTIME_ENDIAN
-  int littleEndian;
-#endif /* RUNTIME_ENDIAN */
+	int littleEndian;
+#endif				/* RUNTIME_ENDIAN */
 };
 
 typedef struct _SHA1Context SHA1Context;
@@ -61,12 +61,11 @@ typedef struct _SHA1Context SHA1Context;
 extern "C" {
 #endif
 
-void SHA1Init (SHA1Context *sc);
-void SHA1Update (SHA1Context *sc, const void *data, uint32_t len);
-void SHA1Final (SHA1Context *sc, uint8_t hash[SHA1_HASH_SIZE]);
+	void SHA1Init(SHA1Context *sc);
+	void SHA1Update(SHA1Context *sc, const void *data, uint32_t len);
+	void SHA1Final(SHA1Context *sc, uint8_t hash[SHA1_HASH_SIZE]);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _SHA1_H */
+#endif				/* _SHA1_H */

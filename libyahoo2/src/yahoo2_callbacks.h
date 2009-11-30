@@ -29,7 +29,6 @@
  * declared in this file and defined in libyahoo2.c
  */
 
-
 #ifndef YAHOO2_CALLBACKS_H
 #define YAHOO2_CALLBACKS_H
 
@@ -45,11 +44,11 @@ extern "C" {
  * Callback interface for libyahoo2
  */
 
-typedef enum {
-	YAHOO_INPUT_READ = 1 << 0,
-	YAHOO_INPUT_WRITE = 1 << 1,
-	YAHOO_INPUT_EXCEPTION = 1 << 2
-} yahoo_input_condition;
+	typedef enum {
+		YAHOO_INPUT_READ = 1 << 0,
+		YAHOO_INPUT_WRITE = 1 << 1,
+		YAHOO_INPUT_EXCEPTION = 1 << 2
+	} yahoo_input_condition;
 
 /*
  * A callback function called when an asynchronous connect completes.
@@ -81,7 +80,7 @@ typedef enum {
 
 #ifdef USE_STRUCT_CALLBACKS
 #define YAHOO_CALLBACK_TYPE(x)	(*x)
-struct yahoo_callbacks {
+	struct yahoo_callbacks {
 #else
 #define YAHOO_CALLBACK_TYPE(x)	x
 #endif
@@ -104,8 +103,7 @@ struct yahoo_callbacks {
  * 	id   - the id that identifies the server connection
  * 	buds - the buddy list
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_buddies)(int id, YList * buds);
-
+	void YAHOO_CALLBACK_TYPE(ext_yahoo_got_buddies) (int id, YList *buds);
 
 /*
  * Name: ext_yahoo_got_ignore
@@ -114,8 +112,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_got_buddies)(int id, YList * buds);
  * 	id   - the id that identifies the server connection
  * 	igns - the ignore list
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_ignore)(int id, YList * igns);
-
+	void YAHOO_CALLBACK_TYPE(ext_yahoo_got_ignore) (int id, YList *igns);
 
 /*
  * Name: ext_yahoo_got_identities
@@ -124,8 +121,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_got_ignore)(int id, YList * igns);
  * 	id   - the id that identifies the server connection
  * 	ids  - the identity list
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_identities)(int id, YList * ids);
-
+	void YAHOO_CALLBACK_TYPE(ext_yahoo_got_identities) (int id, YList *ids);
 
 /*
  * Name: ext_yahoo_got_cookies
@@ -133,8 +129,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_got_identities)(int id, YList * ids);
  * Params:
  * 	id   - the id that identifies the server connection
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_got_cookies)(int id);
-
+	void YAHOO_CALLBACK_TYPE(ext_yahoo_got_cookies) (int id);
 
 /*
  * Name: ext_yahoo_got_ping
@@ -634,8 +629,7 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_got_cookies)(int id);
  * Returns:
  * 	0
  */
-int YAHOO_CALLBACK_TYPE(ext_yahoo_log)(const char *fmt, ...);
-
+	int YAHOO_CALLBACK_TYPE(ext_yahoo_log) (const char *fmt, ...);
 
 /*
  * Name: ext_yahoo_add_handler
@@ -660,8 +654,7 @@ int YAHOO_CALLBACK_TYPE(ext_yahoo_log)(const char *fmt, ...);
  * 	id   - the id that identifies the connection
  * 	tag  - the handler tag to remove
  */
-void YAHOO_CALLBACK_TYPE(ext_yahoo_remove_handler)(int id, int tag);
-
+	void YAHOO_CALLBACK_TYPE(ext_yahoo_remove_handler) (int id, int tag);
 
 /*
  * Name: ext_yahoo_connect
@@ -672,12 +665,11 @@ void YAHOO_CALLBACK_TYPE(ext_yahoo_remove_handler)(int id, int tag);
  * Returns:
  * 	a unix file descriptor to the socket
  */
-int YAHOO_CALLBACK_TYPE(ext_yahoo_connect)(const char *host, int port);
-
+	int YAHOO_CALLBACK_TYPE(ext_yahoo_connect) (const char *host, int port);
 
 /*
  * Name: ext_yahoo_connect_async
- * 	Connect to a host:port asynchronously.  This function should return
+ * 	Connect to a host:port asynchronously. This function should return
  * 	immediately returing a tag used to identify the connection handler,
  * 	or a pre-connect error (eg: host name lookup failure).
  * 	Once the connect completes (successfully or unsuccessfully), callback
@@ -766,7 +758,7 @@ int YAHOO_CALLBACK_TYPE(ext_yahoo_connect)(const char *host, int port);
  * if using a callback structure, call yahoo_register_callbacks
  * before doing anything else
  */
-void yahoo_register_callbacks(struct yahoo_callbacks * tyc);
+void yahoo_register_callbacks(struct yahoo_callbacks *tyc);
 
 #undef YAHOO_CALLBACK_TYPE
 
@@ -777,4 +769,3 @@ void yahoo_register_callbacks(struct yahoo_callbacks * tyc);
 #endif
 
 #endif
-

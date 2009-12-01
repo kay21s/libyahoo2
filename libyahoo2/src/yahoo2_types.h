@@ -303,6 +303,7 @@ extern "C" {
 	};
 
 	struct yab {
+		int yid;
 		char *id;
 		char *fname;
 		char *lname;

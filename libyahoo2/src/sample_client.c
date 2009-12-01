@@ -598,6 +598,23 @@ void ext_yahoo_got_ignore(int id, YList * igns)
 {
 }
 
+void ext_yahoo_got_buzz(int id, const char *me, const char *who, long tm)
+{
+	who = get_buddy_name(who);
+
+	printf("\a");
+	if(tm) {
+		char timestr[255];
+
+		strncpy(timestr, ctime((time_t *)&tm), sizeof(timestr));
+		timestr[strlen(timestr) - 1] = '\0';
+
+		print_message(("[Offline message at %s to %s from %s]: **DING**",
+				timestr, me, who))
+	} else
+		print_message(("[%s]%s: **DING**", me, who))
+}
+
 void ext_yahoo_got_im(int id, const char *me, const char *who, const char *msg, long tm, int stat, int utf8)
 {
 	char *umsg = (char *)msg;
@@ -623,11 +640,8 @@ void ext_yahoo_got_im(int id, const char *me, const char *who, const char *msg, 
 
 		print_message(("[Offline message at %s to %s from %s]: %s", 
 				timestr, me, who, umsg))
-	} else {
-		if(!strcmp(umsg, "<ding>")) 
-			printf("\a");
+	} else
 		print_message(("[%s]%s: %s", me, who, umsg))
-	}
 
 	if(utf8)
 		FREE(umsg);
@@ -1232,6 +1246,7 @@ static void process_commands(char *line)
 
 	char *tmp, *start;
 	char *copy = strdup(line);
+	int yid = 0;
 
 	enum yahoo_status state;
 
@@ -1508,12 +1523,20 @@ static void process_commands(char *line)
 			*tmp = '\0';
 			copy = tmp+1;
 		}
+		yid = atoi(copy);
+
+		tmp = strchr(copy, ' ');
+		if(tmp) {
+			*tmp = '\0';
+			copy = tmp+1;
+		}
 		msg = copy;
 
 		if(to && msg) {
 			yab = y_new0(struct yab, 1);
 			yab->id = to;
-			yab->fname = msg;
+			yab->yid = yid;	/* Only do this if you have got it from the server */
+			yab->nname = msg;
 			yahoo_set_yab(ylad->id, yab);
 			FREE(yab);
 		}
@@ -1815,6 +1838,7 @@ static void register_callbacks()
 	yc.ext_yahoo_got_cookies = ext_yahoo_got_cookies;
 	yc.ext_yahoo_status_changed = ext_yahoo_status_changed;
 	yc.ext_yahoo_got_im = ext_yahoo_got_im;
+	yc.ext_yahoo_got_buzz = ext_yahoo_got_buzz;
 	yc.ext_yahoo_got_conf_invite = ext_yahoo_got_conf_invite;
 	yc.ext_yahoo_conf_userdecline = ext_yahoo_conf_userdecline;
 	yc.ext_yahoo_conf_userjoin = ext_yahoo_conf_userjoin;

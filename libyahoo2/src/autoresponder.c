@@ -626,6 +626,24 @@ void ext_yahoo_got_ignore(int id, YList * igns)
 {
 }
 
+void ext_yahoo_got_buzz(int id, const char *me, const char *who, long tm)
+{
+	const char *buddy = get_buddy_name(who);
+	
+	printf("\a");
+	if(tm) {
+		char timestr[MAX_PREF_LEN];
+
+		strncpy_term(timestr, ctime((time_t *)&tm), sizeof(timestr));
+
+		print_message(("[Offline message at %s to %s from %s]: **DING**", 
+				timestr, me, buddy))
+	} else
+		print_message(("[%s]%s: **DING**", me, buddy))
+
+	yahoo_send_buzz(ylad->id, me, who);
+}
+
 void ext_yahoo_got_im(int id, const char *me, const char *who, const char *msg, long tm, int stat, int utf8)
 {
 	const char *buddy = get_buddy_name(who);

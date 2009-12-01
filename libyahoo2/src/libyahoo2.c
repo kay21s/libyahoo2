@@ -1245,9 +1245,13 @@ static void yahoo_process_message(struct yahoo_input_data *yid,
 				yahoo_packet_free(outpkt);
 			}
 
-			YAHOO_CALLBACK(ext_yahoo_got_im) (yd->client_id,
-				message->to, message->from, message->msg,
-				message->tm, pkt->status, message->utf8);
+			if (strcmp(message->msg, "<ding>"))
+				YAHOO_CALLBACK(ext_yahoo_got_buzz) (yd->client_id,
+					message->to, message->from, message->tm);
+			else
+				YAHOO_CALLBACK(ext_yahoo_got_im) (yd->client_id,
+					message->to, message->from, message->msg,
+					message->tm, pkt->status, message->utf8);
 		} else if (pkt->status == 0xffffffff) {
 			YAHOO_CALLBACK(ext_yahoo_error) (yd->client_id,
 				message->msg, 0, E_SYSTEM);
@@ -2519,6 +2523,14 @@ static struct yab *yahoo_yab_read(unsigned char *d, int len)
 	if (!en)
 		return NULL;
 
+	st = strstr(en, "id=\"");
+	if (st) {
+		st += strlen("id=\"");
+		en = strchr(st, '"');
+		*en++ = '\0';
+		yab->yid = atoi(yahoo_xmldecode(st));
+	}
+
 	st = strstr(en, "fn=\"");
 	if (st) {
 		st += strlen("fn=\"");
@@ -2548,7 +2560,7 @@ static struct yab *yahoo_yab_read(unsigned char *d, int len)
 		st += strlen("yi=\"");
 		en = strchr(st, '"');
 		*en++ = '\0';
-		yab->email = yahoo_xmldecode(st);
+		yab->id = yahoo_xmldecode(st);
 	}
 
 	st = strstr(en, "hphone=\"");
@@ -3621,6 +3633,11 @@ void *yahoo_get_fd(int id)
 		return yid->fd;
 }
 
+void yahoo_send_buzz(int id, const char *from, const char *who)
+{
+	yahoo_send_im(id, from, who, "<ding>", 1, 0);
+}
+
 void yahoo_send_im(int id, const char *from, const char *who, const char *what,
 	int utf8, int picture)
 {
@@ -3880,8 +3897,18 @@ void yahoo_set_yab(int id, struct yab *yab)
 	yid->type = YAHOO_CONNECTION_YAB;
 	yid->yd = yd;
 
-	size = snprintf(post, sizeof(post), "<?xml version=\"1.0\" encoding=\"utf-8\">" "<ab k=\"%s\" cc=\"%d\">\n" "<ct e=\"1\" yi='%s' nn='%s' />\n" "</ab>\r\n", yd->user, 9,	/* Don't know why */
-		yab->id, yab->nname);
+	if(yab->yid)
+		size = snprintf(post, sizeof(post), "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+			"<ab k=\"%s\" cc=\"%d\">"
+			"<ct id=\"%d\" e=\"1\" yi=\"%s\" nn=\"%s\" />"
+			"</ab>", yd->user, 9, yab->yid,	/* Don't know why */
+			yab->id, yab->nname?yab->nname:"");
+	else
+		size = snprintf(post, sizeof(post), "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+			"<ab k=\"%s\" cc=\"%d\">"
+			"<ct a=\"1\" yi=\"%s\" nn=\"%s\" />"
+			"</ab>", yd->user, 1,	/* Don't know why */
+			yab->id, yab->nname?yab->nname:"");
 
 	yad->yid = yid;
 	yad->data = strdup(post);

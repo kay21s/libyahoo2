@@ -1245,7 +1245,7 @@ static void yahoo_process_message(struct yahoo_input_data *yid,
 				yahoo_packet_free(outpkt);
 			}
 
-			if (strcmp(message->msg, "<ding>"))
+			if (!strcmp(message->msg, "<ding>"))
 				YAHOO_CALLBACK(ext_yahoo_got_buzz) (yd->client_id,
 					message->to, message->from, message->tm);
 			else

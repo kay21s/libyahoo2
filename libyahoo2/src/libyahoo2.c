@@ -4826,7 +4826,7 @@ struct send_file_data {
 static char *yahoo_get_random(void)
 {
 	int i = 0;
-	int r;
+	int r = 0;
 	int c = 0;
 	char out[25];
 

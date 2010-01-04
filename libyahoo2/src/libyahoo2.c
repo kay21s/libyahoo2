@@ -3384,7 +3384,7 @@ static void yahoo_process_auth_connection(struct yahoo_input_data *yid,
 		return;
 	}
 
-	if (!strncmp(line_end, "ymsgr=", 6)) {
+	if (line_end && !strncmp(line_end, "ymsgr=", 6)) {
 		is_ymsgr = 1;
 	} else if (strncmp(line_end, "crumb=", 6)) {
 		LOG(("Oops! There was no ymsgr=. Where do I get my token from now :("));
@@ -3437,6 +3437,7 @@ static void yahoo_process_auth_connection(struct yahoo_input_data *yid,
 		LOG(("NO Cookies!"));
 		YAHOO_CALLBACK(ext_yahoo_login_response) (yid->yd->client_id,
 			YAHOO_LOGIN_UNKNOWN, NULL);
+		return;
 	}
 
 	cookie = strstr((char *)yid->rxqueue, "Set-Cookie: Y=");

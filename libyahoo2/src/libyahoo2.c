@@ -3294,14 +3294,26 @@ static void yahoo_process_auth_connection(struct yahoo_input_data *yid,
 
 	token = strstr((char *)yid->rxqueue, "\r\n\r\n");
 
-	if (token) {
-		*token = '\0';
-
-		token += 4;
+	if (!token) {
+		LOG(("Could not find anything after the HTTP headers? huh?\n"));
+		YAHOO_CALLBACK(ext_yahoo_login_response) (yid->yd->client_id,
+			YAHOO_LOGIN_UNKNOWN, NULL);
+		return;
 	}
+
+	*token = '\0';
+	token += 4;
 
 	/* Skip the first number */
 	token = strstr(token, "\r\n");
+
+	if (!token) {
+		LOG(("Well I tried to skip the first number and found... nothing\n"));
+		YAHOO_CALLBACK(ext_yahoo_login_response) (yid->yd->client_id,
+			YAHOO_LOGIN_UNKNOWN, NULL);
+		return;
+	}
+
 	token += 2;
 
 	line_end = strstr(token, "\r\n");

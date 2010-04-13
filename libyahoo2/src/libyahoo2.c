@@ -91,7 +91,6 @@ char *strchr(), *strrchr();
 #define vsnprintf _vsnprintf
 #endif
 
-#ifdef USE_STRUCT_CALLBACKS
 struct yahoo_callbacks *yc = NULL;
 
 void yahoo_register_callbacks(struct yahoo_callbacks *tyc)
@@ -100,9 +99,6 @@ void yahoo_register_callbacks(struct yahoo_callbacks *tyc)
 }
 
 #define YAHOO_CALLBACK(x)	yc->x
-#else
-#define YAHOO_CALLBACK(x)	x
-#endif
 
 static int yahoo_send_data(void *fd, void *data, int len);
 static void _yahoo_http_connected(int id, void *fd, int error, void *data);

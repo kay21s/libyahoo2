@@ -56,12 +56,8 @@ char *strchr(), *strrchr();
 # define snprintf _snprintf
 #endif
 
-#ifdef USE_STRUCT_CALLBACKS
 extern struct yahoo_callbacks *yc;
 #define YAHOO_CALLBACK(x)	yc->x
-#else
-#define YAHOO_CALLBACK(x)	x
-#endif
 
 extern enum yahoo_log_level log_level;
 

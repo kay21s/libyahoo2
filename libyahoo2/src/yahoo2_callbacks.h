@@ -78,13 +78,9 @@ extern "C" {
  * that uses the library
  */
 
-#ifdef USE_STRUCT_CALLBACKS
 #define YAHOO_CALLBACK_TYPE(x)	(*x)
 	struct yahoo_callbacks {
-#else
-#define YAHOO_CALLBACK_TYPE(x)	x
-#endif
-
+		
 /*
  * Name: ext_yahoo_login_response
  * 	Called when the login process is complete
@@ -763,7 +759,6 @@ extern "C" {
 		const char *me, const char *who, const char *old_group,
 		const char *new_group);
 
-#ifdef USE_STRUCT_CALLBACKS
 };
 
 /*
@@ -773,8 +768,6 @@ extern "C" {
 void yahoo_register_callbacks(struct yahoo_callbacks *tyc);
 
 #undef YAHOO_CALLBACK_TYPE
-
-#endif
 
 #ifdef __cplusplus
 }

@@ -1,3 +1,9 @@
+* 20-Apr-2010
+
+Releasing 1.0.0 to send out YMSG16 support into the wild. This breaks
+compatibility with older messengers, so they will have to be rewritten.
+See release note on our Sourceforge.net project page for mor information
+
 * 01-Jun-2008
 
 Releasing 0.7.7 with fixes to enable compilation on Fedora 9 and newer

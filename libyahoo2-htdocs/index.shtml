@@ -10,12 +10,12 @@
 <!--#include virtual="links.shtml" -->
 <div class="content">
 <p>
-libyahoo2 version 0.7.7 - 1 Jun 2008
+libyahoo2 version 1.0.0 - 20 Apr 2010
 </p>
 
 <p>
 libyahoo2 is a C library interface to the new Yahoo! Messenger protocol. It
-supports almost all current features of the protocol.
+supports major features of the protocol.
 </p>
 
 <h2>Feature list</h2>
@@ -37,7 +37,7 @@ supports almost all current features of the protocol.
 	<li>Reject buddy</li>
 	<li>Buddy status updates</li>
 	<li>Group renaming</li>
-	<li>Buddy Search (new in 0.7.3)</li>
+	<!-- li>Buddy Search (new in 0.7.3)</li -->
 	</ul>
 </li>
 <li>Yahoo Address book support</li>
@@ -57,13 +57,13 @@ supports almost all current features of the protocol.
 	<li>Send message to conference</li>
 	</ul>
 </li>
-<li>Yahoo Chat
+<!-- li>Yahoo Chat
 	<ul>
 	<li>List chatrooms</li>
 	<li>Join/leave a chatroom</li>
 	<li>Chat :)</li>
 	</ul>
-</li>
+</li -->
 <li>Webcam support
 	<ul>
 	<li>Support for viewing other people's webcams</li>
@@ -110,6 +110,7 @@ want them.</p>
 <tr><td>Michaël Kamp</td> <td>miksun AT users . sourceforge . net</td> <td>Webcam Support</td></tr>
 <tr><td>Wayne Parrott</td> <td>wayne_p AT pacific . net . au</td> <td>Yahoo Chat</td></tr>
 <tr><td>Ray Van Dolson</td> <td>rayvd AT bludgeon . org</td> <td>Fedora Packager / Release</td></tr>
+<tr><td>Siddhesh Poyarekar</td> <td>siddhesh . poyarekar AT gmail . com</td> <td>YMSG16 Support</td></tr>
 </table>
 
 <p>
@@ -143,7 +144,7 @@ me to library versioning and redhat spec files.
 
 <h2>Copyright</h2>
 <p>
-libyahoo2 is Copyright &copy; 2002-2008 The libyahoo2 Project Authors and Contributors.
+libyahoo2 is Copyright &copy; 2002-2010 The libyahoo2 Project Authors and Contributors.
 Distribution is under the terms of the GNU General Public Licence.
 </p>
 

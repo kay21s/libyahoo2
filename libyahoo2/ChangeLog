@@ -1,3 +1,11 @@
+* Tue Apr 20 2010 Siddhesh Poyarekar <siddhesh.poyarekar@gmail.com>
+- YMSG16 auth support. Breaks all old apps
+- Make callback struct mandatory
+- Fixed Address book support
+- YMSG16 file transfer
+- YMSG16 buddy list and status messages
+- Upped version number to 1.0.0
+
 * Sun Jun 01 2008 Ray Van Dolson <rayvd@bludgeon.org>
 - Up version number to 0.7.7
 - Enable _GNU_SOURCE macro for builds.  This makes newer libc's provide us

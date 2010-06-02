@@ -1726,7 +1726,6 @@ void yahoo_login(int id, int initial)
 
 	ccd = y_new0(struct connect_callback_data, 1);
 	ccd->yd = yd;
-	ccd->server_i = -1;
 
 	host = yss->pager_host;
 
@@ -3610,7 +3609,7 @@ static void yahoo_connected(void *fd, int error, void *data)
 		if (fallback_ports[ccd->i]) {
 			char *host = yss->pager_host;
 
-			if (!host || ccd->server_i >= 0)
+			if (!host)
 				host = yss->pager_host_list[ccd->server_i];
 
 			yss->pager_port = fallback_ports[ccd->i++];
@@ -3620,19 +3619,17 @@ static void yahoo_connected(void *fd, int error, void *data)
 
 			if (tag > 0)
 				ccd->tag = tag;
-		} else if (yss->pager_host_list && 
-
-				(ccd->server_i < 0
-				|| yss->pager_host_list[ccd->server_i])) {
-
-			if (ccd->server_i < 0)
-				ccd->server_i++;
+		} else if (yss->pager_host_list
+				&& yss->pager_host_list[ccd->server_i]) {
 
 			/* Get back to the default port */
 			yss->pager_port = pager_port;
+			ccd->server_i++;
+			LOG(("Fallback: Connecting to %s:%d", yss->pager_host_list[ccd->server_i], yss->pager_port));
+
 			ccd->i = 0;
 			tag = YAHOO_CALLBACK(ext_yahoo_connect_async) (yd->client_id,
-				yss->pager_host_list[ccd->server_i++], yss->pager_port,
+				yss->pager_host_list[ccd->server_i], yss->pager_port,
 				yahoo_connected, ccd, 0);
 		} else {
 			FREE(ccd);

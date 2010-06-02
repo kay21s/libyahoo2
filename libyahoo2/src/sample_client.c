@@ -873,7 +873,7 @@ static void ext_yahoo_login(yahoo_local_account * ylad, int login_mode)
 
 	ylad->id = yahoo_init_with_attributes(ylad->yahoo_id, ylad->password, 
 			"local_host", local_host,
-			"pager_port", 23,
+			"pager_port", 5050,
 			NULL);
 	ylad->status = YAHOO_STATUS_OFFLINE;
 	yahoo_login(ylad->id, login_mode);
@@ -1184,7 +1184,7 @@ static int ext_yahoo_connect_async(int id, const char *host, int port,
 
 	struct _conn *c;
 
-	LOG(("Connecting to %s", host));
+	LOG(("Connecting to %s:%d", host, port));
 	
 	if(!(server = gethostbyname(host))) {
 		errno=h_errno;
@@ -1240,7 +1240,7 @@ static int ext_yahoo_connect_async(int id, const char *host, int port,
 
 		ext_yahoo_close(c);
 
-		callback(NULL, 0, data);
+		callback(NULL, errno, data);
 		return -1;
 	}
 }

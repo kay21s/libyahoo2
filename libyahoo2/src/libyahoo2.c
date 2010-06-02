@@ -134,7 +134,12 @@ int yahoo_set_log_level(enum yahoo_log_level level)
 }
 
 /* default values for servers */
-static char pager_host[] = "scs.msg.yahoo.com";
+static char *default_pager_hosts[] = {	"scs.msg.yahoo.com",
+					"scsa.msg.yahoo.com",
+					"scsb.msg.yahoo.com",
+					"scsc.msg.yahoo.com",
+					NULL};
+
 static int pager_port = 5050;
 static int fallback_ports[] = { 23, 25, 80, 20, 119, 8001, 8002, 5050, 0 };
 
@@ -152,6 +157,7 @@ struct connect_callback_data {
 	struct yahoo_data *yd;
 	int tag;
 	int i;
+	int server_i;
 };
 
 struct yahoo_pair {
@@ -210,6 +216,7 @@ struct yahoo_server_settings {
 	char *webcam_description;
 	char *local_host;
 	int conn_type;
+	char **pager_host_list;
 };
 
 static void yahoo_process_ft_connection(struct yahoo_input_data *yid, int over);
@@ -226,7 +233,12 @@ static void *_yahoo_default_server_settings()
 	struct yahoo_server_settings *yss =
 		y_new0(struct yahoo_server_settings, 1);
 
-	yss->pager_host = strdup(pager_host);
+	/* Give preference to the default host list
+	 * Make sure that only one of the two is set at any time 
+	 */
+	yss->pager_host = NULL;
+	yss->pager_host_list = default_pager_hosts;
+
 	yss->pager_port = pager_port;
 	yss->filetransfer_host = strdup(filetransfer_host);
 	yss->filetransfer_port = filetransfer_port;
@@ -245,6 +257,7 @@ static void *_yahoo_assign_server_settings(va_list ap)
 	char *key;
 	char *svalue;
 	int nvalue;
+	char **pvalue;
 
 	while (1) {
 		key = va_arg(ap, char *);
@@ -255,6 +268,12 @@ static void *_yahoo_assign_server_settings(va_list ap)
 			svalue = va_arg(ap, char *);
 			free(yss->pager_host);
 			yss->pager_host = strdup(svalue);
+			yss->pager_host_list = NULL;
+		} else if (!strcmp(key, "pager_host_list")) {
+			pvalue = va_arg(ap, char **);
+			yss->pager_host_list = pvalue;
+			free(yss->pager_host);
+			yss->pager_host = NULL;
 		} else if (!strcmp(key, "pager_port")) {
 			nvalue = va_arg(ap, int);
 			yss->pager_port = nvalue;
@@ -1695,6 +1714,8 @@ void yahoo_login(int id, int initial)
 	struct yahoo_server_settings *yss;
 	int tag;
 
+	char *host;
+
 	struct yahoo_input_data *yid = y_new0(struct yahoo_input_data, 1);
 	yid->yd = yd;
 	yid->type = YAHOO_CONNECTION_PAGER;
@@ -1705,9 +1726,15 @@ void yahoo_login(int id, int initial)
 
 	ccd = y_new0(struct connect_callback_data, 1);
 	ccd->yd = yd;
+	ccd->server_i = -1;
+
+	host = yss->pager_host;
+
+	if (!host)
+		host = yss->pager_host_list[0];
 
 	tag = YAHOO_CALLBACK(ext_yahoo_connect_async) (yd->client_id,
-		yss->pager_host, yss->pager_port, yahoo_connected, ccd, 0);
+		host, yss->pager_port, yahoo_connected, ccd, 0);
 
 	/*
 	 * if tag <= 0, then callback has already been called
@@ -3579,15 +3606,34 @@ static void yahoo_connected(void *fd, int error, void *data)
 	struct yahoo_server_settings *yss = yd->server_settings;
 
 	if (error) {
+		int tag;
 		if (fallback_ports[ccd->i]) {
-			int tag;
+			char *host = yss->pager_host;
+
+			if (!host || ccd->server_i >= 0)
+				host = yss->pager_host_list[ccd->server_i];
+
 			yss->pager_port = fallback_ports[ccd->i++];
 			tag = YAHOO_CALLBACK(ext_yahoo_connect_async) (yd->
-				client_id, yss->pager_host, yss->pager_port,
+				client_id, host, yss->pager_port,
 				yahoo_connected, ccd, 0);
 
 			if (tag > 0)
 				ccd->tag = tag;
+		} else if (yss->pager_host_list && 
+
+				(ccd->server_i < 0
+				|| yss->pager_host_list[ccd->server_i])) {
+
+			if (ccd->server_i < 0)
+				ccd->server_i++;
+
+			/* Get back to the default port */
+			yss->pager_port = pager_port;
+			ccd->i = 0;
+			tag = YAHOO_CALLBACK(ext_yahoo_connect_async) (yd->client_id,
+				yss->pager_host_list[ccd->server_i++], yss->pager_port,
+				yahoo_connected, ccd, 0);
 		} else {
 			FREE(ccd);
 			YAHOO_CALLBACK(ext_yahoo_login_response) (yd->client_id,

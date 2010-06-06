@@ -1,0 +1,140 @@
+1.Chat Online
+
+Service: Chat Online (150   0×96)
+
+Client –> Server :
+
+109 : username
+1 : username
+6 : abcde
+98 : us
+445 : en-us
+135 : ym10.0.0.1258
+Server –> Client :
+1 : username
+6 : abcde
+98 : us
+109 : username
+135 : ym10.0.0.1258
+445 : en-us
+302 : 10019
+10019 : username
+303 : 10019
+
+2. Chat Join
+
+Service: Chat Join (152   0×98)
+
+Client –> Server :
+
+1 : username
+104 : #ChatRoom(China : 1)
+129 : (number)1129
+62 : 2
+
+Server –> Client :
+
+13 : 1
+104 : #ChatRoom(China : 1)
+105 : To help preven spam … …
+109 : username
+302 : 10019
+10019 : username
+303 : 10019
+109 : Yahoo
+141 : Messenger Chat Admin
+
+Now client receives a picture from the server, and user should type in the characters in the picture and send them to the  server. However this is not in a YMSG format. Should libyahoo2 be in charge of this job?
+
+Server –> Client
+
+13 : 1
+104 : #ChatRoom(China : 1)
+105 : (Information from the chat room)
+108 : 41
+126 : 328704
+128 : 1032
+129 : (number)1129
+130 : (Some Unrecognizable characters)
+302 : 10019
+10019 : username
+303 : 10019
+#For all the users in the chat room:
+109 : user name
+110 : 0
+111 : (sex) neuter/male/female
+113 : (number)
+141 : (nick name ?) james
+142 : (country) New Zealand
+
+Special Situation : Disconnect.  Maybe the chat room is full
+
+Server –> Client :
+Status : Disconnected(4294967295)
+114 : -35
+
+3. Keep Alive
+
+Service  :  Keep Alive(138   0×8a)
+
+Client –> Server
+
+0 : username
+
+4. Comment
+
+Service : Comment(168   0xa8)
+
+Client –> Server
+
+1 : username
+104: #ChatRoom(China:1)
+124 : 1
+117 : (Content)
+
+Server –> Client
+
+104 : #ChatRoom(China:1)
+109 : (From) Yahoo/username
+117 : (Content)
+124 : 1
+
+5. Chat Join
+
+Service : Chat Join (152   0×98)
+
+Server –> Client :
+
+104 : #ChatRoom(China : 1)
+105 : (Information from the chat room)
+108 : 1
+109 : username(who is joining)
+113 : (number)
+
+6. Chat Exit
+
+Service : Chat Exit(155   0×9b)
+
+Server –> Client
+
+104 : #ChatRoom(China:1)
+108 : 1
+109 : username(who is leaving)
+113 : (number)
+
+7. Chat Logout
+
+Service : Chat Logout (160   0xa0)
+
+Client –> Server
+
+1 : username
+1005 : (number)
+
+Server –> Client
+
+1 : username
+1005 : (number) <same with the number sent to server>
+302 : 10019
+10019 : username
+303 : 10019

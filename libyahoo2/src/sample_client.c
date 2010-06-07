@@ -1445,7 +1445,12 @@ static void process_commands(char *line)
 		roomid = atoi(copy);
 		yahoo_get_chatrooms(ylad->id, roomid);
 	} else if(!strncasecmp(cmd, "CHJ", strlen("CHJ"))) {
+	/* Command Format "CHJ roomid roomname" */
 		char *roomid, *roomname;
+		char country[2] = "us";
+		char language[5] = "en-us";
+		country[2]='\0';
+		language[5]='\0';
 /* Linux, FreeBSD, Solaris:1 */
 /* 1600326591 */
 		roomid = copy;
@@ -1456,7 +1461,7 @@ static void process_commands(char *line)
 		}
 		roomname = copy;
 		if(roomid && roomname) {
-			yahoo_chat_logon(ylad->id, NULL, roomname, roomid);
+			yahoo_chat_logon(ylad->id, NULL, roomname, roomid,country, language);
 		}
 
 	} else if(!strncasecmp(cmd, "CHM", strlen("CHM"))) {

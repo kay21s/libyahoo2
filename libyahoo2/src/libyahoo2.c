@@ -4426,7 +4426,7 @@ void yahoo_get_chatrooms(int id, int chatroomid)
 }
 
 void yahoo_chat_logon(int id, const char *from, const char *room,
-	const char *roomid)
+	const char *roomid, const char *country, const char *language)
 {
 	struct yahoo_input_data *yid =
 		find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
@@ -4444,6 +4444,14 @@ void yahoo_chat_logon(int id, const char *from, const char *room,
 	yahoo_packet_hash(pkt, 1, (from ? from : yd->user));
 	yahoo_packet_hash(pkt, 109, yd->user);
 	yahoo_packet_hash(pkt, 6, "abcde");
+	if(country && language) {
+		yahoo_packet_hash(pkt, 98, country);
+		yahoo_packet_hash(pkt, 445, language);
+	} else {
+		yahoo_packet_hash(pkt, 98, "us");
+		yahoo_packet_hash(pkt, 445, "en-us");
+	}
+	yahoo_packet_hash(pkt, 135, "9.0.0.2515");
 
 	yahoo_send_packet(yid, pkt, 0);
 

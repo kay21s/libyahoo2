@@ -139,7 +139,7 @@ extern "C" {
 	void yahoo_get_chatrooms(int id, int chatroomid);
 /* join room with specified roomname and roomid */
 	void yahoo_chat_logon(int id, const char *from, const char *room,
-		const char *roomid);
+		const char *roomid, const char *country, const char *language);
 /* Send message "msg" to room with specified roomname, msgtype is 1-normal message or 2-/me mesage */
 	void yahoo_chat_message(int id, const char *from, const char *room,
 		const char *msg, const int msgtype, const int utf8);

@@ -463,6 +463,11 @@ static void print_chat_member(struct yahoo_chat_member *ycm)
 	printf("  Location: %s", ycm->location);
 }
 
+static void ext_yahoo_chat_verify(const char *url)
+{
+	printf("%s\n", url);
+}
+
 static void ext_yahoo_chat_cat_xml(int id, const char *xml) 
 {
 	print_message(("%s", xml));
@@ -1858,6 +1863,7 @@ static void register_callbacks()
 	yc.ext_yahoo_conf_userjoin = ext_yahoo_conf_userjoin;
 	yc.ext_yahoo_conf_userleave = ext_yahoo_conf_userleave;
 	yc.ext_yahoo_conf_message = ext_yahoo_conf_message;
+	yc.ext_yahoo_chat_verify = ext_yahoo_chat_verify;
 	yc.ext_yahoo_chat_cat_xml = ext_yahoo_chat_cat_xml;
 	yc.ext_yahoo_chat_join = ext_yahoo_chat_join;
 	yc.ext_yahoo_chat_userjoin = ext_yahoo_chat_userjoin;

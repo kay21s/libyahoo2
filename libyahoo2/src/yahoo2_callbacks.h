@@ -244,6 +244,15 @@ extern "C" {
  * 	id      - the id that identifies the server connection
  * 	xml     - ?
  */
+	void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_verify) (const char *url);
+
+/*
+ * Name: ext_yahoo_chat_cat_xml
+ * 	Called when ?
+ * Params:
+ * 	id      - the id that identifies the server connection
+ * 	xml     - ?
+ */
 	void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_cat_xml) (int id,
 		const char *xml);
 

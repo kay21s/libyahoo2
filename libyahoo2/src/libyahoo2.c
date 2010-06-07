@@ -1163,6 +1163,19 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 				WARNING(("Got more than 1 member on a normal join"));
 			}
 			/* this should only ever have one, but just in case */
+			
+			int len = strlen(topic);
+			char *url = topic + 264;
+			/* skip the message "To help prevent spam ..."
+			and directly jump to the url of the image*/
+			char *end = topic + len - 4;
+			/* find the end of the url */
+			while(strcmp(end, ".jpg") != 0) {
+				end --;
+				end[4] = '\0';
+			}
+			YAHOO_CALLBACK(ext_yahoo_chat_verify)(url);
+
 			while (members) {
 				YList *n = members->next;
 				currentmember = members->data;

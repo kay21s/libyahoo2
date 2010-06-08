@@ -1164,25 +1164,17 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 			}
 			/* this should only ever have one, but just in case */
 			
-			int len = strlen(topic);
-			char *dup = strdup(topic);
 			/* skip the message "To help prevent spam ..." to the url of the image for verification*/
-			char *end = topic + len - 4;
 			/* find the end of the url */
-			while(strcmp(end, ".jpg") != 0) {
-				end --;
-				end[4] = '\0';
-			}
+			char *end = strstr(topic, ".jpg");
+			end[4] = '\0';
 
-			char *head = end - 7;
-			/* find the head of the url */
-			while(strcmp(head, "http://") != 0) {
-				head --;
-				head[7] = '\0';
-			}
+			/* find the head of the url, the second "http://" */
+			char *head = strstr(topic, "http://");
+			topic = head + 7;
+			head = strstr(topic, "http://");
 
-			dup[end - topic + 4] = '\0';
-			YAHOO_CALLBACK(ext_yahoo_chat_verify)( &(dup[head - topic]) );
+			YAHOO_CALLBACK(ext_yahoo_chat_verify)( head );
 
 			while (members) {
 				YList *n = members->next;

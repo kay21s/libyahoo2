@@ -93,6 +93,11 @@ char *strchr(), *strrchr();
 
 struct yahoo_callbacks *yc = NULL;
 
+struct yahoo_post_data {
+	struct yahoo_input_data *yid;
+	char *data;
+};
+
 void yahoo_register_callbacks(struct yahoo_callbacks *tyc)
 {
 	yc = tyc;
@@ -103,6 +108,7 @@ void yahoo_register_callbacks(struct yahoo_callbacks *tyc)
 static int yahoo_send_data(void *fd, void *data, int len);
 static void _yahoo_http_connected(int id, void *fd, int error, void *data);
 static void yahoo_connected(void *fd, int error, void *data);
+static void _yahoo_http_post_connected(int id, void *fd, int error, void *data);
 
 int yahoo_log_message(char *fmt, ...)
 {
@@ -1052,6 +1058,10 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 	int membercount = 0;
 	int chaterr = 0;
 	YList *l;
+	char *end, *head;
+	char content[256], vcode[8];
+	int length;
+	struct yahoo_post_data *yad;
 
 	yahoo_dump_unhandled(pkt);
 	for (l = pkt->hash; l; l = l->next) {
@@ -1166,15 +1176,27 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 			
 			/* skip the message "To help prevent spam ..." to the url of the image for verification*/
 			/* find the end of the url */
-			char *end = strstr(topic, ".jpg");
+			end = strstr(topic, ".jpg");
 			end[4] = '\0';
 
 			/* find the head of the url, the second "http://" */
-			char *head = strstr(topic, "http://");
+			head = strstr(topic, "http://");
 			topic = head + 7;
 			head = strstr(topic, "http://");
 
-			YAHOO_CALLBACK(ext_yahoo_chat_verify)( head );
+			YAHOO_CALLBACK(ext_yahoo_chat_verify)(head, vcode);
+	
+			snprintf(content, sizeof(content), "question=%s"
+				"&answer=%s"
+				"&.intl=us&.lang=en-US",
+				head, vcode);
+
+			length = strlen(content);
+			yad = y_new0(struct yahoo_post_data, 1);
+			yad->yid = yid;
+			yad->data = strdup(content);
+			yahoo_http_post(yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
+				NULL, length, _yahoo_http_post_connected, yad);
 
 			while (members) {
 				YList *n = members->next;
@@ -3904,10 +3926,6 @@ void yahoo_get_yab(int id)
 		_yahoo_http_connected, yid);
 }
 
-struct yahoo_post_data {
-	struct yahoo_input_data *yid;
-	char *data;
-};
 
 static void _yahoo_http_post_connected(int id, void *fd, int error, void *data)
 {

@@ -463,9 +463,11 @@ static void print_chat_member(struct yahoo_chat_member *ycm)
 	printf("  Location: %s", ycm->location);
 }
 
-static void ext_yahoo_chat_verify(const char *url)
+static void ext_yahoo_chat_verify(const char *url, char *vcode)
 {
 	printf("%s\n", url);
+	printf("Please input the verification code:");
+	scanf("%s", vcode);
 }
 
 static void ext_yahoo_chat_cat_xml(int id, const char *xml) 

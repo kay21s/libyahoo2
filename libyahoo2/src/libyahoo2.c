@@ -1062,6 +1062,7 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 	char content[256], vcode[8];
 	int length;
 	struct yahoo_post_data *yad;
+	static int verify_image = 1;
 
 	yahoo_dump_unhandled(pkt);
 	for (l = pkt->hash; l; l = l->next) {
@@ -1174,29 +1175,39 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 			}
 			/* this should only ever have one, but just in case */
 			
-			/* skip the message "To help prevent spam ..." to the url of the image for verification*/
-			/* find the end of the url */
-			end = strstr(topic, ".jpg");
-			end[4] = '\0';
+			/* skip the message "To help prevent spam ..." to the url of the image for verification
+			   the URL is in the first message server send to client
+			   if what user input is wrong, new image URL will be send in form of HTTP*/
+			if(verify_image == 1) {
+				verify_image = 0;
+				end = strstr(topic, ".jpg");
+				end[4] = '\0';
 
-			/* find the head of the url, the second "http://" */
-			head = strstr(topic, "http://");
-			topic = head + 7;
-			head = strstr(topic, "http://");
+				/* find the head of the url, the second "http://" */
+				head = strstr(topic, "http://");
+				topic = head + 7;
+				head = strstr(topic, "http://");
 
-			YAHOO_CALLBACK(ext_yahoo_chat_verify)(head, vcode);
+				YAHOO_CALLBACK(ext_yahoo_chat_verify)(head, vcode);
 	
-			snprintf(content, sizeof(content), "question=%s"
-				"&answer=%s"
-				"&.intl=us&.lang=en-US",
-				head, vcode);
+				snprintf(content, sizeof(content), "question=%s"
+					"&answer=%s"
+					"&.intl=us&.lang=en-US",
+					head, vcode);
 
-			length = strlen(content);
-			yad = y_new0(struct yahoo_post_data, 1);
-			yad->yid = yid;
-			yad->data = strdup(content);
-			yahoo_http_post(yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
-				NULL, length, _yahoo_http_post_connected, yad);
+				length = strlen(content);
+
+				struct yahoo_input_data *new_yid;
+				new_yid = y_new0(struct yahoo_input_data, 1);
+				new_yid->type = YAHOO_CONNECTION_CHATCAT;
+				new_yid->yd = yid->yd;
+
+				yad = y_new0(struct yahoo_post_data, 1);
+				yad->yid = new_yid;
+				yad->data = strdup(content);
+				yahoo_http_post(yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
+					NULL, length, _yahoo_http_post_connected, yad);
+			}
 
 			while (members) {
 				YList *n = members->next;

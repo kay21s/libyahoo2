@@ -1207,6 +1207,7 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 				yad->data = strdup(content);
 				yahoo_http_post(yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
 					NULL, length, _yahoo_http_post_connected, yad);
+				break;
 			}
 
 			while (members) {

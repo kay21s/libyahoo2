@@ -1468,16 +1468,17 @@ static void process_commands(char *line)
 		}
 		roomname = copy;
 		if(roomid && roomname) {
-			yahoo_chat_logon(ylad->id, NULL, roomname, roomid,country, language);
+			yahoo_chat_logon(ylad->id, NULL, roomname, roomid, country, language);
 		}
 
 	} else if(!strncasecmp(cmd, "CHM", strlen("CHM"))) {
+	/* Command Format "CHM roomname msg" */
 		char *msg, *roomname;
 		roomname = copy;
-		tmp = strstr(copy, "  ");
+		tmp = strchr(copy, ' ');
 		if(tmp) {
 			*tmp = '\0';
-			copy = tmp+2;
+			copy = tmp+1;
 		}
 		msg = copy;
 		if(roomname && msg) {
@@ -1486,6 +1487,7 @@ static void process_commands(char *line)
 
 	} else if(!strncasecmp(cmd, "CHX", strlen("CHX"))) {
 		yahoo_chat_logoff(ylad->id, NULL);
+
 	} else if(!strncasecmp(cmd, "STA", strlen("STA"))) {
 		if(isdigit(copy[0])) {
 			state = (enum yahoo_status)atoi(copy);

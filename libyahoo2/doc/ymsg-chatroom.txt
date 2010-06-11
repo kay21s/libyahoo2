@@ -10,7 +10,9 @@ Client –> Server :
 98 : us
 445 : en-us
 135 : ym10.0.0.1258
+
 Server –> Client :
+
 1 : username
 6 : abcde
 98 : us
@@ -29,7 +31,7 @@ Client –> Server :
 
 1 : username
 104 : #ChatRoom(China : 1)
-129 : (number)1129
+129 : (Chat Room ID)
 62 : 2
 
 Server –> Client :
@@ -51,11 +53,11 @@ Server –> Client
 13 : 1
 104 : #ChatRoom(China : 1)
 105 : (Information from the chat room)
-108 : 41
+108 : (Number of members in this package)
 126 : 328704
 128 : 1032
-129 : (number)1129
-130 : (Some Unrecognizable characters)
+129 : (Chat Room ID)
+130 : (Some Unrecognizable characters to show the first join)
 302 : 10019
 10019 : username
 303 : 10019
@@ -89,7 +91,7 @@ Client –> Server
 
 1 : username
 104: #ChatRoom(China:1)
-124 : 1
+124 : (Message Type)
 117 : (Content)
 
 Server –> Client
@@ -97,7 +99,7 @@ Server –> Client
 104 : #ChatRoom(China:1)
 109 : (From) Yahoo/username
 117 : (Content)
-124 : 1
+124 : (Message Type)
 
 5. Chat Join
 

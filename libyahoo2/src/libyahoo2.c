@@ -4545,6 +4545,34 @@ void yahoo_chat_message(int id, const char *from, const char *room,
 	yahoo_packet_free(pkt);
 }
 
+void yahoo_chat_ignore(int id, const char *from, const char *user, int ignore)
+{
+	struct yahoo_input_data *yid =
+		find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
+	struct yahoo_data *yd;
+	struct yahoo_packet *pkt;
+
+	yd = yid->yd;
+
+	pkt = yahoo_packet_new(YAHOO_SERVICE_IGNORECONTACT, YPACKET_STATUS_DEFAULT,
+		yd->session_id);
+
+	yahoo_packet_hash(pkt, 1, (from ? from : yd->user));
+	if(ignore)
+		yahoo_packet_hash(pkt, 13, "1");
+	else
+		yahoo_packet_hash(pkt, 13, "2");
+	yahoo_packet_hash(pkt, 302, "319");
+	yahoo_packet_hash(pkt, 300, "319");
+	yahoo_packet_hash(pkt, 7, user);
+	yahoo_packet_hash(pkt, 301, "319");
+	yahoo_packet_hash(pkt, 303, "319");
+
+	yahoo_send_packet(yid, pkt, 0);
+
+	yahoo_packet_free(pkt);
+}
+
 void yahoo_chat_logoff(int id, const char *from)
 {
 	struct yahoo_input_data *yid =

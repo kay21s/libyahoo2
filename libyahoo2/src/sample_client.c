@@ -1485,6 +1485,18 @@ static void process_commands(char *line)
 			yahoo_chat_message(ylad->id, NULL, roomname, msg, 1, 0);
 		}
 
+	} else if(!strncasecmp(cmd, "CHI", strlen("CHI"))) {
+	/* Ignore a member in the chat room, Command Format "CHI user_to_be_ignored" */	
+		char *user;
+		user = copy;
+		yahoo_chat_ignore(ylad->id, NULL, user, 1);
+	
+	} else if(!strncasecmp(cmd, "CHU", strlen("CHU"))) {
+	/* Unignore a member in the chat room, Command Format "CHI user_to_be_ignored" */	
+		char *user;
+		user = copy;
+		yahoo_chat_ignore(ylad->id, NULL, user, 0);
+
 	} else if(!strncasecmp(cmd, "CHX", strlen("CHX"))) {
 		yahoo_chat_logoff(ylad->id, NULL);
 

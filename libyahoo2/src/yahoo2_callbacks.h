@@ -238,11 +238,12 @@ extern "C" {
 		const char *me, const char *who, const char *room);
 
 /*
- * Name: ext_yahoo_chat_cat_xml
- * 	Called when ?
+ * Name: ext_yahoo_chat_cat_verify
+ * 	Called when user log into chat room, client will receive a image
+ * 	while user needs to type in the characters in the image to verify
  * Params:
- * 	id      - the id that identifies the server connection
- * 	xml     - ?
+ * 	url     - the URL of the image for verification
+ * 	vcode   - the characters which is typed in by the user
  */
 	void YAHOO_CALLBACK_TYPE(ext_yahoo_chat_verify) (const char *url, char *vcode);
 

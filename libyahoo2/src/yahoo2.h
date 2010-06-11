@@ -143,6 +143,8 @@ extern "C" {
 /* Send message "msg" to room with specified roomname, msgtype is 1-normal message or 2-/me mesage */
 	void yahoo_chat_message(int id, const char *from, const char *room,
 		const char *msg, const int msgtype, const int utf8);
+/* Ignore a contact in the chat room, ignore = 1 represents ignore and ignore = 0 represents unignore */
+	void yahoo_chat_ignore(int id, const char *from, const char *user, int ignore);
 /* Log off chat */
 	void yahoo_chat_logoff(int id, const char *from);
 

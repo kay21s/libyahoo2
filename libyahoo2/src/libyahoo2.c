@@ -4551,6 +4551,7 @@ void yahoo_chat_logoff(int id, const char *from)
 		find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
 	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
+	char c1005[8] = "12345678"; /* ? just a hard-coding value */
 
 	if (!yid)
 		return;
@@ -4561,6 +4562,7 @@ void yahoo_chat_logoff(int id, const char *from)
 		yd->session_id);
 
 	yahoo_packet_hash(pkt, 1, (from ? from : yd->user));
+	yahoo_packet_hash(pkt, 1005, c1005);
 
 	yahoo_send_packet(yid, pkt, 0);
 

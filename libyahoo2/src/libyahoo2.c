@@ -4464,7 +4464,7 @@ void yahoo_get_chatrooms(int id, int chatroomid)
 
 	inputs = y_list_prepend(inputs, yid);
 
-	yahoo_http_get(yid->yd->client_id, url, buff, 0, 0,
+	yahoo_http_get(yid->yd->client_id, url, buff, 1, 0,
 		_yahoo_http_connected, yid);
 }
 

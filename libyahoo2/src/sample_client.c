@@ -1454,10 +1454,8 @@ static void process_commands(char *line)
 	} else if(!strncasecmp(cmd, "CHJ", strlen("CHJ"))) {
 	/* Command Format "CHJ roomid roomname" */
 		char *roomid, *roomname;
-		char country[2] = "us";
-		char language[5] = "en-us";
-		country[2]='\0';
-		language[5]='\0';
+		char country[] = "us";
+		char language[] = "en-us";
 /* Linux, FreeBSD, Solaris:1 */
 /* 1600326591 */
 		roomid = copy;

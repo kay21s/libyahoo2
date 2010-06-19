@@ -1,3 +1,17 @@
+Yahoo Messenger Protocol -- Chat Room
+----------------------------------------
+
+The YMSG protocol used in chat room.
+Seven types of messages used here:
+1) Chat Online
+2) Chat Join      : Messages send when joining the chat room.
+3) Chat Comment   : Send comment to server or Receive comments from others from server
+4) Chat Join      : When a user joined the chat room, will receive a message from the server
+5) Chat Logout    : When a user left the chat room, will receive a message from the server
+6) Chat Exit      : Left the chat room, send a message to tell the server
+7) Ignore User    : Ignore/Unignore a specified user, and the server  will not send the user's comments any more
+
+
 1.Chat Online
 
 Service: Chat Online (150   0×96)
@@ -46,7 +60,7 @@ Server –> Client :
 109 : Yahoo
 141 : Messenger Chat Admin
 
-Now client receives a picture from the server, and user should type in the characters in the picture and send them to the  server. However this is not in a YMSG format. Should libyahoo2 be in charge of this job?
+Now client receives the URL of the image for verification. Libyahoo2 will be in charge of extracting the URL and handle it to client to display the image.
 
 Server –> Client
 
@@ -75,15 +89,7 @@ Server –> Client :
 Status : Disconnected(4294967295)
 114 : -35
 
-3. Keep Alive
-
-Service  :  Keep Alive(138   0×8a)
-
-Client –> Server
-
-0 : username
-
-4. Comment
+3. Chat Comment
 
 Service : Comment(168   0xa8)
 
@@ -101,7 +107,7 @@ Server –> Client
 117 : (Content)
 124 : (Message Type)
 
-5. Chat Join
+4. Chat Join
 
 Service : Chat Join (152   0×98)
 
@@ -113,7 +119,7 @@ Server –> Client :
 109 : username(who is joining)
 113 : (number)
 
-6. Chat Exit
+5. Chat Exit
 
 Service : Chat Exit(155   0×9b)
 
@@ -124,7 +130,7 @@ Server –> Client
 109 : username(who is leaving)
 113 : (number)
 
-7. Chat Logout
+6. Chat Logout
 
 Service : Chat Logout (160   0xa0)
 
@@ -140,3 +146,24 @@ Server –> Client
 302 : 10019
 10019 : username
 303 : 10019
+
+7. Ignore user
+
+Service : Ignore Contact (133 0x85)
+
+Client -->Server
+
+1 : my username
+13 : 1 if ignore a user / 2 if unignore a user
+302 : 319
+300 : 319
+7 : user to be ignored
+301 : 319
+303 : 319
+
+Server --> Client
+
+0 : user to be ignored
+1 : my username
+13 : 1 if ignore a user / 2 if unignore a user
+66 : 0 

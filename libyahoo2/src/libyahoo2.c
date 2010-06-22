@@ -1183,13 +1183,15 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 				end = strstr(topic, ".jpg");
 				end[4] = '\0';
 
-				/* find the head of the url, the second "http://" */
+				/* find the URL of the image, the SECOND "http://" in the string */
 				head = strstr(topic, "http://");
-				topic = head + 7;
+				topic = head + 7; /*skip the first "http://" */
 				head = strstr(topic, "http://");
 
+				/* handle the URL to client to show the image and get the code in the image*/
 				YAHOO_CALLBACK(ext_yahoo_chat_verify)(head, vcode);
 	
+				/* construct a HTTP post message to send the verification code to the server*/
 				snprintf(content, sizeof(content), "question=%s"
 					"&answer=%s"
 					"&.intl=us&.lang=en-US",
@@ -1209,7 +1211,8 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 					NULL, length, _yahoo_http_post_connected, yad);
 				break;
 			}
-
+			
+			/* The second time receive the message of this type, it will contain all the members in the chat room*/
 			while (members) {
 				YList *n = members->next;
 				currentmember = members->data;
@@ -4481,6 +4484,7 @@ void yahoo_chat_logon(int id, const char *from, const char *room,
 
 	yd = yid->yd;
 
+	/* First, send a CHAT ONLINE message*/
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATONLINE, YPACKET_STATUS_DEFAULT,
 		yd->session_id);
 
@@ -4499,7 +4503,8 @@ void yahoo_chat_logon(int id, const char *from, const char *room,
 	yahoo_send_packet(yid, pkt, 0);
 
 	yahoo_packet_free(pkt);
-
+	
+	/* Second, Send a CHAT JOIN message*/
 	pkt = yahoo_packet_new(YAHOO_SERVICE_CHATJOIN, YPACKET_STATUS_DEFAULT,
 		yd->session_id);
 
@@ -4546,6 +4551,8 @@ void yahoo_chat_message(int id, const char *from, const char *room,
 }
 
 void yahoo_chat_ignore(int id, const char *from, const char *user, int ignore)
+/*ignore = 1 means we are trying to ignore the user
+  ignore = 0 means we have already ignored the user and don't want to ignore him any more*/
 {
 	struct yahoo_input_data *yid =
 		find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
@@ -4579,7 +4586,8 @@ void yahoo_chat_logoff(int id, const char *from)
 		find_input_by_id_and_type(id, YAHOO_CONNECTION_PAGER);
 	struct yahoo_data *yd;
 	struct yahoo_packet *pkt;
-	char c1005[8] = "12345678"; /* ? just a hard-coding value */
+	char c1005[8] = "12345678"; 
+	/* Any value of the field 1005 will cause not much difference, just use a hard-coding value */
 
 	if (!yid)
 		return;

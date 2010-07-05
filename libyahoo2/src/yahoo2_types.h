@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+#define YMSG_VERSION "9.0.0.2152"
+
 	enum yahoo_service {	/* these are easier to see in hex */
 		YAHOO_SERVICE_LOGON = 1,
 		YAHOO_SERVICE_LOGOFF,

@@ -1192,12 +1192,10 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 				YAHOO_CALLBACK(ext_yahoo_chat_verify)(head, vcode);
 	
 				/* construct a HTTP post message to send the verification code to the server*/
-				snprintf(content, sizeof(content), "question=%s"
+				length = snprintf(content, sizeof(content), "question=%s"
 					"&answer=%s"
 					"&.intl=us&.lang=en-US",
 					head, vcode);
-
-				length = strlen(content);
 
 				struct yahoo_input_data *new_yid;
 				new_yid = y_new0(struct yahoo_input_data, 1);
@@ -1900,7 +1898,7 @@ static void yahoo_send_auth(struct yahoo_data *yd)
 	yahoo_packet_hash(packet, 2, "1");
 	yahoo_packet_hash(packet, 59, yd->cookie_b);
 	yahoo_packet_hash(packet, 98, "us");	/* TODO Put country code */
-	yahoo_packet_hash(packet, 135, "9.0.0.2152");
+	yahoo_packet_hash(packet, 135, YMSG_VERSION);
 
 	yahoo_send_packet(yid, packet, 0);
 
@@ -4498,7 +4496,7 @@ void yahoo_chat_logon(int id, const char *from, const char *room,
 		yahoo_packet_hash(pkt, 98, "us");
 		yahoo_packet_hash(pkt, 445, "en-us");
 	}
-	yahoo_packet_hash(pkt, 135, "9.0.0.2515");
+	yahoo_packet_hash(pkt, 135, YMSG_VERSION);
 
 	yahoo_send_packet(yid, pkt, 0);
 

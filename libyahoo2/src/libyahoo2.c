@@ -1062,6 +1062,7 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 	char content[256], vcode[8];
 	int length;
 	struct yahoo_post_data *yad;
+	struct yahoo_input_data *new_yid;
 	static int verify_image = 1;
 
 	yahoo_dump_unhandled(pkt);
@@ -1197,9 +1198,8 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 					"&.intl=us&.lang=en-US",
 					head, vcode);
 
-				struct yahoo_input_data *new_yid;
 				new_yid = y_new0(struct yahoo_input_data, 1);
-				new_yid->type = YAHOO_CONNECTION_CHATCAT;
+				new_yid->type = YAHOO_CONNECTION_CAPTCHA;
 				new_yid->yd = yid->yd;
 
 				yad = y_new0(struct yahoo_post_data, 1);
@@ -3015,6 +3015,69 @@ static void yahoo_process_chatcat_connection(struct yahoo_input_data *yid,
 	}
 }
 
+static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int over)
+{
+	char content[256], vcode[8];
+	char *url, *http_content;
+	int length;
+	struct yahoo_post_data *yad;
+	struct yahoo_input_data *new_yid;
+	struct yahoo_packet *pkt;
+	struct yahoo_data *yd = yid->yd;
+	int id = yd->client_id;
+	char *judge;
+
+	if (over)
+		return;
+	printf("here\n");
+	/*while (find_input_by_id_and_type(id, YAHOO_CONNECTION_CAPTCHA)) {*/
+	printf("there\n");
+	http_content = strstr((char *)yid->rxqueue, "The document has moved");
+	if (http_content == NULL) {
+		return ; /* Do not found the content, must have error*/
+	}
+	
+	judge = strstr(http_content, "tryagain=1");
+	if (judge == NULL) {
+		judge = strstr(http_content, "close");
+		if (judge != NULL) {
+			/* Successfully logged in*/
+			printf("Successfully Logged in\n");
+		} else {
+			printf("Error in captcha process\n");
+		}
+		return ;
+	} else {
+		http_content = judge;
+		/* Find the end of the URL*/
+		url = strstr(http_content, ".jpg");
+		url[4] = '\0';
+
+		/* Find the head of the URL*/
+		url = strstr(http_content, "http://");
+
+		/* handle the URL to client to show the image and get the code in the image*/
+		YAHOO_CALLBACK(ext_yahoo_chat_verify)(url, vcode);
+	
+		/* construct a HTTP post message to send the verification code to the server*/
+		length = snprintf(content, sizeof(content), "question=%s"
+			"&answer=%s"
+			"&.intl=us&.lang=en-US",
+			url, vcode);
+
+		new_yid = y_new0(struct yahoo_input_data, 1);
+		new_yid->type = YAHOO_CONNECTION_CAPTCHA;
+		new_yid->yd = yid->yd;
+
+		yad = y_new0(struct yahoo_post_data, 1);
+		yad->yid = new_yid;
+		yad->data = strdup(content);
+		yahoo_http_post(yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
+			NULL, length, _yahoo_http_post_connected, yad);
+	}
+	
+}
+
 static void yahoo_process_yab_connection(struct yahoo_input_data *yid, int over)
 {
 	struct yahoo_data *yd = yid->yd;
@@ -3556,12 +3619,15 @@ static void yahoo_process_auth_connection(struct yahoo_input_data *yid,
 
 static void (*yahoo_process_connection[]) (struct yahoo_input_data *,
 	int over) = {
-yahoo_process_pager_connection, yahoo_process_ft_connection,
+		yahoo_process_pager_connection,
+		yahoo_process_ft_connection,
 		yahoo_process_yab_connection,
 		yahoo_process_webcam_master_connection,
 		yahoo_process_webcam_connection,
 		yahoo_process_chatcat_connection,
-		yahoo_process_search_connection, yahoo_process_auth_connection};
+		yahoo_process_search_connection,
+		yahoo_process_auth_connection,
+		yahoo_process_captcha_connection};
 
 int yahoo_read_ready(int id, void *fd, void *data)
 {

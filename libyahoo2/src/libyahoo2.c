@@ -3030,7 +3030,7 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 	if (over)
 		return;
 
-	http_content = strstr((char *)yid->rxqueue, "The document has moved");
+	http_content = strstr((char *)yid->rxqueue, "A HREF=");
 	if (http_content == NULL) {
 		return ; /* Do not found the content, must have error*/
 	}

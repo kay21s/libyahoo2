@@ -3029,9 +3029,7 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 
 	if (over)
 		return;
-	printf("here\n");
-	/*while (find_input_by_id_and_type(id, YAHOO_CONNECTION_CAPTCHA)) {*/
-	printf("there\n");
+
 	http_content = strstr((char *)yid->rxqueue, "The document has moved");
 	if (http_content == NULL) {
 		return ; /* Do not found the content, must have error*/
@@ -3046,6 +3044,7 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 		} else {
 			printf("Error in captcha process\n");
 		}
+		yahoo_input_close(yid);
 		return ;
 	} else {
 		http_content = judge;
@@ -3072,10 +3071,10 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 		yad = y_new0(struct yahoo_post_data, 1);
 		yad->yid = new_yid;
 		yad->data = strdup(content);
-		yahoo_http_post(yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
+		yahoo_input_close(yid);
+		yahoo_http_post(new_yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
 			NULL, length, _yahoo_http_post_connected, yad);
 	}
-	
 }
 
 static void yahoo_process_yab_connection(struct yahoo_input_data *yid, int over)

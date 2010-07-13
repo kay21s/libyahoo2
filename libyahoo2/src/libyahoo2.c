@@ -1179,7 +1179,7 @@ static void yahoo_process_chat(struct yahoo_input_data *yid,
 			/* skip the message "To help prevent spam ..." to the url of the image for verification
 			   the URL is in the first message server send to client
 			   if what user input is wrong, new image URL will be send in form of HTTP*/
-			if(verify_image == 1) {
+			if (verify_image == 1) {
 				verify_image = 0;
 				end = strstr(topic, ".jpg");
 				end[4] = '\0';
@@ -3009,7 +3009,7 @@ static void yahoo_process_chatcat_connection(struct yahoo_input_data *yid,
 	if (over)
 		return;
 
-	if (strstr((char *)yid->rxqueue + (yid->rxlen - 20), "</content>")) {
+	if (strstr((char *)yid->rxqueue, "</content>")) {
 		YAHOO_CALLBACK(ext_yahoo_chat_cat_xml) (yid->yd->client_id,
 			(char *)yid->rxqueue);
 	}

@@ -470,9 +470,78 @@ static void ext_yahoo_chat_verify(const char *url, char *vcode)
 	scanf("%s", vcode);
 }
 
+void traverse_cat_list(struct LList *list, int level)
+{
+	int i;
+	for(i=0; i<level; i++)
+		putchar('\t');
+	printf("%d - %s\n", list->id, list->name);
+	if(list->child)
+		traverse_cat_list(list->child, level+1);
+	if(list->next)
+		traverse_cat_list(list->next, level);
+}
+
 static void ext_yahoo_chat_cat_xml(int id, const char *xml) 
 {
-	print_message(("%s", xml));
+	char *content = strdup(xml), *header, *tailer;
+	int child_mode = 0;
+	struct LList *cat_list;
+	struct LList *list_ptr;
+	struct LList *cat_stack[5];
+	int stack_ptr = 0;
+	struct LList *temp;
+
+	/* Create a head node */
+	cat_list = malloc(sizeof(struct LList));
+	list_ptr = cat_list;
+	content = strstr(content, "<category"); /* Find the first category*/
+
+	while(stack_ptr >= 0) {
+		/* Find the id */
+		temp = malloc(sizeof(struct LList));
+		header = strchr(content, '"');
+		tailer = strchr(header+1, '"');
+		*tailer = '\0';
+		temp->id = atoi(strdup(header + 1));
+
+		/* Find the name*/
+		header = strchr(tailer+1, '"');
+		tailer = strchr(header+1, '"');
+		*tailer = '\0';
+		temp->name = strdup(header + 1);
+
+		temp->next = NULL;
+		temp->child = NULL;
+
+		content = strchr(tailer+1, '>');
+		if(child_mode == 1) {
+			list_ptr->child = temp;
+			list_ptr = temp;
+			cat_stack[stack_ptr] = temp;
+			child_mode = 0;
+		} else {
+			list_ptr->next = temp;
+			list_ptr = temp;
+			cat_stack[stack_ptr] = temp;
+		}
+
+		if (*(content-1) != '/') {
+			stack_ptr ++;
+			child_mode = 1;
+		}
+
+		/* find the next category */
+		content = strchr(content, '<');
+		while (*(content+1) == '/' && stack_ptr >= 0) {
+			stack_ptr --;
+			list_ptr = cat_stack[stack_ptr];
+			content = strchr(content + 1, '<');
+		}
+	}
+
+	/* Traverse the structure and print them out */
+	traverse_cat_list(cat_list->next, 0);
 }
 
 static void ext_yahoo_chat_join(int id, const char *me, const char *room, const char * topic, YList *members, void *fd)

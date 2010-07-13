@@ -393,6 +393,13 @@ extern "C" {
 		int f213;       /* 213    state */ 
 	};
 
+	struct LList {
+		int id;
+		char *name;
+		struct LList *next;
+		struct LList *child;
+	};
+
 #ifdef __cplusplus
 }
 #endif

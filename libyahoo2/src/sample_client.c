@@ -114,6 +114,11 @@ typedef struct {
 	char *who;
 } yahoo_authorize_data;
 
+typedef struct {
+	int id;
+	char *name;
+} yahoo_chatroom_category;
+
 yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_AVAILABLE, "Available"},
 	{YAHOO_STATUS_BRB, "BRB"},
@@ -470,14 +475,14 @@ static void ext_yahoo_chat_verify(const char *url, char *vcode)
 	scanf("%s", vcode);
 }
 
-void traverse_cat_list(struct LList *list, int level)
+void traverse_cat_list(YList *list, int level)
 {
 	int i;
 	for(i=0; i<level; i++)
 		putchar('\t');
-	printf("%d - %s\n", list->id, list->name);
-	if(list->child)
-		traverse_cat_list(list->child, level+1);
+	printf("%d - %s\n", ((yahoo_chatroom_category *)list->data)->id, ((yahoo_chatroom_category *)list->data)->name);
+	if(list->prev)
+		traverse_cat_list(list->prev, level+1);
 	if(list->next)
 		traverse_cat_list(list->next, level);
 }
@@ -486,37 +491,38 @@ static void ext_yahoo_chat_cat_xml(int id, const char *xml)
 {
 	char *content = strdup(xml), *header, *tailer;
 	int child_mode = 0;
-	struct LList *cat_list;
-	struct LList *list_ptr;
-	struct LList *cat_stack[5];
+	YList *cat_list;
+	YList *list_ptr;
+	YList *cat_stack[5];
 	int stack_ptr = 0;
-	struct LList *temp;
+	YList *temp;
 
 	/* Create a head node */
-	cat_list = malloc(sizeof(struct LList));
+	cat_list = malloc(sizeof(YList));
 	list_ptr = cat_list;
 	content = strstr(content, "<category"); /* Find the first category*/
 
 	while(stack_ptr >= 0) {
 		/* Find the id */
-		temp = malloc(sizeof(struct LList));
+		temp = malloc(sizeof(YList));
+		temp->data = malloc(sizeof(yahoo_chatroom_category));
 		header = strchr(content, '"');
 		tailer = strchr(header+1, '"');
 		*tailer = '\0';
-		temp->id = atoi(strdup(header + 1));
+		((yahoo_chatroom_category *)temp->data)->id = atoi(strdup(header + 1));
 
 		/* Find the name*/
 		header = strchr(tailer+1, '"');
 		tailer = strchr(header+1, '"');
 		*tailer = '\0';
-		temp->name = strdup(header + 1);
+		((yahoo_chatroom_category *)temp->data)->name = strdup(header + 1);
 
 		temp->next = NULL;
-		temp->child = NULL;
+		temp->prev = NULL;
 
 		content = strchr(tailer+1, '>');
 		if(child_mode == 1) {
-			list_ptr->child = temp;
+			list_ptr->prev = temp;
 			list_ptr = temp;
 			cat_stack[stack_ptr] = temp;
 			child_mode = 0;

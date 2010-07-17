@@ -3018,7 +3018,7 @@ static void yahoo_process_chatcat_connection(struct yahoo_input_data *yid,
 static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int over)
 {
 	char content[256], vcode[8];
-	char *url, *http_content;
+	char *url, *location;
 	int length;
 	struct yahoo_post_data *yad;
 	struct yahoo_input_data *new_yid;
@@ -3030,14 +3030,14 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 	if (over)
 		return;
 
-	http_content = strstr((char *)yid->rxqueue, "A HREF=");
-	if (http_content == NULL) {
+	location = strstr((char *)yid->rxqueue, "Location:");
+	if (location == NULL) {
 		return ; /* Do not found the content, must have error*/
 	}
 	
-	judge = strstr(http_content, "tryagain=1");
+	judge = strstr(location, "tryagain=1");
 	if (judge == NULL) {
-		judge = strstr(http_content, "close");
+		judge = strstr(location, "close");
 		if (judge != NULL) {
 			/* Successfully logged in*/
 			printf("Successfully Logged in\n");
@@ -3047,13 +3047,13 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 		yahoo_input_close(yid);
 		return ;
 	} else {
-		http_content = judge;
+		location = judge;
 		/* Find the end of the URL*/
-		url = strstr(http_content, ".jpg");
+		url = strstr(location, ".jpg");
 		url[4] = '\0';
 
 		/* Find the head of the URL*/
-		url = strstr(http_content, "http://");
+		url = strstr(location, "http://");
 
 		/* handle the URL to client to show the image and get the code in the image*/
 		YAHOO_CALLBACK(ext_yahoo_chat_verify)(url, vcode);

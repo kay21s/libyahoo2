@@ -119,6 +119,20 @@ typedef struct {
 	char *name;
 } yahoo_chatroom_category;
 
+typedef struct aa{
+	char *type;
+	int id;
+	char *name;
+	char *topic;
+} yahoo_chatroom_info;
+
+typedef struct bb{
+	int count;
+	int users;
+	int voices;
+	int webcams;
+} yahoo_lobby_info;
+
 yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_AVAILABLE, "Available"},
 	{YAHOO_STATUS_BRB, "BRB"},
@@ -475,7 +489,7 @@ static void ext_yahoo_chat_verify(const char *url, char *vcode)
 	scanf("%s", vcode);
 }
 
-void traverse_cat_list(YList *list, int level)
+static void traverse_cat_list(YList *list, int level)
 {
 	int i;
 	for(i=0; i<level; i++)
@@ -487,6 +501,36 @@ void traverse_cat_list(YList *list, int level)
 		traverse_cat_list(list->next, level);
 }
 
+static void traverse_room_list(YList *list)
+{
+	YList *lobby;
+
+	while(list != NULL) {
+		lobby = list->prev;
+		while(lobby != NULL) {
+			printf("%d - %s %d [%d] [w%d]\n", 
+			((yahoo_chatroom_info *)list->data)->id, ((yahoo_chatroom_info *)list->data)->name,
+			((yahoo_lobby_info *)lobby->data)->count, ((yahoo_lobby_info *)lobby->data)->users, 
+			((yahoo_lobby_info *)lobby->data)->webcams);
+			lobby = lobby->prev;
+		}
+		list = list->next;
+	}
+}
+
+static char *get_xml_chatroom_info(char *content, char *pattern)
+{
+	char *header, *tailer, *info;
+	header = strstr(content, pattern);
+	header += strlen(pattern);
+	tailer = strchr(header, '"');
+	*tailer = '\0';
+	info = malloc(tailer - header + 1);
+	strcpy(info, header);
+	*tailer = '"';
+	return info;
+}
+
 static void ext_yahoo_chat_cat_xml(int id, const char *xml) 
 {
 	char *content = strdup(xml), *header, *tailer;
@@ -495,59 +539,111 @@ static void ext_yahoo_chat_cat_xml(int id, const char *xml)
 	YList *list_ptr;
 	YList *cat_stack[5];
 	int stack_ptr = 0;
-	YList *temp;
+	YList *temp, *child, *tail;
 
 	/* Create a head node */
-	cat_list = malloc(sizeof(YList));
+	cat_list = calloc(1, sizeof(YList));
 	list_ptr = cat_list;
 	content = strstr(content, "<category"); /* Find the first category*/
 
-	while(stack_ptr >= 0) {
-		/* Find the id */
-		temp = malloc(sizeof(YList));
-		temp->data = malloc(sizeof(yahoo_chatroom_category));
-		header = strchr(content, '"');
-		tailer = strchr(header+1, '"');
-		*tailer = '\0';
-		((yahoo_chatroom_category *)temp->data)->id = atoi(strdup(header + 1));
+	if (content == NULL) {
+		content = strdup(xml);
+		content = strstr(content, "<chatRooms>");
+		if (content == NULL) {
+			printf("Error : Cannot find anything!\n");
+			return ;
+		}
 
-		/* Find the name*/
-		header = strchr(tailer+1, '"');
-		tailer = strchr(header+1, '"');
-		*tailer = '\0';
-		((yahoo_chatroom_category *)temp->data)->name = strdup(header + 1);
+		content += strlen("<chatRooms>");
 
-		temp->next = NULL;
-		temp->prev = NULL;
+		content = strchr(content, '<');
+		while(*(content + 1) != '/') {
 
-		content = strchr(tailer+1, '>');
-		if(child_mode == 1) {
-			list_ptr->prev = temp;
-			list_ptr = temp;
-			cat_stack[stack_ptr] = temp;
-			child_mode = 0;
-		} else {
+			/* find all the fields of a chat room */
+			temp = calloc(1, sizeof(YList));
+			temp->data = calloc(1, sizeof(yahoo_chatroom_info));
+			tail = temp;
+
+			((yahoo_chatroom_info *)(temp->data))->type = get_xml_chatroom_info(content, "type=\"");
+			((yahoo_chatroom_info *)(temp->data))->id = atoi(get_xml_chatroom_info(content, "id=\""));
+			((yahoo_chatroom_info *)(temp->data))->name = get_xml_chatroom_info(content, "name=\"");
+			((yahoo_chatroom_info *)(temp->data))->topic = get_xml_chatroom_info(content, "topic=\"");
+
+			/* find all lobbys of a chat room */
+
+			content = strchr(content+1, '<');
+			while(*(content + 1) != '/') {
+				child = calloc(1, sizeof(YList));
+				child->data = calloc(1, sizeof(yahoo_lobby_info));
+
+				((yahoo_lobby_info *)child->data)->count = atoi(get_xml_chatroom_info(content, "count=\""));
+				((yahoo_lobby_info *)child->data)->users = atoi(get_xml_chatroom_info(content, "users=\""));
+				((yahoo_lobby_info *)child->data)->voices = atoi(get_xml_chatroom_info(content, "voices=\""));
+				((yahoo_lobby_info *)child->data)->webcams = atoi(get_xml_chatroom_info(content, "webcams=\""));
+
+				/* prev is used as a pointer to the the lobby*/
+				tail->prev = child;
+				tail = child;
+
+				content = strchr(content+1, '<');
+			}
+
 			list_ptr->next = temp;
 			list_ptr = temp;
-			cat_stack[stack_ptr] = temp;
+
+			content = strchr(content+1, '<');
 		}
 
-		if (*(content-1) != '/') {
-			stack_ptr ++;
-			child_mode = 1;
+		/* Traverse the structure and print them out */
+		traverse_room_list(cat_list->next);
+
+	} else {
+		while(stack_ptr >= 0) {
+			/* prev is used as a pointer linked with its child categories */
+
+			/* Find the id */
+			temp = calloc(1, sizeof(YList));
+			temp->data = calloc(1, sizeof(yahoo_chatroom_category));
+			header = strchr(content, '"');
+			tailer = strchr(header+1, '"');
+			*tailer = '\0';
+			((yahoo_chatroom_category *)temp->data)->id = atoi(strdup(header + 1));
+
+			/* Find the name*/
+			header = strchr(tailer+1, '"');
+			tailer = strchr(header+1, '"');
+			*tailer = '\0';
+			((yahoo_chatroom_category *)temp->data)->name = strdup(header + 1);
+
+			content = strchr(tailer+1, '>');
+			if(child_mode == 1) {
+				list_ptr->prev = temp;
+				list_ptr = temp;
+				cat_stack[stack_ptr] = temp;
+				child_mode = 0;
+			} else {
+				list_ptr->next = temp;
+				list_ptr = temp;
+				cat_stack[stack_ptr] = temp;
+			}
+
+			if (*(content-1) != '/') {
+				stack_ptr ++;
+				child_mode = 1;
+			}
+
+			/* find the next category */
+			content = strchr(content, '<');
+			while (*(content+1) == '/' && stack_ptr >= 0) {
+				stack_ptr --;
+				list_ptr = cat_stack[stack_ptr];
+				content = strchr(content + 1, '<');
+			}
 		}
 
-		/* find the next category */
-		content = strchr(content, '<');
-		while (*(content+1) == '/' && stack_ptr >= 0) {
-			stack_ptr --;
-			list_ptr = cat_stack[stack_ptr];
-			content = strchr(content + 1, '<');
-		}
+		/* Traverse the structure and print them out */
+		traverse_cat_list(cat_list->next, 0);
 	}
-
-	/* Traverse the structure and print them out */
-	traverse_cat_list(cat_list->next, 0);
 }
 
 static void ext_yahoo_chat_join(int id, const char *me, const char *room, const char * topic, YList *members, void *fd)

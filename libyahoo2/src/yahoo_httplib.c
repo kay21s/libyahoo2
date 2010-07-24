@@ -61,6 +61,72 @@ extern struct yahoo_callbacks *yc;
 
 extern enum yahoo_log_level log_level;
 
+char * get_field_value(http_struct structure, char *field)
+{
+	namevalue_pair *ptr = structure.lines.next;
+	while(ptr != NULL) {
+		if(!strcmp(field, ptr->name))
+			return ptr->value;
+		ptr = ptr->next;
+	}
+	return NULL;
+}
+
+void show_http_struct(http_struct header)
+{
+	namevalue_pair *ptr = header.lines.next;
+	printf("%s, %s\n", header.http_version, header.status_code);
+	while(ptr != NULL) {
+		printf("%s  :  %s\n", ptr->name, ptr->value);
+		ptr = ptr->next;
+	}
+	printf("%s\n", header.content);
+}
+
+void structure_http_packet(char *input, int length, http_struct *struct_packet)
+{
+	char *header, *tail;
+	char *raw_packet = strdup(input);
+	namevalue_pair *temp_line, *last_line;
+
+	struct_packet->lines.next = NULL;
+	last_line = &(struct_packet->lines);
+	
+	/* Get HTTP version and the status code, their format are fixed, just hard-coding */
+	header = raw_packet+5;
+	tail = raw_packet+8;
+	*tail = '\0';
+	struct_packet->http_version = strdup(header);
+	header = tail+1;
+	tail = header+3;
+	*tail = '\0';
+	struct_packet->status_code = strdup(header);
+
+	header = strstr(tail+1, "\r\n");
+	header = header + 2;
+	while(*header!='\r' || *(header+1)!='\n') {
+		temp_line = malloc(sizeof(namevalue_pair));
+		tail = strchr(header, ':');
+		*tail = '\0';
+		temp_line->name = strdup(header);
+
+		header = tail+2;
+		tail = strstr(header, "\r\n");
+		*tail = '\0';
+		temp_line->value = strdup(header);
+
+		temp_line->next = NULL;
+		last_line->next = temp_line;
+		last_line = temp_line;
+		
+		header = tail+2;
+	}
+	header += 2;
+	tail = raw_packet + length;
+	*tail = '\0';
+	struct_packet->content = strdup(header);
+}
+
 int yahoo_tcp_readline(char *ptr, int maxlen, void *fd)
 {
 	int n, rc;

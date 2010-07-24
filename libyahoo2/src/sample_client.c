@@ -119,14 +119,14 @@ typedef struct {
 	char *name;
 } yahoo_chatroom_category;
 
-typedef struct aa{
+typedef struct {
 	char *type;
 	int id;
 	char *name;
 	char *topic;
 } yahoo_chatroom_info;
 
-typedef struct bb{
+typedef struct {
 	int count;
 	int users;
 	int voices;

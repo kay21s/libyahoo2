@@ -393,6 +393,20 @@ extern "C" {
 		int f213;       /* 213    state */ 
 	};
 
+	typedef struct pair{
+		char *name;
+		char *value;
+		struct pair *next;
+	}namevalue_pair;
+
+	typedef struct{
+		char *http_version;
+		char *status_code;
+		namevalue_pair lines;
+		char *content;
+	}http_struct;
+
+
 #ifdef __cplusplus
 }
 #endif

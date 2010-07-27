@@ -404,7 +404,7 @@ extern "C" {
 		char *status_code;
 		namevalue_pair lines;
 		char *content;
-	}http_struct;
+	}http_data;
 
 
 #ifdef __cplusplus

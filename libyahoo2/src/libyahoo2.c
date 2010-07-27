@@ -3026,13 +3026,13 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 	struct yahoo_data *yd = yid->yd;
 	int id = yd->client_id;
 	char *judge;
-	http_struct structure;
+	http_data data;
 
 	if (over)
 		return;
 
-	structure_http_packet((char *)yid->rxqueue, yid->rxlen, &structure);
-	location = get_field_value(structure, "Location");
+	set_http_data((char *)yid->rxqueue, yid->rxlen, &data);
+	location = http_data_get_header_value(data, "Location");
 
 	/*location = strstr((char *)yid->rxqueue, "Location:");*/
 	if (location == NULL) {

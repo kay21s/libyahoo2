@@ -61,9 +61,9 @@ extern struct yahoo_callbacks *yc;
 
 extern enum yahoo_log_level log_level;
 
-char * get_field_value(http_struct structure, char *field)
+char *http_data_get_header_value(http_data data, char *field)
 {
-	namevalue_pair *ptr = structure.lines.next;
+	namevalue_pair *ptr = data.lines.next;
 	while(ptr != NULL) {
 		if(!strcmp(field, ptr->name))
 			return ptr->value;
@@ -72,18 +72,18 @@ char * get_field_value(http_struct structure, char *field)
 	return NULL;
 }
 
-void show_http_struct(http_struct header)
+void get_http_data(http_data data)
 {
-	namevalue_pair *ptr = header.lines.next;
-	printf("%s, %s\n", header.http_version, header.status_code);
+	namevalue_pair *ptr = data.lines.next;
+	printf("%s, %s\n", data.http_version, data.status_code);
 	while(ptr != NULL) {
 		printf("%s  :  %s\n", ptr->name, ptr->value);
 		ptr = ptr->next;
 	}
-	printf("%s\n", header.content);
+	printf("%s\n", data.content);
 }
 
-void structure_http_packet(char *input, int length, http_struct *struct_packet)
+void set_http_data(char *input, int length, http_data *struct_packet)
 {
 	char *header, *tail;
 	char *raw_packet = strdup(input);

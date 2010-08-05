@@ -113,10 +113,11 @@ typedef struct {
 	int id;
 	char *who;
 } yahoo_authorize_data;
-
+/*
 typedef struct {
 	int id;
 	char *name;
+	YList *room_list;
 } yahoo_chatroom_category;
 
 typedef struct {
@@ -132,7 +133,7 @@ typedef struct {
 	int voices;
 	int webcams;
 } yahoo_lobby_info;
-
+*/
 yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_AVAILABLE, "Available"},
 	{YAHOO_STATUS_BRB, "BRB"},
@@ -535,18 +536,18 @@ static void ext_yahoo_chat_cat_xml(int id, const char *xml)
 {
 	char *content = strdup(xml), *header, *tailer;
 	int child_mode = 0;
-	YList *cat_list;
+	YList *room_list;
 	YList *list_ptr;
 	YList *cat_stack[5];
 	int stack_ptr = 0;
 	YList *temp, *child, *tail;
 
-	/* Create a head node */
-	cat_list = calloc(1, sizeof(YList));
-	list_ptr = cat_list;
 	content = strstr(content, "<category"); /* Find the first category*/
 
 	if (content == NULL) {
+		room_list = calloc(1, sizeof(YList));
+		list_ptr = room_list;
+
 		content = strdup(xml);
 		content = strstr(content, "<chatRooms>");
 		if (content == NULL) {
@@ -595,9 +596,13 @@ static void ext_yahoo_chat_cat_xml(int id, const char *xml)
 		}
 
 		/* Traverse the structure and print them out */
-		traverse_room_list(cat_list->next);
+		traverse_room_list(room_list->next);
 
 	} else {
+		/* Create a head node */
+		room_list = calloc(1, sizeof(YList));
+		list_ptr = room_list;
+
 		while(stack_ptr >= 0) {
 			/* prev is used as a pointer linked with its child categories */
 
@@ -614,6 +619,7 @@ static void ext_yahoo_chat_cat_xml(int id, const char *xml)
 			tailer = strchr(header+1, '"');
 			*tailer = '\0';
 			((yahoo_chatroom_category *)temp->data)->name = strdup(header + 1);
+			((yahoo_chatroom_category *)temp->data)->room_list = NULL;
 
 			content = strchr(tailer+1, '>');
 			if(child_mode == 1) {
@@ -642,7 +648,7 @@ static void ext_yahoo_chat_cat_xml(int id, const char *xml)
 		}
 
 		/* Traverse the structure and print them out */
-		traverse_cat_list(cat_list->next, 0);
+		traverse_cat_list(room_list->next, 0);
 	}
 }
 
@@ -1622,6 +1628,15 @@ static void process_commands(char *line)
 		int roomid;
 		roomid = atoi(copy);
 		yahoo_get_chatrooms(ylad->id, roomid);
+	} else if(!strncasecmp(cmd, "CHR", strlen("CHR"))) {
+		int roomid;
+		roomid = atoi(copy);
+		YList *list = yahoo_get_chat_room_list(ylad->id, roomid);
+		if(roomid == 0)
+			traverse_cat_list(list, 0);
+		else
+			traverse_room_list(list);
+	
 	} else if(!strncasecmp(cmd, "CHJ", strlen("CHJ"))) {
 	/* Command Format "CHJ roomid roomname" */
 		char *roomid, *roomname;

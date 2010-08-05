@@ -305,6 +305,9 @@ extern "C" {
 		void *server_settings;
 
 		struct yahoo_process_status_entry *half_user;
+		
+		YList *chat_room_list;
+		int chat_room_id;
 	};
 
 	struct yab {
@@ -327,6 +330,26 @@ extern "C" {
 		struct yab *yab_entry;
 	};
 
+	typedef struct yahoo_category{
+		int id;
+		char *name;
+		YList *room_list;
+	} yahoo_chatroom_category;
+
+	typedef struct yahoo_chatroom{
+		char *type;
+		int id;
+		char *name;
+		char *topic;
+	} yahoo_chatroom_info;
+
+	typedef struct yahoo_lobby{
+		int count;
+		int users;
+		int voices;
+		int webcams;
+	} yahoo_lobby_info;
+	
 	enum yahoo_search_type {
 		YAHOO_SEARCH_KEYWORD = 0,
 		YAHOO_SEARCH_YID,

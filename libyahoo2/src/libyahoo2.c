@@ -210,6 +210,7 @@ struct yahoo_input_data {
 
 	YList *txqueues;
 	int write_tag;
+	int chat_room_id;
 };
 
 struct yahoo_server_settings {
@@ -3108,6 +3109,7 @@ static char *get_xml_chatroom_info(char *content, char *pattern)
 static void parse_chat_cat_xml(int id, const char *xml) 
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
+	struct yahoo_input_data *yid = find_input_by_id_and_type(id, YAHOO_CONNECTION_CHATCAT);
 	char *content = strdup(xml), *header, *tailer;
 	int child_mode = 0;
 	YList *room_list;
@@ -3121,7 +3123,7 @@ static void parse_chat_cat_xml(int id, const char *xml)
 	content = strstr(content, "<category"); /* Find the first category */
 
 	if (content == NULL) {
-		category = find_room_category(yd->chat_room_list, yd->chat_room_id);
+		category = find_room_category(yd->chat_room_list, yid->chat_room_id);
 
 		content = strdup(xml);
 		content = strstr(content, "<chatRooms>");
@@ -3170,8 +3172,6 @@ static void parse_chat_cat_xml(int id, const char *xml)
 		}
 
 		((yahoo_chatroom_category *)(category->data))->room_list = room_list->next;
-		/* Traverse the structure and print them out 
-		traverse_room_list(((yahoo_chatroom_category *)(category->data))->room_list); */
 
 	} else {
 		while(stack_ptr >= 0) {
@@ -3179,7 +3179,7 @@ static void parse_chat_cat_xml(int id, const char *xml)
 
 			/* Find the id */
 			temp = y_new0(struct _YList, 1);
-			temp->data = y_new0(struct yahoo_category, 1);
+			temp->data = y_new0(struct yahoo_chatroom_category, 1);
 			header = strchr(content, '"');
 			tailer = strchr(header+1, '"');
 			*tailer = '\0';
@@ -3219,8 +3219,6 @@ static void parse_chat_cat_xml(int id, const char *xml)
 		}
 
 		yd->chat_room_list = room_list->next;
-		/* Traverse the structure and print them out 
-		traverse_cat_list(yd->chat_room_list, 0); */
 	}
 	FREE(room_list); /* free the head node */
 }
@@ -3232,8 +3230,10 @@ static void yahoo_process_chatcat_connection(struct yahoo_input_data *yid, int o
 
 	if (strstr((char *)yid->rxqueue, "</content>")) {
 		parse_chat_cat_xml(yid->yd->client_id, (char *)yid->rxqueue);
-		/*YAHOO_CALLBACK(ext_yahoo_chat_cat_xml) (yid->yd->client_id,
-			(char *)yid->rxqueue);*/
+		
+		/*  ext_yahoo_chat_cat_xml() needs to be deprecated in future releases */
+		YAHOO_CALLBACK(ext_yahoo_chat_cat_xml) (yid->yd->client_id,
+			(char *)yid->rxqueue);
 	}
 }
 
@@ -4745,8 +4745,8 @@ void yahoo_get_chatrooms(int id, int chatroomid)
 	yid = y_new0(struct yahoo_input_data, 1);
 	yid->yd = yd;
 	yid->type = YAHOO_CONNECTION_CHATCAT;
-	
-	yd->chat_room_id = chatroomid;
+	yid->chat_room_id = chatroomid;
+
 	if (chatroomid == 0) {
 		if (yd->chat_room_list) {
 			yahoo_free_chat_cat_list(yd->chat_room_list);
@@ -5872,7 +5872,7 @@ const YList *yahoo_get_buddylist(int id)
 	return yd->buddies;
 }
 
-const YList *yahoo_get_chat_room_list(int id, int roomid)
+const YList *yahoo_get_chat_room_list(int id, int roomid, void *ext_data)
 {
 	struct yahoo_data *yd = find_conn_by_id(id);
 	YList *category;
@@ -5882,8 +5882,12 @@ const YList *yahoo_get_chat_room_list(int id, int roomid)
 	if(roomid == 0)
 		return yd->chat_room_list;
 	else {
-		category = find_room_category(yd->chat_room_list, roomid);
-		return ((yahoo_chatroom_category *)(category->data))->room_list;
+		if(yd->chat_room_list) {
+			category = find_room_category(yd->chat_room_list, roomid);
+			return ((yahoo_chatroom_category *)(category->data))->room_list;
+		} else {
+			return NULL;
+		}
 	}
 }
 

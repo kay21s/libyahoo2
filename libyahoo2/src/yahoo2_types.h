@@ -307,7 +307,6 @@ extern "C" {
 		struct yahoo_process_status_entry *half_user;
 		
 		YList *chat_room_list;
-		int chat_room_id;
 	};
 
 	struct yab {
@@ -330,7 +329,7 @@ extern "C" {
 		struct yab *yab_entry;
 	};
 
-	typedef struct yahoo_category{
+	typedef struct yahoo_chatroom_category{
 		int id;
 		char *name;
 		YList *room_list;

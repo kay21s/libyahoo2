@@ -113,27 +113,7 @@ typedef struct {
 	int id;
 	char *who;
 } yahoo_authorize_data;
-/*
-typedef struct {
-	int id;
-	char *name;
-	YList *room_list;
-} yahoo_chatroom_category;
 
-typedef struct {
-	char *type;
-	int id;
-	char *name;
-	char *topic;
-} yahoo_chatroom_info;
-
-typedef struct {
-	int count;
-	int users;
-	int voices;
-	int webcams;
-} yahoo_lobby_info;
-*/
 yahoo_idlabel yahoo_status_codes[] = {
 	{YAHOO_STATUS_AVAILABLE, "Available"},
 	{YAHOO_STATUS_BRB, "BRB"},
@@ -1630,12 +1610,15 @@ static void process_commands(char *line)
 		yahoo_get_chatrooms(ylad->id, roomid);
 	} else if(!strncasecmp(cmd, "CHR", strlen("CHR"))) {
 		int roomid;
+		void *ext_data;
 		roomid = atoi(copy);
-		YList *list = yahoo_get_chat_room_list(ylad->id, roomid);
-		if(roomid == 0)
-			traverse_cat_list(list, 0);
-		else
-			traverse_room_list(list);
+		YList *list = yahoo_get_chat_room_list(ylad->id, roomid, ext_data);
+		if(list) {
+			if(roomid == 0)
+				traverse_cat_list(list, 0);
+			else
+				traverse_room_list(list);
+		}
 	
 	} else if(!strncasecmp(cmd, "CHJ", strlen("CHJ"))) {
 	/* Command Format "CHJ roomid roomname" */

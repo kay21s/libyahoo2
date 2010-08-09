@@ -63,10 +63,10 @@ extern enum yahoo_log_level log_level;
 
 char *http_data_get_header_value(http_data data, char *field)
 {
-	namevalue_pair *ptr = data.headers.next;
+	YList *ptr = data.headers.next;
 	while(ptr != NULL) {
-		if(!strcmp(field, ptr->name))
-			return ptr->value;
+		if(!strcmp(field, ((struct pair *)(ptr->data))->name))
+			return ((struct pair *)(ptr->data))->value;
 		ptr = ptr->next;
 	}
 	return NULL;
@@ -74,10 +74,10 @@ char *http_data_get_header_value(http_data data, char *field)
 
 void get_http_data(http_data data)
 {
-	namevalue_pair *ptr = data.headers.next;
+	YList *ptr = data.headers.next;
 	printf("%s, %s\n", data.http_version, data.status_code);
 	while(ptr != NULL) {
-		printf("%s  :  %s\n", ptr->name, ptr->value);
+		printf("%s  :  %s\n", ((struct pair *)(ptr->data))->name, ((struct pair *)(ptr->data))->value);
 		ptr = ptr->next;
 	}
 	printf("%s\n", data.content);
@@ -85,41 +85,45 @@ void get_http_data(http_data data)
 
 void set_http_data(char *input, int length, http_data *struct_packet)
 {
-	char *header, *tail;
+	char *head, *tail;
 	char *raw_packet = strdup(input);
-	namevalue_pair *temp_line, *last_line;
+	namevalue_pair *temp_header;
+	YList *temp_ylist, *last_ptr;
 
 	struct_packet->headers.next = NULL;
-	last_line = &(struct_packet->headers);
+	last_ptr = &(struct_packet->headers);
 	
 	/* Get HTTP version and the status code */
 	struct_packet->http_version = y_new(char, 4);
 	struct_packet->status_code = y_new(char, 4);
 	sscanf(raw_packet, "%*[^/]/%s %s", struct_packet->http_version, struct_packet->status_code);
 
-	header = strstr(raw_packet, "\r\n");
-	header = header + 2;
-	while(*header!='\r' || *(header+1)!='\n') {
-		temp_line = malloc(sizeof(namevalue_pair));
-		tail = strchr(header, ':');
-		*tail = '\0';
-		temp_line->name = strdup(header);
+	head = strstr(raw_packet, "\r\n");
+	head = head + 2;
+	while(*head != '\r' || *(head+1) != '\n') {
+		temp_header = y_new(struct pair, 1);
+		temp_ylist = y_new(struct _YList, 1);
 
-		header = tail+2;
-		tail = strstr(header, "\r\n");
+		tail = strchr(head, ':');
 		*tail = '\0';
-		temp_line->value = strdup(header);
+		temp_header->name = strdup(head);
 
-		temp_line->next = NULL;
-		last_line->next = temp_line;
-		last_line = temp_line;
+		head = tail+2;
+		tail = strstr(head, "\r\n");
+		*tail = '\0';
+		temp_header->value = strdup(head);
+
+		temp_ylist->next = NULL;
+		temp_ylist->data = temp_header;
+		last_ptr->next = temp_ylist;
+		last_ptr = temp_ylist;
 		
-		header = tail+2;
+		head = tail+2;
 	}
-	header += 2;
+	head += 2;
 	tail = raw_packet + length;
 	*tail = '\0';
-	struct_packet->content = strdup(header);
+	struct_packet->content = strdup(head);
 }
 
 int yahoo_tcp_readline(char *ptr, int maxlen, void *fd)

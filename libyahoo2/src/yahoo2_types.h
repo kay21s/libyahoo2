@@ -418,13 +418,12 @@ extern "C" {
 	typedef struct pair{
 		char *name;
 		char *value;
-		struct pair *next;
 	}namevalue_pair;
 
 	typedef struct{
 		char *http_version;
 		char *status_code;
-		namevalue_pair headers;
+		YList headers;
 		char *content;
 	}http_data;
 

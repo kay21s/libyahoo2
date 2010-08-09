@@ -424,7 +424,7 @@ extern "C" {
 	typedef struct{
 		char *http_version;
 		char *status_code;
-		namevalue_pair lines;
+		namevalue_pair headers;
 		char *content;
 	}http_data;
 

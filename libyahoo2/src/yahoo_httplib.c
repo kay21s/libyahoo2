@@ -63,7 +63,7 @@ extern enum yahoo_log_level log_level;
 
 char *http_data_get_header_value(http_data data, char *field)
 {
-	namevalue_pair *ptr = data.lines.next;
+	namevalue_pair *ptr = data.headers.next;
 	while(ptr != NULL) {
 		if(!strcmp(field, ptr->name))
 			return ptr->value;
@@ -74,7 +74,7 @@ char *http_data_get_header_value(http_data data, char *field)
 
 void get_http_data(http_data data)
 {
-	namevalue_pair *ptr = data.lines.next;
+	namevalue_pair *ptr = data.headers.next;
 	printf("%s, %s\n", data.http_version, data.status_code);
 	while(ptr != NULL) {
 		printf("%s  :  %s\n", ptr->name, ptr->value);
@@ -89,20 +89,15 @@ void set_http_data(char *input, int length, http_data *struct_packet)
 	char *raw_packet = strdup(input);
 	namevalue_pair *temp_line, *last_line;
 
-	struct_packet->lines.next = NULL;
-	last_line = &(struct_packet->lines);
+	struct_packet->headers.next = NULL;
+	last_line = &(struct_packet->headers);
 	
-	/* Get HTTP version and the status code, their format are fixed, just hard-coding */
-	header = raw_packet+5;
-	tail = raw_packet+8;
-	*tail = '\0';
-	struct_packet->http_version = strdup(header);
-	header = tail+1;
-	tail = header+3;
-	*tail = '\0';
-	struct_packet->status_code = strdup(header);
+	/* Get HTTP version and the status code */
+	struct_packet->http_version = y_new(char, 4);
+	struct_packet->status_code = y_new(char, 4);
+	sscanf(raw_packet, "%*[^/]/%s %s", struct_packet->http_version, struct_packet->status_code);
 
-	header = strstr(tail+1, "\r\n");
+	header = strstr(raw_packet, "\r\n");
 	header = header + 2;
 	while(*header!='\r' || *(header+1)!='\n') {
 		temp_line = malloc(sizeof(namevalue_pair));

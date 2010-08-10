@@ -423,7 +423,7 @@ extern "C" {
 	typedef struct{
 		char *http_version;
 		char *status_code;
-		YList headers;
+		YList *headers;
 		char *content;
 	}http_data;
 

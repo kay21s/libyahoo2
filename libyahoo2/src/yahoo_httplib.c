@@ -63,7 +63,7 @@ extern enum yahoo_log_level log_level;
 
 char *http_data_get_header_value(http_data data, char *field)
 {
-	YList *ptr = data.headers.next;
+	YList *ptr = data.headers;
 	while(ptr != NULL) {
 		if(!strcmp(field, ((struct pair *)(ptr->data))->name))
 			return ((struct pair *)(ptr->data))->value;
@@ -74,7 +74,7 @@ char *http_data_get_header_value(http_data data, char *field)
 
 void get_http_data(http_data data)
 {
-	YList *ptr = data.headers.next;
+	YList *ptr = data.headers;
 	printf("%s, %s\n", data.http_version, data.status_code);
 	while(ptr != NULL) {
 		printf("%s  :  %s\n", ((struct pair *)(ptr->data))->name, ((struct pair *)(ptr->data))->value);
@@ -88,10 +88,9 @@ void set_http_data(char *input, int length, http_data *struct_packet)
 	char *head, *tail;
 	char *raw_packet = strdup(input);
 	namevalue_pair *temp_header;
-	YList *temp_ylist, *last_ptr;
+	YList *temp_ylist;
 
-	struct_packet->headers.next = NULL;
-	last_ptr = &(struct_packet->headers);
+	struct_packet->headers = NULL;
 	
 	/* Get HTTP version and the status code */
 	struct_packet->http_version = y_new(char, 4);
@@ -113,10 +112,7 @@ void set_http_data(char *input, int length, http_data *struct_packet)
 		*tail = '\0';
 		temp_header->value = strdup(head);
 
-		temp_ylist->next = NULL;
-		temp_ylist->data = temp_header;
-		last_ptr->next = temp_ylist;
-		last_ptr = temp_ylist;
+		struct_packet->headers = y_list_append(struct_packet->headers, temp_header);
 		
 		head = tail+2;
 	}

@@ -61,7 +61,7 @@ extern struct yahoo_callbacks *yc;
 
 extern enum yahoo_log_level log_level;
 
-char *http_data_get_header_value(http_data data, char *field)
+char *yahoo_http_get_header_value(http_data data, char *field)
 {
 	YList *ptr = data.headers;
 	while(ptr != NULL) {
@@ -72,7 +72,7 @@ char *http_data_get_header_value(http_data data, char *field)
 	return NULL;
 }
 
-void get_http_data(http_data data)
+void yahoo_get_http_data(http_data data)
 {
 	YList *ptr = data.headers;
 	printf("%s, %s\n", data.http_version, data.status_code);
@@ -83,7 +83,7 @@ void get_http_data(http_data data)
 	printf("%s\n", data.content);
 }
 
-void set_http_data(char *input, int length, http_data *struct_packet)
+void yahoo_set_http_data(char *input, int length, http_data *struct_packet)
 {
 	char *head, *tail;
 	char *raw_packet = strdup(input);
@@ -120,6 +120,22 @@ void set_http_data(char *input, int length, http_data *struct_packet)
 	tail = raw_packet + length;
 	*tail = '\0';
 	struct_packet->content = strdup(head);
+}
+
+void yahoo_free_http_data(http_data *http_pkt)
+{
+	YList *rm;
+	FREE(http_pkt->http_version);
+	FREE(http_pkt->status_code);
+
+	while(http_pkt->headers) {
+		rm = http_pkt->headers;
+		FREE(((namevalue_pair *)(http_pkt->headers->data))->name);
+		FREE(((namevalue_pair *)(http_pkt->headers->data))->value);
+		FREE(http_pkt->headers->data);
+		http_pkt->headers = y_list_remove_link(http_pkt->headers, http_pkt->headers);
+		y_list_free_1(rm);
+	}
 }
 
 int yahoo_tcp_readline(char *ptr, int maxlen, void *fd)

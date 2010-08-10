@@ -3253,8 +3253,8 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 	if (over)
 		return;
 
-	set_http_data((char *)yid->rxqueue, yid->rxlen, &data);
-	location = http_data_get_header_value(data, "Location");
+	yahoo_set_http_data((char *)yid->rxqueue, yid->rxlen, &data);
+	location = yahoo_http_get_header_value(data, "Location");
 
 	/*location = strstr((char *)yid->rxqueue, "Location:");*/
 	if (location == NULL) {
@@ -3301,6 +3301,7 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 		yahoo_http_post(new_yid->yd->client_id, "http://captcha.chat.yahoo.com/captcha1", 
 			NULL, length, _yahoo_http_post_connected, yad);
 	}
+	yahoo_free_http_data(&data);
 }
 
 static void yahoo_process_yab_connection(struct yahoo_input_data *yid, int over)

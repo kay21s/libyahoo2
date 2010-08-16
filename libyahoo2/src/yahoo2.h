@@ -135,8 +135,10 @@ extern "C" {
 	void yahoo_conference_logoff(int id, const char *from, YList *who,
 		const char *room);
 
-/* Get a list of chatrooms */
+/* Get list of chat rooms or categories from the server */
 	void yahoo_get_chatrooms(int id, int chatroomid);
+/* Get cached chat room list or category list */
+	const YList *yahoo_get_chat_room_list(int id, int roomid, void *extra_data);
 /* join room with specified roomname and roomid */
 	void yahoo_chat_logon(int id, const char *from, const char *room,
 		const char *roomid, const char *country, const char *language);

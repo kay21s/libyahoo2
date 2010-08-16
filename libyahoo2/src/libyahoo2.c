@@ -3049,6 +3049,8 @@ static void yahoo_process_pager_connection(struct yahoo_input_data *yid,
 	}
 }
 
+/*  DEFINED FOR TEST
+
 static void traverse_cat_list(YList *list, int level)
 {
 	int i;
@@ -3077,6 +3079,7 @@ static void traverse_room_list(YList *list)
 		list = list->next;
 	}
 }
+*/
 
 static YList *find_room_category(YList *list, int cat_id)
 {
@@ -3244,9 +3247,6 @@ static void yahoo_process_captcha_connection(struct yahoo_input_data *yid, int o
 	int length;
 	struct yahoo_post_data *yad;
 	struct yahoo_input_data *new_yid;
-	struct yahoo_packet *pkt;
-	struct yahoo_data *yd = yid->yd;
-	int id = yd->client_id;
 	char *judge;
 	http_data data;
 

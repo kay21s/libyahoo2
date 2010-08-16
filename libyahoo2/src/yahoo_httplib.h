@@ -41,6 +41,10 @@ extern "C" {
 	void yahoo_http_head(int id, const char *url, const char *cookies,
 		int size, char *payload, yahoo_get_fd_callback callback,
 		void *data);
+	char *yahoo_http_get_header_value(http_data, char *);
+	void yahoo_get_http_data(http_data);
+	void yahoo_set_http_data(char *, int, http_data *);
+	void yahoo_free_http_data(http_data *);
 
 #ifdef __cplusplus
 }

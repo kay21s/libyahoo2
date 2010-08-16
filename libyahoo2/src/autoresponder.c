@@ -745,7 +745,7 @@ static void ext_yahoo_mail_notify(int id, const char *from, const char *subj, in
 	}
 
 	if(buff[0])
-		print_message((buff));
+		print_message(("%s", buff));
 }
 
 static void ext_yahoo_got_webcam_image(int id, const char *who,
@@ -970,7 +970,7 @@ static void ext_yahoo_login_response(int id, int succ, const char *url)
 	}
 
 	ylad->status = YAHOO_STATUS_OFFLINE;
-	print_message((buff));
+	print_message(("%s", buff));
 	yahoo_logout();
 	/* poll_loop=0; */
 }
@@ -1155,7 +1155,7 @@ void yahoo_callback(struct conn_handler *c, yahoo_input_condition cond)
 				"Yahoo read error: Server closed socket");
 
 		if(buff[0])
-			print_message((buff));
+			print_message(("%s", buff));
 	}
 }
 
